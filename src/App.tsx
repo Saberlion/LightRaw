@@ -145,16 +145,18 @@ function ImageDragOverlayNode({ activeItem }: { activeItem: { path: string; path
 function App() {
   const [activeImageDragItem, setActiveImageDragItem] = useState<{ path: string; paths: string[] } | null>(null);
 
-  const { appSettings, theme, osPlatform, isOhos, isOhosKnown, handleSettingsChange } = useSettingsStore(
-    useShallow((state) => ({
-      appSettings: state.appSettings,
-      theme: state.theme,
-      osPlatform: state.osPlatform,
-      isOhos: state.isOhos,
-      isOhosKnown: state.isOhosKnown,
-      handleSettingsChange: state.handleSettingsChange,
-    })),
-  );
+  const { appSettings, theme, osPlatform, isOhos, isOhosKnown, ohosDeviceType, handleSettingsChange } =
+    useSettingsStore(
+      useShallow((state) => ({
+        appSettings: state.appSettings,
+        theme: state.theme,
+        osPlatform: state.osPlatform,
+        isOhos: state.isOhos,
+        isOhosKnown: state.isOhosKnown,
+        ohosDeviceType: state.ohosDeviceType,
+        handleSettingsChange: state.handleSettingsChange,
+      })),
+    );
 
   const {
     activeView,
@@ -275,6 +277,10 @@ function App() {
   });
 
   const isAndroid = osPlatform === 'android';
+  // OpenHarmony form factor: tablets are touch-first and keep the desktop
+  // three-column layout out of the way (rail + drawer); 2in1 keeps desktop.
+  const isOhosTablet = isOhos && ohosDeviceType === 'tablet';
+  const isTouchUi = isAndroid || isOhosTablet;
   const COMPACT_EDITOR_MAX_WIDTH = 900;
   const ANDROID_COMPACT_MAX_WIDTH = 600;
   const ANDROID_FULL_MIN_WIDTH = 1000;
@@ -288,12 +294,44 @@ function App() {
       : isPortraitViewport && viewportSize.width < ANDROID_COMPACT_MAX_WIDTH
         ? 'compact'
         : 'wide'
-    : isPortraitViewport && viewportSize.width > 0 && viewportSize.width <= COMPACT_EDITOR_MAX_WIDTH
-      ? 'compact'
-      : 'full';
+    : isOhosTablet
+      ? // A pad gives the canvas priority: icon rail + panel drawer, and only a
+        // genuinely narrow window (split screen / free window) drops to the
+        // phone-style bottom sheet.
+        viewportSize.width > 0 && viewportSize.width < 700
+        ? 'compact'
+        : 'wide'
+      : isPortraitViewport && viewportSize.width > 0 && viewportSize.width <= COMPACT_EDITOR_MAX_WIDTH
+        ? 'compact'
+        : 'full';
 
   const useCompactPanels = layoutMode === 'compact';
   const useWidePanels = layoutMode === 'wide';
+
+  // Touch tablets start with the adjustments rail collapsed so the canvas gets
+  // the whole width; tapping a rail icon slides the panel out (SidePanelArea).
+  const tabletPanelDefaultsAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!isOhosTablet || tabletPanelDefaultsAppliedRef.current) return;
+    tabletPanelDefaultsAppliedRef.current = true;
+    setUI((state) => ({
+      uiVisibility: { ...state.uiVisibility, rightPanel: false },
+    }));
+  }, [isOhosTablet, setUI]);
+
+  // One line per form-factor/layout transition in the OHOS log, so the
+  // tablet-vs-desktop routing is auditable on device (no devtools there).
+  const lastLayoutLogRef = useRef('');
+  useEffect(() => {
+    if (!isOhos) return;
+    const key = `${ohosDeviceType ?? 'pending'}:${layoutMode}`;
+    if (lastLayoutLogRef.current === key) return;
+    lastLayoutLogRef.current = key;
+    console.info(
+      `[ohos-layout] deviceType=${ohosDeviceType ?? 'pending'} mode=${layoutMode} viewport=${viewportSize.width}x${viewportSize.height} touchUi=${isTouchUi}`,
+    );
+  }, [isOhos, ohosDeviceType, layoutMode, isTouchUi, viewportSize.width, viewportSize.height]);
+
   const compactEditorPanelMinHeight = 220;
   const compactEditorPanelMaxHeight =
     viewportSize.height > 0
@@ -866,7 +904,7 @@ function App() {
   // service already collects first-launch consent with its own platform
   // dialog, so the in-app gate must never render a second consent dialog
   // (AppGallery review feedback). Desktop and Android keep the gate.
-  if (!appSettings || !isOhosKnown) {
+  if (!appSettings || !isOhosKnown || (isOhos && ohosDeviceType === null)) {
     return <div className="h-screen w-screen bg-bg-primary" />;
   }
 
@@ -891,7 +929,7 @@ function App() {
           isWgpuActive ? 'bg-transparent' : 'bg-bg-primary',
         )}
       >
-        {!isAndroid && (
+        {!isTouchUi && (
           <div
             className={clsx(
               'shrink-0 overflow-hidden z-50',
@@ -949,7 +987,7 @@ function App() {
                       transformWrapperRef={transformWrapperRef}
                       isResizing={isResizing}
                       layoutMode={layoutMode}
-                      isAndroid={isAndroid}
+                      isTouchUi={isTouchUi}
                       compactEditorPanelHeight={compactEditorPanelHeight}
                       compactEditorPanelCollapsedHeight={compactEditorPanelCollapsedHeight}
                       thumbnailAspectRatio={thumbnailAspectRatio}
@@ -984,7 +1022,7 @@ function App() {
                     thumbnailSize={thumbnailSize}
                     thumbnailAspectRatio={thumbnailAspectRatio}
                     libraryViewMode={libraryViewMode}
-                    isAndroid={isAndroid}
+                    isTouchUi={isTouchUi}
                     layoutMode={layoutMode}
                     setThumbnailSize={setThumbnailSize}
                     setThumbnailAspectRatio={setThumbnailAspectRatio}
@@ -1032,6 +1070,7 @@ function App() {
                   onWidthReset={createResizeResetHandler('right')}
                   isResizing={isResizing}
                   showAdditionalTabs={useWidePanels}
+                  showFolderTreeTab={isOhosTablet}
                 />
               )}
             </div>

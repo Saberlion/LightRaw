@@ -197,6 +197,24 @@ export const useAppInitialization = ({
           else unlisten();
         })
         .catch(() => undefined);
+
+      // Device form factor (phone/tablet/2in1): the store already polls it at
+      // startup, this listener covers the push from ArkTS once the native
+      // module import resolves, and the re-query covers the reverse race.
+      invoke<string | null>(Invokes.GetOhosDeviceType)
+        .then((deviceType) => {
+          if (active && deviceType) useSettingsStore.getState().setOhosDeviceType(deviceType);
+        })
+        .catch(() => undefined);
+
+      listen<{ deviceType: string }>('ohos-device-type', (event) => {
+        useSettingsStore.getState().setOhosDeviceType(event.payload.deviceType);
+      })
+        .then((unlisten) => {
+          if (active) unlisteners.push(unlisten);
+          else unlisten();
+        })
+        .catch(() => undefined);
     }
 
     const media = window.matchMedia('(prefers-color-scheme: dark)');

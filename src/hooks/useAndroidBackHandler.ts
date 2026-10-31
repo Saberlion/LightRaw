@@ -90,6 +90,20 @@ export function useAndroidBackHandler() {
         return;
       }
 
+      // Touch tablets: the adjustments/folder drawer behaves like an overlay, so
+      // the back gesture closes it before leaving the library/editor (desktop
+      // panels are permanent columns and must not respond to back).
+      const settings = useSettingsStore.getState();
+      if (
+        settings.isOhos &&
+        settings.ohosDeviceType === 'tablet' &&
+        ui.uiVisibility.rightPanel &&
+        window.innerWidth >= 700
+      ) {
+        ui.setUI((state: any) => ({ uiVisibility: { ...state.uiVisibility, rightPanel: false } }));
+        return;
+      }
+
       window.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true }),
       );

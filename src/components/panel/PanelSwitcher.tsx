@@ -244,12 +244,17 @@ export function MobilePanelSwitcher({
   activePanel,
   onPanelSelect,
   placement = 'bottom',
+  showFolderTree = false,
 }: {
   activePanel: Panel | null;
   onPanelSelect: (id: Panel) => void;
   placement?: 'bottom' | 'right';
+  /** Tablets keep the folder tree reachable from the rail (the desktop left
+   *  column is hidden in the touch layout). */
+  showFolderTree?: boolean;
 }) {
   const MOBILE_PANELS = [
+    ...(showFolderTree ? [Panel.FolderTree] : []),
     Panel.Metadata,
     Panel.Adjustments,
     Panel.Crop,

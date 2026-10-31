@@ -20,7 +20,7 @@ interface EditorViewProps {
   transformWrapperRef: RefObject<any>;
   isResizing: boolean;
   layoutMode: 'compact' | 'wide' | 'full';
-  isAndroid: boolean;
+  isTouchUi: boolean;
   compactEditorPanelHeight: number;
   compactEditorPanelCollapsedHeight: number;
   thumbnailAspectRatio: ThumbnailAspectRatio;
@@ -46,7 +46,7 @@ export default function EditorView({
   transformWrapperRef,
   isResizing,
   layoutMode,
-  isAndroid,
+  isTouchUi,
   compactEditorPanelHeight,
   compactEditorPanelCollapsedHeight,
   thumbnailAspectRatio,
@@ -138,7 +138,7 @@ export default function EditorView({
       selectedImage={selectedImage ?? undefined}
       showFilmstrip={layoutMode !== 'compact'}
       layoutMode={layoutMode}
-      showZoomControls={!isAndroid}
+      showZoomControls={!isTouchUi}
       thumbnailAspectRatio={thumbnailAspectRatio}
       totalImages={sortedImageList.length}
     />

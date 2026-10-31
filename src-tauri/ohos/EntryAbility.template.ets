@@ -163,9 +163,10 @@ export default class EntryAbility extends RustAbility {
         }
       });
       // Keep the module handle for onConfigurationUpdate pushes, and seed
-      // the Rust bridge with the current system color mode.
+      // the Rust bridge with the current system color mode + form factor.
       this.rapidrawModule = mod;
       this.pushColorMode(this.context.config?.colorMode);
+      this.pushDeviceType();
       // Subscribe only now that the module handle exists: the consent
       // subscription pushes through notifyOhosPrivacyChanged below.
       this.subscribePrivacyEvents();
@@ -193,6 +194,20 @@ export default class EntryAbility extends RustAbility {
     } else if (colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT) {
       notify(false);
     }
+  }
+
+  // Forward the device form factor into the Rust bridge. The frontend uses it
+  // to choose between the desktop (2in1) and touch-first tablet layouts; the
+  // module import resolves after the page may already have loaded, so the Rust
+  // side also emits 'ohos-device-type' for the frontend to follow (docs 6.14).
+  private pushDeviceType(): void {
+    const notify: ESObject =
+      this.rapidrawModule?.notifyOhosDeviceType ?? this.rapidrawModule?.default?.notifyOhosDeviceType;
+    if (typeof notify !== 'function') {
+      console.error('[RapidRAW] notifyOhosDeviceType not exported by librapidraw_lib.so');
+      return;
+    }
+    notify(deviceInfo.deviceType);
   }
 
   // Every handler MUST resolve its request exactly once — the Rust side parks
@@ -521,8 +536,9 @@ export default class EntryAbility extends RustAbility {
           } catch (e) {
             console.error(`[RapidRAW] pick_folder stat FAILED for ${resolved}: ${JSON.stringify(e)}`);
           }
-          // Convert the picker's temporary grant into a persistent one
-          // (2in1/PC form factors only — pads lack the capability; docs 6.14).
+          // Convert the picker's temporary grant into a persistent one.
+          // Attempted on every form factor (tablets may or may not expose the
+          // persistence syscap); a rejection falls back to the session grant.
           // Guarded: grant persistence must never break the pick flow —
           // resolvePickFolder below must always run.
           try {
@@ -680,28 +696,32 @@ export default class EntryAbility extends RustAbility {
 
   // Convert the picker's temporary folder grant into a persistent one
   // (fileShare.persistPermission) and record the URI for later launches.
-  // 2in1/PC only: tablets/phones lack the capability (docs 6.14) and stay
-  // on the per-launch re-grant flow in the frontend.
+  // The capability used to be 2in1-only (docs 6.14), so this now attempts it
+  // on every form factor: if the platform accepts it the grant survives
+  // restarts, and if it does not the temporary grant still covers the session
+  // and the frontend's per-launch re-grant flow stays the fallback.
   private persistFolderGrant(uri: string, path: string): void {
-    if (deviceInfo.deviceType !== '2in1') {
-      console.info(`[RapidRAW] persist grant skipped (deviceType=${deviceInfo.deviceType})`);
-      return;
-    }
     // READ|WRITE: .rrdata sidecars are written next to the originals in
     // the library folder (parse_virtual_path in file_management.rs).
     const policy: fileShare.PolicyInfo = {
       uri: uri,
       operationMode: fileShare.OperationMode.READ_MODE | fileShare.OperationMode.WRITE_MODE,
     };
-    fileShare.persistPermission([policy]).then(() => {
-      console.info(`[RapidRAW] persistPermission ok for ${uri}`);
-      this.recordFolderGrant(uri, path);
-    }).catch((e: BusinessError) => {
-      // Non-fatal: the temporary grant still covers this session and the
-      // frontend re-grant flow remains the fallback. Expected 201 while the
-      // debug profile lacks the FILE_ACCESS_PERSIST ACL (docs 6.14).
-      console.error(`[RapidRAW] persistPermission failed: ${JSON.stringify(e)}`);
-    });
+    try {
+      fileShare.persistPermission([policy]).then(() => {
+        console.info(`[RapidRAW] persistPermission ok for ${uri} (deviceType=${deviceInfo.deviceType})`);
+        this.recordFolderGrant(uri, path);
+      }).catch((e: BusinessError) => {
+        // Non-fatal: expected 201 when the profile lacks the
+        // FILE_ACCESS_PERSIST ACL and on form factors without the
+        // persistence syscap (docs 6.14).
+        console.error(`[RapidRAW] persistPermission failed (deviceType=${deviceInfo.deviceType}): ${JSON.stringify(e)}`);
+      });
+    } catch (e) {
+      // Some form factors do not export the API at all; a synchronous throw
+      // here must not break the folder pick.
+      console.error(`[RapidRAW] persistPermission unavailable (deviceType=${deviceInfo.deviceType}): ${JSON.stringify(e)}`);
+    }
   }
 
   private recordFolderGrant(uri: string, path: string): void {

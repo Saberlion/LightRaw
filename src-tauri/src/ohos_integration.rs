@@ -152,6 +152,9 @@ mod system_bridge {
     // 0 = unknown, 1 = dark, 2 = light.
     static COLOR_MODE: AtomicU8 = AtomicU8::new(0);
     static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
+    // ArkTS `deviceInfo.deviceType`: "phone" | "tablet" | "2in1" | "default" |
+    // … (docs 6.14). Drives form-factor-dependent UI and grant strategy.
+    static DEVICE_TYPE: OnceLock<String> = OnceLock::new();
 
     pub fn set_app_handle(handle: tauri::AppHandle) {
         let _ = APP_HANDLE.set(handle);
@@ -163,6 +166,10 @@ mod system_bridge {
             2 => Some(false),
             _ => None,
         }
+    }
+
+    pub fn device_type() -> Option<String> {
+        DEVICE_TYPE.get().cloned()
     }
 
     /// Emit a tauri event to the webview (shared with sibling bridge modules).
@@ -193,6 +200,22 @@ mod system_bridge {
         }
         Ok(())
     }
+
+    /// NAPI export (ArkTS name: `notifyOhosDeviceType`). EntryAbility pushes
+    /// `deviceInfo.deviceType` once the native module is loaded; the frontend
+    /// queries it (`get_ohos_device_type`) and follows the event for the race
+    /// where the webview boots before the module import resolves.
+    #[napi_derive_ohos::napi]
+    pub fn notify_ohos_device_type(device_type: String) -> Result<()> {
+        if DEVICE_TYPE.set(device_type.clone()).is_ok() {
+            log::info!("OHOS device type: {device_type}");
+            emit(
+                "ohos-device-type",
+                serde_json::json!({ "deviceType": device_type }),
+            );
+        }
+        Ok(())
+    }
 }
 
 /// Latest OHOS system color mode reported by the ArkTS side, or `None` when
@@ -202,6 +225,22 @@ pub fn get_ohos_color_mode() -> Option<bool> {
     #[cfg(target_env = "ohos")]
     {
         system_bridge::color_mode()
+    }
+    #[cfg(not(target_env = "ohos"))]
+    {
+        None
+    }
+}
+
+/// OHOS device form factor ("phone" | "tablet" | "2in1" | …) as reported by
+/// ArkTS `deviceInfo`, or `None` before the ArkTS bridge has registered (and
+/// on every other platform). The frontend picks its layout mode from this:
+/// tablets get the touch-first rail layout, 2in1 keeps the desktop one.
+#[tauri::command]
+pub fn get_ohos_device_type() -> Option<String> {
+    #[cfg(target_env = "ohos")]
+    {
+        system_bridge::device_type()
     }
     #[cfg(not(target_env = "ohos"))]
     {

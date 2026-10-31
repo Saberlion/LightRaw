@@ -2214,8 +2214,23 @@ pub fn run() {
             crate::storage::apply_cache_limits(&settings);
 
             if crash_flag_path.exists() {
-                log::warn!("GPU Driver crash detected on last run! Falling back to OpenGL backend.");
-                settings.processing_backend = Some("gl".to_string());
+                let previous = settings
+                    .processing_backend
+                    .clone()
+                    .unwrap_or_else(|| "auto".to_string());
+                // OHOS: GLES is the unstable backend (readback stack smash in the
+                // translation layer) while Vulkan is the working one, so a crash
+                // under Vulkan falls back to GLES and a crash under GLES goes back
+                // to Vulkan — never pin the app to the broken path. Other platforms
+                // keep the long-standing OpenGL fallback.
+                #[cfg(target_env = "ohos")]
+                let fallback = if previous == "gl" { "vulkan" } else { "gl" };
+                #[cfg(not(target_env = "ohos"))]
+                let fallback = "gl";
+                log::warn!(
+                    "GPU driver crash detected on last run (backend={previous}); switching to {fallback}."
+                );
+                settings.processing_backend = Some(fallback.to_string());
                 let _ = crate::save_settings(settings.clone(), app_handle.clone());
                 let _ = std::fs::remove_file(&crash_flag_path);
             }
@@ -2363,11 +2378,36 @@ pub fn run() {
                 // the background with a tiny throwaway processor; pipelines
                 // are dimension-independent, so the processor created on
                 // demand hits a warm driver cache.
+                //
+                // A driver can die inside shader compilation (GEM-W40 pad,
+                // 2026-10-31: SIGSEGV in libmaleoon_v300.so), and that is not
+                // catchable. Leave a marker for the duration of the warmup:
+                // if the process disappears, the next launch skips the warmup
+                // once instead of crash-looping, and the backend itself is
+                // left untouched (the engine still compiles on demand).
                 let warmup_handle = app.handle().clone();
                 std::thread::Builder::new()
                     .name("pipeline-warmup".into())
                     .spawn(move || {
                         let state = warmup_handle.state::<AppState>();
+                        let warmup_flag = state
+                            .gpu_crash_flag_path
+                            .lock()
+                            .ok()
+                            .and_then(|path| path.clone())
+                            .map(|path| path.with_file_name(".gpu_warmup_crash_flag"));
+                        if warmup_flag.as_ref().is_some_and(|path| path.exists()) {
+                            log::warn!(
+                                "[pipeline-warmup] skipped after a previous warmup crash (first image open may stall)"
+                            );
+                            if let Some(path) = &warmup_flag {
+                                let _ = std::fs::remove_file(path);
+                            }
+                            return;
+                        }
+                        if let Some(path) = &warmup_flag {
+                            let _ = std::fs::write(path, "warming_up");
+                        }
                         match gpu_processing::warm_up_pipelines(&state, &warmup_handle) {
                             Ok(elapsed) => {
                                 log::info!("[pipeline-warmup] completed in {elapsed:.2?}")
@@ -2376,6 +2416,9 @@ pub fn run() {
                                 "[pipeline-warmup] failed (first image open may stall): {}",
                                 e
                             ),
+                        }
+                        if let Some(path) = &warmup_flag {
+                            let _ = std::fs::remove_file(path);
                         }
                     })
                     .expect("failed to spawn pipeline warmup thread");
@@ -2626,8 +2669,9 @@ pub fn run() {
             android_integration::resolve_android_content_uri_name,
             ohos_integration::ohos_window_control,
             ohos_integration::is_ohos_build,
-  ohos_integration::exit_app,
+            ohos_integration::exit_app,
             ohos_integration::get_ohos_color_mode,
+            ohos_integration::get_ohos_device_type,
                 ohos_integration::pick_ohos_folder,
                 ohos_integration::pick_ohos_files,
                 ohos_integration::pick_ohos_save_file,

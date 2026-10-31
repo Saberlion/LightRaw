@@ -349,7 +349,7 @@ cargo check --target aarch64-unknown-linux-ohos   # OHOS(需 §6.1 环境变量)
 | TC-SIGN-07 | ACL 权限包调试装机被拒 | 带 ACL 权限 + 调试 profile | `hdc install -r` | `9568289 grant request permissions failed`(**已知**,本地验证用 INTERNET-only 变体) | P2 | §6.17 |
 | TC-SIGN-08 | 提审包产物校验 | `.app` 已产出 | 校验体积/SHA256/无调试信息 | 与记录一致(如 v3:26.17MB,SHA256 `986387BE…BDA0`) | P1 | §6.17(提审包 v3) |
 | TC-SIGN-09 | AGC 控制台名称/图标同步 | AGC 控制台 | 更新为 LightRaw | 与包内一致,避免审核不一致 | P2 | §6.17 注 |
-| TC-SIGN-10 | deviceTypes 收敛 | 提审包 | 检查 deviceTypes | 首发为 `["2in1"]`;AGC「支持设备」只勾 2in1 | P2 | §6.15/§6.17 |
+| TC-SIGN-10 | deviceTypes 覆盖形态 | 提审包 | 检查 deviceTypes | `["2in1", "tablet"]`(平板上架后);AGC「支持设备」须勾选与包内一致的 2in1 + 平板,否则 998 | P2 | §6.15/§6.17/§6.21 |
 
 ### 3.15 TC-REG —— 回归与静态门禁
 
@@ -385,6 +385,22 @@ cargo check --target aarch64-unknown-linux-ohos   # OHOS(需 §6.1 环境变量)
 | TC-PRIV-11 | 关于页以平台文本取代本地文本 | [DEV-A] | 对比 OHOS 与桌面/Android 的关于页 | OHOS 展示平台链接(不渲染本地法务文本查看器);桌面/Android 不变 | P2 | §6.18-3 |
 | TC-PRIV-12 | 桥缺失时不 panic | 缺 EntryAbility 补丁的构建 | 触发任一隐私命令 | 返回 `ok:false` + 错误信息;不 panic、不挂起(请求必被 resolve 一次) | P2 | §6.18-1 |
 | TC-PRIV-13 | 非 OHOS 平台返回 Err | [DESK] | 调用三个隐私命令 | 返回明确 Err,不 panic | P2 | `ohos_integration.rs` |
+
+### 3.17 TC-PAD —— 平板(tablet)形态
+
+> 设备 `GEM-W40`(MatePad Pro Max 悦享款,tablet,3000×2000 → 1298×799 CSS);背景与实现见 §6.21。
+
+| ID | 名称 | 前置条件 | 步骤 | 预期结果 | 优先级 | 依据 |
+|---|---|---|---|---|---|---|
+| TC-PAD-01 | 平板可安装 | 包内 `deviceTypes` 含 `tablet`;调试 profile | `hdc install` | 安装成功(带 ACL 权限会 `9568289`,需裁剪权限,§6.21) | P0 | §6.21 |
+| TC-PAD-02 | 首启不崩 + Vulkan | 全新安装(无 settings) | 冷启动 → 看 app.log | `Using GPU adapter: … (Vulkan …)`;`[pipeline-warmup] completed`;**无 cppcrash**;`processingBackend` 保持 `auto` | P0 | §6.21 |
+| TC-PAD-03 | 平板布局路由 | 同上 | 看 `[ohos-layout]` | `deviceType=tablet mode=wide touchUi=true`;自绘标题栏不渲染;欢迎页按钮为「打开图库」 | P0 | §6.21 |
+| TC-PAD-04 | 抽屉交互 | 已选图库 | 点栏图标开面板 → 再点当前图标 → 点「调整」 | 打开为右抽屉(工作区宽度,默认 320);点激活图标收起;重新打开显示「调整」面板 | P1 | §6.21 |
+| TC-PAD-05 | 文件夹树可达 | 桌面左栏不渲染 | 点栏内文件夹树图标 | 「来源」树可见并显示 `currentUser` 子目录 | P1 | §6.21 |
+| TC-PAD-06 | 编辑与 GPU | 图库内 1 张图 | 点缩略图进编辑器 → 拖曝光滑块 | 编辑器可交互;app.log `apply_adjustments` 出图;交互预览延迟可接受 | P1 | §6.21 |
+| TC-PAD-07 | 重启重授权 | 平板形态 + 调试 profile | force-stop → 重启 → 「继续会话」 | 应用回欢迎页;继续会话提示重选目录(persistPermission 201 属预期) | P2 | §6.21/§6.14 |
+| TC-PAD-08 | AGC 平板分发 | 提审包 | 检查 `deviceTypes` 与控制台「支持设备」 | `["2in1", "tablet"]`;控制台同时勾选;平板截图已备 | P2 | §6.21/§6.15 |
+| TC-PAD-09 | 返回手势关闭抽屉 | 抽屉展开 | 触发系统返回手势 | 抽屉收起,当前视图不离开 | P2 | §6.21 |
 
 ---
 

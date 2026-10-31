@@ -20,7 +20,7 @@
 | 应用图标 | 1 张，216×216 或 1024×1024，正方形，PNG ≤3MB | `icon-216.png` 47KB / `icon-1024.png` 791KB，1024×1024 不透明 | ✅ |
 | 应用介绍截图 | 3~5 张，16:9，1920×1080，PNG/JPG/JPEG ≤5MB | 5 张，1920×1080，PNG 207~573KB | ✅ |
 | 名称/图标与包内一致 | 必须一致 | 名称 **LightRaw**（包内 `app_name` / `EntryAbility_label`）、图标取包内 `foreground.png`（= `LightRaw.png`） | ✅ |
-| 支持设备 | 包内 `deviceTypes = ["2in1"]` → 控制台只勾 2in1 | — | ⚠️ 需在控制台勾选 |
+| 支持设备 | 包内 `deviceTypes = ["2in1", "tablet"]` → 控制台勾 2in1 + 平板 | — | ⚠️ 需在控制台勾选；平板截图待采集 |
 
 ## 3. 截图内容与建议顺序
 

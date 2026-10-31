@@ -21,7 +21,7 @@ interface LibraryViewProps {
   thumbnailSize: ThumbnailSize;
   thumbnailAspectRatio: ThumbnailAspectRatio;
   libraryViewMode: LibraryViewMode;
-  isAndroid: boolean;
+  isTouchUi: boolean;
   layoutMode: 'compact' | 'wide' | 'full';
   setThumbnailSize: (size: ThumbnailSize) => void;
   setThumbnailAspectRatio: (ratio: ThumbnailAspectRatio) => void;
@@ -50,7 +50,7 @@ export default function LibraryView({
   thumbnailSize,
   thumbnailAspectRatio,
   libraryViewMode,
-  isAndroid,
+  isTouchUi,
   layoutMode,
   setThumbnailSize,
   setThumbnailAspectRatio,
@@ -149,7 +149,7 @@ export default function LibraryView({
             importState={importState}
             isLoading={isViewLoading}
             isTreeLoading={isTreeLoading}
-            isAndroid={isAndroid}
+            isTouchUi={isTouchUi}
             libraryViewMode={libraryViewMode}
             multiSelectedPaths={multiSelectedPaths}
             onClearSelection={handleClearSelection}

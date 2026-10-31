@@ -5,6 +5,31 @@ import { AppSettings, SupportedTypes, Invokes } from '../components/ui/AppProper
 import { DEFAULT_THEME_ID } from '../utils/themes';
 import type { OhosPrivacyState } from '../utils/ohosPrivacy';
 
+/**
+ * Ask the ArkTS bridge for the device form factor ("phone" | "tablet" | "2in1").
+ * The native module import can resolve after the webview has already booted, so
+ * a null answer is retried a few times (an `ohos-device-type` event covers the
+ * same race from the other side).
+ */
+const pollOhosDeviceType = (attempt = 0) => {
+  invoke<string | null>(Invokes.GetOhosDeviceType)
+    .then((deviceType) => {
+      if (deviceType) {
+        useSettingsStore.setState({ ohosDeviceType: deviceType });
+        return;
+      }
+      if (attempt < 4) {
+        window.setTimeout(() => pollOhosDeviceType(attempt + 1), 200 * (attempt + 1));
+      } else {
+        // The bridge never answered (missing export in an older HAP): settle on
+        // "unknown" so the UI does not wait forever; a late event, if any, still
+        // overwrites this with the real form factor.
+        useSettingsStore.setState({ ohosDeviceType: 'unknown' });
+      }
+    })
+    .catch(() => useSettingsStore.setState({ ohosDeviceType: 'unknown' }));
+};
+
 interface SettingsState {
   appSettings: AppSettings | null;
   theme: string;
@@ -13,6 +38,8 @@ interface SettingsState {
   isOhos: boolean;
   /** Whether the IsOhosBuild probe has settled (true + false = known not OHOS). */
   isOhosKnown: boolean;
+  /** OHOS form factor from ArkTS `deviceInfo.deviceType` (null until known). */
+  ohosDeviceType: string | null;
   isSystemDark: boolean | null;
   /** Last AppGallery privacy payload (OHOS only; null elsewhere). */
   ohosPrivacy: OhosPrivacyState | null;
@@ -24,6 +51,7 @@ interface SettingsState {
   setSupportedTypes: (types: SupportedTypes | null) => void;
   setSystemDark: (dark: boolean) => void;
   setOhosPrivacy: (state: OhosPrivacyState | null) => void;
+  setOhosDeviceType: (deviceType: string | null) => void;
   handleSettingsChange: (newSettings: AppSettings) => Promise<void>;
 }
 
@@ -34,6 +62,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   osPlatform: '',
   isOhos: false,
   isOhosKnown: false,
+  ohosDeviceType: null,
   isSystemDark: null,
   ohosPrivacy: null,
 
@@ -46,7 +75,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     // plugin-os reports "linux" on OpenHarmony; detect OHOS through the Rust
     // bridge instead (same pattern as the TitleBar window controls).
     invoke<boolean>(Invokes.IsOhosBuild)
-      .then((ohos) => set({ isOhos: ohos, isOhosKnown: true }))
+      .then((ohos) => {
+        set({ isOhos: ohos, isOhosKnown: true });
+        if (ohos) pollOhosDeviceType();
+      })
       .catch(() => set({ isOhos: false, isOhosKnown: true }));
   },
 
@@ -59,6 +91,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setSystemDark: (dark) => set({ isSystemDark: dark }),
 
   setOhosPrivacy: (state) => set({ ohosPrivacy: state }),
+
+  setOhosDeviceType: (deviceType) => set({ ohosDeviceType: deviceType }),
 
   handleSettingsChange: async (newSettings: AppSettings) => {
     if (!newSettings) {

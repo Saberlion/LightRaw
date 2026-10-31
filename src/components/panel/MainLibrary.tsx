@@ -68,7 +68,7 @@ interface MainLibraryProps {
   imageRatings: Record<string, number>;
   importState: ImportState;
   isLoading: boolean;
-  isAndroid: boolean;
+  isTouchUi: boolean;
   isTreeLoading: boolean;
   libraryViewMode: LibraryViewMode;
   multiSelectedPaths: Array<string>;
@@ -373,7 +373,7 @@ export default function MainLibrary(props: MainLibraryProps) {
                           <br />
                           {t('library.splash.welcomeBackDesc')}
                         </>
-                      ) : props.isAndroid ? (
+                      ) : props.isTouchUi ? (
                         t('library.splash.descriptionAndroid')
                       ) : (
                         t('library.splash.descriptionDesktop')
@@ -398,7 +398,7 @@ export default function MainLibrary(props: MainLibraryProps) {
                           size="lg"
                         >
                           <Folder size={20} className="mr-2" />
-                          {props.isAndroid
+                          {props.isTouchUi
                             ? t('library.splash.openLibrary')
                             : hasLastPath
                               ? t('library.splash.addFolder')
@@ -484,7 +484,7 @@ export default function MainLibrary(props: MainLibraryProps) {
         onMouseEnter={() => setIsProgressHovered(true)}
         onMouseLeave={() => setIsProgressHovered(false)}
       >
-        {selectionModeActive && props.isAndroid ? (
+        {selectionModeActive && props.isTouchUi ? (
           <>
             <div className="min-w-0">
               <Text variant={TextVariants.headline}>{t('library.header.selectItems')}</Text>
@@ -523,7 +523,7 @@ export default function MainLibrary(props: MainLibraryProps) {
           <>
             <div className="min-w-0">
               <Text variant={TextVariants.headline}>{t('library.header.title')}</Text>
-              {!props.isAndroid && (
+              {!props.isTouchUi && (
                 <div className="flex items-center gap-2">
                   {props.currentFolderPath ? (
                     <Text className="truncate" data-tooltip={props.currentFolderPath}>
@@ -578,7 +578,7 @@ export default function MainLibrary(props: MainLibraryProps) {
                   sortOptions={translatedSortOptions}
                 />
                 <JobsMenu onNavigateToFolder={props.onNavigateToFolder} />
-                {props.isAndroid && (
+                {props.isTouchUi && (
                   <Button
                     className="h-12 w-12 bg-accent text-button-text shadow-none p-0 flex items-center justify-center"
                     onClick={() => setSelectionModeActive(true)}
@@ -587,7 +587,7 @@ export default function MainLibrary(props: MainLibraryProps) {
                     <CheckCheck className="w-6 h-6" />
                   </Button>
                 )}
-                {!props.isAndroid && (
+                {!props.isTouchUi && (
                   <Button
                     className="h-12 w-12 bg-transparent text-text-primary shadow-none p-0 flex items-center justify-center"
                     onClick={props.onNavigateToCommunity}
@@ -662,7 +662,7 @@ export default function MainLibrary(props: MainLibraryProps) {
           <Text>{t('library.filters.noMatch')}</Text>
         </div>
       )}
-      {(props.isAndroid || useSettingsStore.getState().isOhos) && (
+      {(props.isTouchUi || useSettingsStore.getState().isOhos) && (
         <Button
           className="absolute bottom-18 right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50"
           onClick={(e) => {

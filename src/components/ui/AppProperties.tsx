@@ -59,6 +59,7 @@ export enum Invokes {
   ExportImages = 'export_images',
   FrontendLog = 'frontend_log',
   GetOhosColorMode = 'get_ohos_color_mode',
+  GetOhosDeviceType = 'get_ohos_device_type',
   GetOhosPrivacyState = 'get_ohos_privacy_state',
   RequestOhosPrivacyConsent = 'request_ohos_privacy_consent',
   RevokeOhosPrivacyConsent = 'revoke_ohos_privacy_consent',

@@ -19,6 +19,9 @@ interface SidePanelAreaProps {
   onWidthReset: () => void;
   isResizing: boolean;
   showAdditionalTabs?: boolean;
+  /** Touch tablets: expose the folder tree in the rail (desktop's left column
+   *  is not rendered in the wide layout). */
+  showFolderTreeTab?: boolean;
 }
 
 function RegionDroppableContainer({
@@ -321,6 +324,7 @@ export default function SidePanelArea({
   onWidthReset,
   isResizing,
   showAdditionalTabs = false,
+  showFolderTreeTab = false,
 }: SidePanelAreaProps) {
   const panelLayout = useUIStore((s) => s.panelLayout);
   const isFullScreen = useUIStore((s) => s.isFullScreen);
@@ -422,6 +426,13 @@ export default function SidePanelArea({
           <MobilePanelSwitcher
             activePanel={activePanel}
             onPanelSelect={(id) => {
+              // Tapping the active icon of an open drawer closes it again —
+              // the rail is the only collapse affordance on touch devices
+              // (the 8px resizer is not usable with a finger).
+              if (!isCollapsed && activePanel === id) {
+                setUI((s) => ({ uiVisibility: { ...s.uiVisibility, rightPanel: false } }));
+                return;
+              }
               setPanel(id);
               if (isCollapsed) {
                 setUI((s) => ({
@@ -431,6 +442,7 @@ export default function SidePanelArea({
               }
             }}
             placement="right"
+            showFolderTree={showFolderTreeTab}
           />
         </div>
       </div>

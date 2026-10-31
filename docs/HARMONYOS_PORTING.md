@@ -1,7 +1,7 @@
 # RapidRAW 鸿蒙(HarmonyOS / OpenHarmony)移植报告
 
 > 分析日期:2026-10 · 分支:`feature/harmonyos-port`
-> 状态:Phase 0–2 全部完成(窗口控制 6.5 / FileKit 导入导出 6.6-6.7 / 系统 UI 适配 6.8),Phase 3 模拟器侧完成(编辑器 GPU 管线点亮 6.8、直渲评估 6.9、高像素基线与缓解评估 6.10/6.11),Phase 4 前置打通(AI 降噪单模型全通 6.12、HAP 签名 2026-10-05);当前阻塞:无真机硬件;全部待办与优先级见 §9 盘点
+> 状态:Phase 0–2 全部完成(窗口控制 6.5 / FileKit 导入导出 6.6-6.7 / 系统 UI 适配 6.8),Phase 3 模拟器侧完成(编辑器 GPU 管线点亮 6.8、直渲评估 6.9、高像素基线与缓解评估 6.10/6.11),Phase 4 前置打通(AI 降噪单模型全通 6.12、HAP 签名 2026-10-05);真机(2in1 + 平板)均已到位,**鸿蒙平板形态适配见 6.21**;全部待办与优先级见 §9 盘点
 
 ## 1. 结论(TL;DR)
 
@@ -920,6 +920,52 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - **两个 files 目录别搞混(排障必踩)**:ArkTS `this.context.filesDir` = `/data/app/el2/100/base/<bundle>/**haps/entry**/files/` —— 授权记录 `ohos_grants.json` 在这里;而 Rust 的 `app_data_dir()`(fern 日志、`appdata/settings.json`)是 `/data/app/el2/100/base/<bundle>/**files/**`。本次排查中曾把合成记录写进后者,导致"0 revoked, 0 error(s)"的假阴性。
 - 用 hdc 往应用目录写测试文件时注意属主:shell 是 root,写出来的文件属主是 root,应用(uid 20020192)可能读写不了 —— 需要 `chown 20020192:20020192` + `chmod 660`。
 
+### 6.21 鸿蒙平板(Pad)适配(2026-10-31)
+
+**目标设备**:`GEM-W40`(HUAWEI MatePad Pro Max 悦享款),`deviceType=tablet`,3000×2000 @dpr2.3125 → 1298×799 CSS px,HarmonyOS 7.1.0.20(C00E18R3P1log),GPU Maleoon 935A,总内存 ~11.5GiB。此前所有真机结论来自 `HAD-W32`(2in1/PC 形态),平板形态未接入。
+
+**现状(适配前)**:
+- HAP 能装能开,但**首次冷启动在 `pipeline-warmup` 线程 SIGSEGV**(`libmaleoon_v300.so` 内,启动期 GPU 管线预热)。
+- 崩溃标记被自愈逻辑消费,`processing_backend` 被**永久写成 `gl`** —— 平板从此固定在文档 §5 风险 7 标记为不可靠的 GLES 路径上;而强制 `vulkan` 实测正常(`[pipeline-warmup] completed in 3.99s`,热缓存 199ms,adapter `Maleoon 935A (Vulkan, IntegratedGpu)`)。
+- 根因:OHOS 上 `processing_backend=auto` 时 `instance_desc.backends = VULKAN | GL`,wgpu 的适配器选择落到了 GLES 转译层,驱动在管线编译期崩溃。
+
+**实现**:
+
+| 层 | 变更 |
+|---|---|
+| `gpu_processing.rs` | `auto` 在 OHOS 先只建 Vulkan instance;`request_adapter` 失败(模拟器无 Vulkan)才用第二个 GL instance 重试。显式 `WGPU_BACKEND` 仍优先。 |
+| `lib.rs`(崩溃自愈) | OHOS 不再一律写 `gl`,而是 `vulkan ↔ gl` 交替;其它平台维持原 GL 回退。 |
+| `lib.rs`(warmup) | 新增 `.gpu_warmup_crash_flag`(与 `.gpu_init_crash_flag` 同目录):warmup 期间存在该标记,若进程消失则下次启动**跳过 warmup 一次**并删除标记,不改后端 —— 驱动在 shader 编译期死亡不可捕获,这样最多崩一次而不是崩溃循环。 |
+| `ohos_integration.rs` | `system_bridge` 新增 `DEVICE_TYPE`;napi `notifyOhosDeviceType` + tauri 命令 `get_ohos_device_type` + `ohos-device-type` 事件。 |
+| `EntryAbility.template.ets` | 原生模块加载后 `pushDeviceType()` 上报 `deviceInfo.deviceType`;`persistFolderGrant` 放开到所有形态(try/catch,失败回退会话授权)。 |
+| 前端 | `useSettingsStore.ohosDeviceType`(启动轮询 5 次/≤2s,兜底 `unknown`,并监听事件);`App.tsx` 在 OHOS 上等形态就绪再渲染。 |
+
+**布局(触控优先平板形态)**:
+- `layoutMode`:OHOS `tablet` → `wide`(右侧 58px 图标栏 + 可收起抽屉),窗口宽度 <700 CSS px(分屏/自由窗口)才退回 `compact`;**2in1 保持原桌面规则不变**,避免回归已发布的 PC 形态。
+- 平板上隐藏自绘标题栏(`isTouchUi`),窗口操作交给系统装饰;`LibraryView`/`EditorView`/`MainLibrary` 的移动/触控分支统一由 `isTouchUi`(`android || ohos tablet`)驱动。
+- 抽屉默认收起,给画布让位;点击当前激活的栏图标可**收起**抽屉(8px 拖拽条在触屏上不可用);平板额外把**文件夹树**放进栏位(桌面左栏在 wide 形态不渲染,否则根目录导航不可达)。
+- 返回手势:平板上抽屉展开时,返回先收起抽屉(桌面形态不受影响),再走既有的「模态 → 编辑器退库 → 库退主页」分支。
+- `[ohos-layout] deviceType=… mode=… viewport=… touchUi=…` 在每次形态/布局切换时写入 app.log,真机无 devtools 也能审计路由。
+
+**分发标识**:
+- `gen/ohos/entry/src/main/module.json5`:`deviceTypes = ["2in1", "tablet"]`(gen/ 为 gitignored 本地修改,`module.json5.agc-backup` 同步更新;`cargo tauri ohos init` 重跑后需重打)。
+- AGC「支持设备」需同时勾选 2in1 与平板;平板截图(16:9/3:2 以控制台提示为准)尚未采集。
+- **本地调试装机**:RLS 的 7 项权限里有 4 项 ACL 受限,调试 profile 无 `allowed-acls`(§7 注记)→ 装机 `9568289`。本机测试把 `module.json5` 临时裁到 `INTERNET` + `MEDIA_LOCATION`(与已装 i18n-local 包一致);**发布前必须从 `module.json5.agc-backup` 恢复 7 权限**。
+
+**已知边界**:
+- 平板文件夹授权的**持久化无法在本机验证**:调试 profile 无 `FILE_ACCESS_PERSIST` ACL,`persistPermission` 必然 201;代码已按"尝试 + 失败回退会话授权"写好,真实行为待 AGC 渠道包验证。
+- 平板在“PC 模式/自由多窗”下 `deviceInfo.deviceType` 仍是 `tablet`,会使用触控布局;若要键鼠优先的桌面布局,后续可加手动覆盖项。
+
+**真机验证(2026-10-31,GEM-W40,`entry-pad-debug-signed.hap`,69.0MB,SHA256 `66489B1F…06D27E`)**:
+- **安装**:`hdc install` 成功(`deviceTypes=["2in1","tablet"]`;权限临时裁到 INTERNET + MEDIA_LOCATION,见上)。
+- **冷启动**:首启 `Using GPU adapter: Maleoon 935A (Vulkan, IntegratedGpu)`、`[pipeline-warmup] completed in 3.9~4.5s`、**零 cppcrash**(适配前同一台设备首启 SIGSEGV);随后 3 次 force-stop/重启均为 Vulkan,warmup 224~256ms,`processingBackend` 保持 `auto`(不再被自愈逻辑改写)。
+- **布局**:`[ohos-layout] deviceType=tablet mode=wide viewport=1298x799 touchUi=true`;右侧 8 个图标栏、抽屉默认收起;点当前激活图标可收起(「图像修复」内容从 UI 树消失),再点「调整」重新展开(基础/曝光/对比度/高光/阴影/曲线可见)。自绘标题栏不渲染,欢迎页按钮为移动文案「打开图库」。首帧还有一条 `deviceType=pending mode=full` —— 这是形态未知时门闸(空白占位)期间的日志,设备形态到达后立即按 wide 渲染,不是可见的桌面布局闪烁。
+- **文件夹树**:平板栏位可打开「来源」树(`currentUser` → Documents/Download/Images/Music/Videos …),桌面左栏移除后根目录导航仍可达。
+- **编辑与 GPU**:导入 JPEG 后 `[apply_adjustments] 1280x854 555ms`、`[generate_preview_for_path] 1600x1067 1.36s`;拖动曝光滑块时交互预览 `768x512` 124~163ms/趟(6.1~8.1 FPS)。
+- **返回手势**:抽屉展开时触发系统返回 → 抽屉收起(面板标题回到 58px 栏位),编辑器不退出。
+- **授权**:`persistPermission failed (deviceType=tablet): {"code":201}`(调试 profile 无 ACL,符合预期),会话授权内可正常读目录;重启后根目录 `Operation not permitted`,应用回欢迎页,「继续会话」触发既有 v2 重选授权流程(既有行为,不是本次回归)。
+- **待补**:平板授权持久化与公共目录导出需 AGC/release 渠道包;平板截图待采集。
+
 ## 7. 移植路线图与进度清单
 
 ### Phase 0 — 技术验证(1~2 周)
@@ -951,6 +997,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - [x] 深色模式/安全区/返回手势等系统 UI 适配(2026-10-04,见 6.8):主题"系统"选项(14 locale)+ `resolveThemeId`/`isSystemDark` + `onConfigurationUpdate`→napi→事件链(深浅双向实时翻转实证);返回手势页面级 `onBackPress` 桥(编辑器退库/模态关闭优先/库退主页三分支实证,注入用 `uitest uiInput keyEvent Back`);avoid area 日志;EntryAbility/Index 模板固化入 `src-tauri/ohos/`
 - [x] 窗口控制可用(2026-10-04,见 6.5):系统装饰栏原生提供 最小化/最大化/关闭;自绘标题栏保留(标题/拖动),拖动经 Rust↔ArkTS `startMoving` 桥(实测 +400px 精确);OHOS 隐藏自绘三按钮——系统装饰输入矩形残留发现,原"隐藏 decor 独占"方案(2026-10-03)已反转(历史与教训见 6.4)
 - [x] 应用图标与 label 对齐其他平台:entry 字符串资源 + layered_image 双层图标 + startIcon,均取自 `src-tauri/icons/full_res_original.png`(2026-10-03,见 6.4)。**注:以上 EntryAbility/字符串/图标三处改动均位于 gitignored 的 `gen/ohos/`,`cargo tauri ohos init` 重跑后需按 6.4 重打**
+- [x] 平板(tablet)形态适配(2026-10-31,见 6.21):ArkTS `deviceInfo` 形态桥(napi + tauri 命令 + 事件)、触控优先 `wide` 布局与抽屉交互、自绘标题栏在触控形态隐藏、栏位补文件夹树、`deviceTypes` 加 `tablet`;同时修复平板首次冷启动在 GPU warmup 期崩溃并把 backend 永久锁到 GLES 的问题(详见 6.21)
 
 ### Phase 3 — 渲染验证(1~2 周)
 - [x] compute-only + IPC 回读路径点亮编辑器(Android 同款,零新增风险)(2026-10-04,见 6.8):Mali-G77 GLES 后端实测点亮——GPU Processor/apply_adjustments/estimate_export_size/generate_thumbnail_data 全链路日志铁证,交互 ROI ~29 FPS,曝光编辑视觉生效;`Fake map` 为回读路径良性产物
@@ -1054,6 +1101,7 @@ cargo tauri ohos build -d -t aarch64
 6. 全分辨率导出输入纹理分块(6.11 §4:GPU 侧整图上传是 45MP 导出死因,独立工作项)
 7. 中期 B:驻留瘦身 + rawler 校准/裁剪 in-place 小 fork(6.11,~50-100 LOC,可推回上游)
 8. ~~`app_cache_dir()` OHOS 指向用户公共存储区的长期方案~~ → **已解决(6.13)**:`app_paths.rs` 将全部 app 路径 OHOS 直连 `/data/storage/el2/base/` 沙箱,不再经过用户存储 FUSE(rename EACCES 场景随之消失);ArkTS 沙箱中转现仅导出桥仍在用
+9. **平板分发收尾(6.21)**:AGC「支持设备」补勾平板 + 采集平板截图;release 渠道验证平板文件夹授权持久化(调试 profile 无 `FILE_ACCESS_PERSIST` ACL,本机不可验);平板在 PC 模式/键鼠场景需要桌面布局时,加一个手动布局覆盖
 
 ### 9.4 条件性 / 低优先级 / 非本仓
 
