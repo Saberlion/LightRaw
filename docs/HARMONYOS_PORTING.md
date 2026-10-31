@@ -991,13 +991,12 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 
 **权限与装机边界**:
 - **`READ_IMAGEVIDEO` 不声明**:系统照片选择器(`PhotoViewPicker`)由系统 UI 承载,用户选择即授权,应用侧无需媒体库读权限;该权限属 ACL 受限、AGC 申请门槛高,遵循此前 v3 的决定(见 §6.17)继续排除。后续若要做"按相册网格浏览"(`getAssets`),再单独申请并消费。
-- `FILE_ACCESS_PERSIST` 仍是 **ACL 受限权限**:调试 profile 未声明 `allowed-acls` 时,带该权限的 HAP 装机报 `9568289 grant request permissions failed`。本机验证使用临时裁剪版(仅 `INTERNET + MEDIA_LOCATION`)构建;`module.json5` 最终恢复为包含 `FILE_ACCESS_PERSIST` 的发布配置。真机安装/长期迭代需在 AGC 申请含 ACL 的调试 Profile,或继续用裁剪版。
+- `FILE_ACCESS_PERSIST` 仍是 **ACL 受限权限**。**2026-10-31 AGC 发布 Profile 已更新**(`rapidrawRelease.p7b`):`allowed-acls` = DESKTOP / DOCUMENTS / DOWNLOAD / WRITE_IMAGEVIDEO / **FILE_ACCESS_PERSIST**(无 READ_IMAGEVIDEO),发布包可声明并实际使用它,AppGallery 渠道用户的平板文件夹授权可跨重启。
+- **本地调试 profile(`~/.ohos/config/default_ohos_*`)仍为 `acls=[]`**:带 `FILE_ACCESS_PERSIST` 的调试签名 HAP 装机报 `9568289`;用更新后的**发布** Profile 签名的 HAP 直装报 `9568322 not trusted app source`(2026-10-31 复验)。故本地验证继续用裁剪版(仅 `INTERNET + MEDIA_LOCATION`);想在真机验证持久授权,需在 AGC 给**调试** Profile 授权 ACL 后重新自动签名。
 
 **已知边界**:
 - 系统选择器只返回 `image/*`;相册里是否出现 DNG/RAW 取决于系统媒体库索引,相机 RAW 仍建议走 FileKit。
 - 媒体 URI 不能被 Rust 直接 `std::fs` 读取,因此暂存复制不可避免(大相册导入会短暂占用 cache,完成后释放)。
-
-
 
 ### Phase 0 — 技术验证(1~2 周)
 - [x] 全量平台门控审计与修正(本分支)
