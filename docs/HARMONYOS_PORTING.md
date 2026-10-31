@@ -965,7 +965,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - **编辑与 GPU**:导入 JPEG 后 `[apply_adjustments] 1280x854 555ms`、`[generate_preview_for_path] 1600x1067 1.36s`;拖动曝光滑块时交互预览 `768x512` 124~163ms/趟(6.1~8.1 FPS)。
 - **返回手势**:抽屉展开时触发系统返回 → 抽屉收起(面板标题回到 58px 栏位),编辑器不退出。
 - **悬浮窗/分屏(2026-10-31,电脑桌面)**:浮动窗口启动为 2010×1340 px(1025×646 CSS,`mode=wide`);拖右边缘缩到 697 CSS 自动切 `compact`(底部面板 + 工具条),拖回 703 立即回 `wide`;继续缩小被 `minWindowWidth=480`vp 钳在 942 px,布局保持 compact。窗口内欢迎页/图库/编辑器/调整面板均可用,GPU 预览 358ms/趟。切换桌面模式时系统会关闭应用(平台行为,弹窗已提示)。
-- **授权**:`persistPermission failed (deviceType=tablet): {"code":201}`(调试 profile 无 ACL,符合预期),会话授权内可正常读目录;重启后根目录 `Operation not permitted`,应用回欢迎页,「继续会话」触发既有 v2 重选授权流程(既有行为,不是本次回归)。
+- **授权**:调试 profile 无 ACL 时 `persistPermission failed (deviceType=tablet): {"code":201}`,会话授权内可正常读目录,重启后根目录 `Operation not permitted`、应用回欢迎页并走 v2 重选授权;换用含 `FILE_ACCESS_PERSIST` 的 ACL 调试 Profile 后(2026-10-31)**平板持久授权闭环成立**:`persistPermission ok`,`force-stop` 重启后 hilog `ActivatePermission pathPolicies size: 1`,「继续会话」直接进图库、不再弹重授权。
 - **待补**:平板授权持久化与公共目录导出需 AGC/release 渠道包;平板截图待采集。
 
 ### 6.22 相册导入(MediaLibraryKit)+ FILE_ACCESS_PERSIST(2026-10-31)
@@ -992,7 +992,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 **权限与装机边界**:
 - **`READ_IMAGEVIDEO` 不声明**:系统照片选择器(`PhotoViewPicker`)由系统 UI 承载,用户选择即授权,应用侧无需媒体库读权限;该权限属 ACL 受限、AGC 申请门槛高,遵循此前 v3 的决定(见 §6.17)继续排除。后续若要做"按相册网格浏览"(`getAssets`),再单独申请并消费。
 - `FILE_ACCESS_PERSIST` 仍是 **ACL 受限权限**。**2026-10-31 AGC 发布 Profile 已更新**(`rapidrawRelease.p7b`):`allowed-acls` = DESKTOP / DOCUMENTS / DOWNLOAD / WRITE_IMAGEVIDEO / **FILE_ACCESS_PERSIST**(无 READ_IMAGEVIDEO),发布包可声明并实际使用它,AppGallery 渠道用户的平板文件夹授权可跨重启。
-- **本地调试 profile(`~/.ohos/config/default_ohos_*`)仍为 `acls=[]`**:带 `FILE_ACCESS_PERSIST` 的调试签名 HAP 装机报 `9568289`;用更新后的**发布** Profile 签名的 HAP 直装报 `9568322 not trusted app source`(2026-10-31 复验)。故本地验证继续用裁剪版(仅 `INTERNET + MEDIA_LOCATION`);想在真机验证持久授权,需在 AGC 给**调试** Profile 授权 ACL 后重新自动签名。
+- **本地调试 profile 已更新为 ACL 版**(2026-10-31,`default_ohos_T8iyt...`,`allowed-acls=["ohos.permission.FILE_ACCESS_PERSIST"]`):带该权限的调试签名包可正常装机;真机实测 `persistPermission ok`、force-stop 重启后 `ActivatePermission pathPolicies size: 1`、「继续会话」直接进图库、不再重授权。**平板持久授权闭环成立**。旧的无 ACL 调试 profile 仍会 `9568289`;发布 profile 直装仍 `9568322`(只能走 AGC 分发)。
 
 **已知边界**:
 - 系统选择器只返回 `image/*`;相册里是否出现 DNG/RAW 取决于系统媒体库索引,相机 RAW 仍建议走 FileKit。
@@ -1132,7 +1132,7 @@ cargo tauri ohos build -d -t aarch64
 6. 全分辨率导出输入纹理分块(6.11 §4:GPU 侧整图上传是 45MP 导出死因,独立工作项)
 7. 中期 B:驻留瘦身 + rawler 校准/裁剪 in-place 小 fork(6.11,~50-100 LOC,可推回上游)
 8. ~~`app_cache_dir()` OHOS 指向用户公共存储区的长期方案~~ → **已解决(6.13)**:`app_paths.rs` 将全部 app 路径 OHOS 直连 `/data/storage/el2/base/` 沙箱,不再经过用户存储 FUSE(rename EACCES 场景随之消失);ArkTS 沙箱中转现仅导出桥仍在用
-9. **平板分发收尾(6.21)**:AGC「支持设备」补勾平板 + 采集平板截图;release 渠道验证平板文件夹授权持久化(调试 profile 无 `FILE_ACCESS_PERSIST` ACL,本机不可验);平板在 PC 模式/键鼠场景需要桌面布局时,加一个手动布局覆盖
+9. **平板分发收尾(6.21)**:AGC「支持设备」补勾平板 + 采集平板截图;release 渠道复用已验证的平板持久授权路径(ACL 调试 Profile 上 `persistPermission`/`activatePermission` 已实证,2026-10-31);平板在 PC 模式/键鼠场景需要桌面布局时,加一个手动布局覆盖
 10. **相册导入后续(6.22)**:按相册网格浏览(`getAssets`,需先申请 `READ_IMAGEVIDEO`)、大批量导入的暂存进度提示、重复照片按内容哈希去重;当前逐文件复制,可在同一文件系统内尝试 rename
 
 ### 9.4 条件性 / 低优先级 / 非本仓

@@ -398,7 +398,7 @@ cargo check --target aarch64-unknown-linux-ohos   # OHOS(需 §6.1 环境变量)
 | TC-PAD-04 | 抽屉交互 | 已选图库 | 点栏图标开面板 → 再点当前图标 → 点「调整」 | 打开为右抽屉(工作区宽度,默认 320);点激活图标收起;重新打开显示「调整」面板 | P1 | §6.21 |
 | TC-PAD-05 | 文件夹树可达 | 桌面左栏不渲染 | 点栏内文件夹树图标 | 「来源」树可见并显示 `currentUser` 子目录 | P1 | §6.21 |
 | TC-PAD-06 | 编辑与 GPU | 图库内 1 张图 | 点缩略图进编辑器 → 拖曝光滑块 | 编辑器可交互;app.log `apply_adjustments` 出图;交互预览延迟可接受 | P1 | §6.21 |
-| TC-PAD-07 | 重启重授权 | 平板形态 + 调试 profile | force-stop → 重启 → 「继续会话」 | 应用回欢迎页;继续会话提示重选目录(persistPermission 201 属预期;发布 Profile 已含 ACL,AGC 渠道包应免重授权) | P2 | §6.21/§6.14/§6.22 |
+| TC-PAD-07 | 重启重授权 | 平板形态 + ACL 调试/发布 profile | force-stop → 重启 → 「继续会话」 | 首次 `persistPermission ok`;重启后 `ActivatePermission` 成功,直接进图库、不再重授权 | P1 | §6.21/§6.14/§6.22 |
 | TC-PAD-08 | AGC 平板分发 | 提审包 | 检查 `deviceTypes` 与控制台「支持设备」 | `["2in1", "tablet"]`;控制台同时勾选;平板截图已备 | P2 | §6.21/§6.15 |
 | TC-PAD-09 | 返回手势关闭抽屉 | 抽屉展开 | 触发系统返回手势 | 抽屉收起,当前视图不离开 | P2 | §6.21 |
 | TC-PAD-10 | 悬浮窗宽窄切换 | 平板 + 电脑桌面/悬浮窗 | 浮动窗口拖右边缘 <700 CSS 再拖回 >700 | `[ohos-layout]` 依次 `mode=compact` / `mode=wide`;底部面板与右侧栏跟随切换,无重启 | P1 | §6.21 |
@@ -415,7 +415,7 @@ cargo check --target aarch64-unknown-linux-ohos   # OHOS(需 §6.1 环境变量)
 | TC-ALBUM-02 | 多选导入 | 系统相册有照片 | 点相册 FAB → 多选 → 确认 | app.log `pick_gallery_images staged N/N`;导入完成;库内文件名保留原名;缩略图/编辑可用 | P1 | §6.22 |
 | TC-ALBUM-03 | 格式过滤与去重 | 选择含不支持格式/重复项 | 同上 | 不支持项被跳过(`skip unsupported`),重复 URI 只导入一次 | P2 | §6.22 |
 | TC-ALBUM-04 | 暂存清理 | 导入完成 | 检查 `cache/import_staging` | 目录被删除;异常中断后重启日志 `cleared N staged import file(s)` | P2 | §6.22 |
-| TC-ALBUM-05 | ACL 装机边界 | 含 FILE_ACCESS_PERSIST 的包 | `hdc install` | 无 ACL 的调试 profile 报 `9568289`(已知);裁剪版可装 | P2 | §6.22/§6.17 |
+| TC-ALBUM-05 | ACL 装机边界 | 含 FILE_ACCESS_PERSIST 的包 | `hdc install` | ACL 调试 profile 装机成功(2026-10-31);无 ACL 的旧 profile 报 `9568289` | P2 | §6.22/§6.17 |
 
 ---
 
