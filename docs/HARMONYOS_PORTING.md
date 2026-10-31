@@ -617,7 +617,7 @@ demosaic 输出         f32 RGB   734MB
 | PC/2in1 | `2in1`(param 实证) | persistPermission(READ\|WRITE)+ hap 级记录 + onCreate activate | Continue Session 直通(零 picker) | 真机端到端:pick → force-stop → 整机 reboot 全通(20:30-21:23 实测) |
 | pad/tablet | `tablet`(文档值) | gate 跳过(留痕日志) | v2:探针失败 → toast → 重授权 | v2 流真机 ×3(本机);真 pad 待验 |
 
-- **gen/ 手动复制纪律(两处,`ohos init` 重跑后必查)**:① `cargo tauri ohos build` **不复制** `src-tauri/ohos/*.template.ets` 进 gen(仅 `ohos init` 复制且其会重置签名配置)——模板改动须手动 copy + 字节级 diff 校验;② module.json5 的 `FILE_ACCESS_PERSIST` 声明也只存在于 gitignored 的 gen/ ——init 重跑后须重加
+- **gen/ 手动复制纪律(两处,`ohos init` 重跑后必查)**:① `cargo tauri ohos build` **不复制** `src-tauri/ohos/*.template.ets` 进 gen(仅 `ohos init` 复制且其会重置签名配置)——模板改动须手动 copy + 字节级 diff 校验;② module.json5 的 `FILE_ACCESS_PERSIST` 声明也只存在于 gitignored 的 gen/ ——init 重跑后须重加;③ 平板多窗所需 `deviceTypes` 的 `tablet`、`supportWindowMode: ["fullscreen","split","floating"]`、`minWindowWidth/minWindowHeight`(480/420)同样是 gen/ 本地字段,重跑后按 `module.json5.agc-backup` 重加(见 6.21)
 
 **6. 调试方法学补充二(v3 排障沉淀,接第 4 节)**
 
@@ -942,13 +942,14 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 
 **布局(触控优先平板形态)**:
 - `layoutMode`:OHOS `tablet` → `wide`(右侧 58px 图标栏 + 可收起抽屉),窗口宽度 <700 CSS px(分屏/自由窗口)才退回 `compact`;**2in1 保持原桌面规则不变**,避免回归已发布的 PC 形态。
+- 分屏/悬浮窗:`gen/ohos/entry/src/main/module.json5` 的 EntryAbility 声明 `supportWindowMode: ["fullscreen", "split", "floating"]` 与 `minWindowWidth: 480` / `minWindowHeight: 420`(vp)。窗口被拖到 <700 CSS px 时前端自动切到 `compact`(手机式底部面板 + 底部工具条),≥700 保持 `wide`;窗口尺寸变化由 `window.resize`/`visualViewport.resize` 监听驱动,无需重启。
 - 平板上隐藏自绘标题栏(`isTouchUi`),窗口操作交给系统装饰;`LibraryView`/`EditorView`/`MainLibrary` 的移动/触控分支统一由 `isTouchUi`(`android || ohos tablet`)驱动。
 - 抽屉默认收起,给画布让位;点击当前激活的栏图标可**收起**抽屉(8px 拖拽条在触屏上不可用);平板额外把**文件夹树**放进栏位(桌面左栏在 wide 形态不渲染,否则根目录导航不可达)。
 - 返回手势:平板上抽屉展开时,返回先收起抽屉(桌面形态不受影响),再走既有的「模态 → 编辑器退库 → 库退主页」分支。
 - `[ohos-layout] deviceType=… mode=… viewport=… touchUi=…` 在每次形态/布局切换时写入 app.log,真机无 devtools 也能审计路由。
 
 **分发标识**:
-- `gen/ohos/entry/src/main/module.json5`:`deviceTypes = ["2in1", "tablet"]`(gen/ 为 gitignored 本地修改,`module.json5.agc-backup` 同步更新;`cargo tauri ohos init` 重跑后需重打)。
+- `gen/ohos/entry/src/main/module.json5`:`deviceTypes = ["2in1", "tablet"]`、`supportWindowMode = ["fullscreen", "split", "floating"]`、`minWindowWidth/minWindowHeight = 480/420`(gen/ 为 gitignored 本地修改,`module.json5.agc-backup` 同步更新;`cargo tauri ohos init` 重跑后需重打)。
 - AGC「支持设备」需同时勾选 2in1 与平板;平板截图(16:9/3:2 以控制台提示为准)尚未采集。
 - **本地调试装机**:RLS 的 7 项权限里有 4 项 ACL 受限,调试 profile 无 `allowed-acls`(§7 注记)→ 装机 `9568289`。本机测试把 `module.json5` 临时裁到 `INTERNET` + `MEDIA_LOCATION`(与已装 i18n-local 包一致);**发布前必须从 `module.json5.agc-backup` 恢复 7 权限**。
 
@@ -963,6 +964,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - **文件夹树**:平板栏位可打开「来源」树(`currentUser` → Documents/Download/Images/Music/Videos …),桌面左栏移除后根目录导航仍可达。
 - **编辑与 GPU**:导入 JPEG 后 `[apply_adjustments] 1280x854 555ms`、`[generate_preview_for_path] 1600x1067 1.36s`;拖动曝光滑块时交互预览 `768x512` 124~163ms/趟(6.1~8.1 FPS)。
 - **返回手势**:抽屉展开时触发系统返回 → 抽屉收起(面板标题回到 58px 栏位),编辑器不退出。
+- **悬浮窗/分屏(2026-10-31,电脑桌面)**:浮动窗口启动为 2010×1340 px(1025×646 CSS,`mode=wide`);拖右边缘缩到 697 CSS 自动切 `compact`(底部面板 + 工具条),拖回 703 立即回 `wide`;继续缩小被 `minWindowWidth=480`vp 钳在 942 px,布局保持 compact。窗口内欢迎页/图库/编辑器/调整面板均可用,GPU 预览 358ms/趟。切换桌面模式时系统会关闭应用(平台行为,弹窗已提示)。
 - **授权**:`persistPermission failed (deviceType=tablet): {"code":201}`(调试 profile 无 ACL,符合预期),会话授权内可正常读目录;重启后根目录 `Operation not permitted`,应用回欢迎页,「继续会话」触发既有 v2 重选授权流程(既有行为,不是本次回归)。
 - **待补**:平板授权持久化与公共目录导出需 AGC/release 渠道包;平板截图待采集。
 

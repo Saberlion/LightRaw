@@ -401,6 +401,9 @@ cargo check --target aarch64-unknown-linux-ohos   # OHOS(需 §6.1 环境变量)
 | TC-PAD-07 | 重启重授权 | 平板形态 + 调试 profile | force-stop → 重启 → 「继续会话」 | 应用回欢迎页;继续会话提示重选目录(persistPermission 201 属预期) | P2 | §6.21/§6.14 |
 | TC-PAD-08 | AGC 平板分发 | 提审包 | 检查 `deviceTypes` 与控制台「支持设备」 | `["2in1", "tablet"]`;控制台同时勾选;平板截图已备 | P2 | §6.21/§6.15 |
 | TC-PAD-09 | 返回手势关闭抽屉 | 抽屉展开 | 触发系统返回手势 | 抽屉收起,当前视图不离开 | P2 | §6.21 |
+| TC-PAD-10 | 悬浮窗宽窄切换 | 平板 + 电脑桌面/悬浮窗 | 浮动窗口拖右边缘 <700 CSS 再拖回 >700 | `[ohos-layout]` 依次 `mode=compact` / `mode=wide`;底部面板与右侧栏跟随切换,无重启 | P1 | §6.21 |
+| TC-PAD-11 | 悬浮窗最小尺寸 | 同上 | 继续缩小窗口 | 宽度被 `minWindowWidth=480`vp 钳住;布局保持可用 | P2 | §6.21 |
+| TC-PAD-12 | 分屏/悬浮窗能力声明 | 提审包 | 检查 module.json5 | `supportWindowMode=["fullscreen","split","floating"]` + `minWindowWidth/minWindowHeight`;系统可把应用放入多窗 | P1 | §6.21 |
 
 ---
 
