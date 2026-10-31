@@ -119,3 +119,22 @@
 - 设备 `files/appdata/models` 已出现 `efficientsam3_ev_m_{image_encoder,decoder}.onnx`、`efficientsam3_sky_prompt.bin` 与 `nind_denoise_utnet_684.onnx`,说明新模型下载链路正常。
 - 待补:天空/文本/人脸与法线的真机耗时、PSS 峰值,以及 BiRefNet 与旧 u2net NPU(~50 ms)的量化对比。
 - CANN `.om` 侧的 PoC 结论(转换 + 双机 restore/Run + 逐算子验证)统一记录在 `docs/CANN_MODEL_MIGRATION.md`(§6/§6.4)与 `docs/KIRIN_XE90_SUPPORT.md`;本文 §3 的判定已按其修正。
+
+## 7. 真机验证:GEM-W40 平板(2026-11-01)
+
+> 设备:HUAWEI MatePad Pro Max 悦享款(`GEM-W40`,tablet),HarmonyOS 7.1.0.20,Maleoon 935A,总内存 ~11.5 GiB;应用为 ACL 调试签名包(ORT + CANN 库已注入),网络走 hf-mirror。
+
+- **模型目录(真机路径)**:`/data/app/el2/100/base/io.github.CyberTimon.RapidRAW/files/appdata/models`(应用内 `/data/storage/el2/base/files/appdata/models`)。
+- **下载实测**(UI 进度 + 文件落盘,应用侧 SHA256 校验通过):
+  - `birefnet_general_lite.onnx` 213.6 MB(00:05→00:06);
+  - `sam_vit_b_01ec64_encoder.onnx` 95.6 MB + `sam_vit_b_01ec64_decoder.onnx` 8.3 MB(00:08→00:09);
+  - `nind_denoise_utnet_684.onnx` 118.4 MB(此前已在 20:07 落盘)。
+- **前景遮罩(BiRefNet,ORT CPU)**:AI 面板点「前景」→ 模型下载完成后生成成功,面板出现「前景」组件(反转/扩展/羽化可用);sidecar `adjustments.aiPatches` 1 条(~19.7 KB)。
+- **主体遮罩(SAM,ORT CPU)**:蒙版面板点「主体」→ SAM encoder/decoder 下载完成后生成成功;sidecar `adjustments.masks` 1 条(主体蒙版),蒙版属性面板可用。
+- **稳定性**:`/data/log/faultlog/faultlogger` 为空,无 `cppcrash`。测试期间应用 pid 变更一次,但无 faultlog(与屏幕自动锁/`aa start` 交互一致,非崩溃)。
+- **未覆盖**:
+  - AI 降噪(NIND):测试图为 JPEG,NIND 面向 RAW;标题/侧车注入 `aiDenoiseEnabled` 未触发数据流,需补一张 RAW 样张再测。
+  - 天空/文本/人脸/深度:本轮未逐一点选(深度模型 95 MB,文本/人脸需 ESAM3 + MediaPipe 全套)。
+  - CANN/NPU:平板未侧载 `.om` 模型(`nind_v2.om`/`u2net.om` 等),实际全部走 ORT CPU;与 §3 判定一致。
+
+**结论**:CPU 路径在平板上可用(下载、建模、蒙版生成、侧车持久化全通);NPU 加速在此设备上没有产物可测,需按 `CANN_MODEL_MIGRATION.md` 侧载 `.om` 后另测。
