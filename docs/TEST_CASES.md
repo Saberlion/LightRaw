@@ -415,7 +415,7 @@ cargo check --target aarch64-unknown-linux-ohos   # OHOS(需 §6.1 环境变量)
 | TC-ALBUM-02 | 多选导入 | 系统相册有照片 | 点相册 FAB → 多选 → 确认 | app.log `pick_gallery_images staged N/N`;导入完成;库内文件名保留原名;缩略图/编辑可用 | P1 | §6.22 |
 | TC-ALBUM-03 | 格式过滤与去重 | 选择含不支持格式/重复项 | 同上 | 不支持项被跳过(`skip unsupported`),重复 URI 只导入一次 | P2 | §6.22 |
 | TC-ALBUM-04 | 暂存清理 | 导入完成 | 检查 `cache/import_staging` | 目录被删除;异常中断后重启日志 `cleared N staged import file(s)` | P2 | §6.22 |
-| TC-ALBUM-05 | ACL 装机边界 | 含 READ_IMAGEVIDEO/FILE_ACCESS_PERSIST 的包 | `hdc install` | 无 ACL 的调试 profile 报 `9568289`(已知);裁剪版可装 | P2 | §6.22/§6.17 |
+| TC-ALBUM-05 | ACL 装机边界 | 含 FILE_ACCESS_PERSIST 的包 | `hdc install` | 无 ACL 的调试 profile 报 `9568289`(已知);裁剪版可装 | P2 | §6.22/§6.17 |
 
 ---
 

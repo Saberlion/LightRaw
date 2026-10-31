@@ -968,7 +968,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - **授权**:`persistPermission failed (deviceType=tablet): {"code":201}`(调试 profile 无 ACL,符合预期),会话授权内可正常读目录;重启后根目录 `Operation not permitted`,应用回欢迎页,「继续会话」触发既有 v2 重选授权流程(既有行为,不是本次回归)。
 - **待补**:平板授权持久化与公共目录导出需 AGC/release 渠道包;平板截图待采集。
 
-### 6.22 相册导入(MediaLibraryKit)+ READ_IMAGEVIDEO / FILE_ACCESS_PERSIST(2026-10-31)
+### 6.22 相册导入(MediaLibraryKit)+ FILE_ACCESS_PERSIST(2026-10-31)
 
 **动机**:FileKit 的文件选择器是文件视角——相册照片要在文件管理器里找 `图片/最近` 虚拟目录,而且导入前还得先落成普通文件。平板用户期望的是系统相册的多选网格。本次新增一条独立入口:库视图的第二个 FAB「从相册导入」,走 MediaLibraryKit 的系统照片选择器;原「导入图像」(FileKit)保留给相机 RAW/任意目录。
 
@@ -979,7 +979,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 | ArkTS(`EntryAbility`) | 新桥 op `pick_gallery_images`:`PhotoViewPicker.select({ MIMEType: IMAGE_TYPE, maxSelectNumber })` → 过滤扩展名/去重 → 逐个媒体 URI `fs.openSync(READ_ONLY)` + `fs.copyFileSync(fd, target)` 复制到 `cacheDir/import_staging/<requestId>/<原文件名>` → `resolveOhosPickFiles` 回传暂存路径。启动时清理残留暂存目录。 |
 | Rust | 新命令 `pick_ohos_gallery_images(supported_extensions, max_select)`(隐私门控 + 桥请求)与 `cleanup_ohos_import_staging(paths)`(只允许删除 `<cache>/import_staging` 下的文件,顺带清空目录)。 |
 | 前端 | `Invokes.PickOhosGalleryImages` / `CleanupOhosImportStaging`;`handleImportClick(target, 'album')` 校验扩展名后复用既有 `ImportFiles`;`src/utils/ohosImportStaging.ts` 暂存路径登记,`import-complete` 事件后清理。`MainLibrary` 在 OHOS 显示第二个 FAB(相册),原 FAB 降为次级样式。 |
-| 权限 | `module.json5` 新增 `ohos.permission.READ_IMAGEVIDEO`(user_grant + ACL,`$string:perm_read_imagevideo`)并把 `FILE_ACCESS_PERSIST` 保留/加回;`module.json5.agc-backup` 同步。 |
+| 权限 | `module.json5` 保留 `ohos.permission.FILE_ACCESS_PERSIST`(ACL);**不声明 `READ_IMAGEVIDEO`**——系统照片选择器不需要它,且该 ACL 申请难度高(见下)。`module.json5.agc-backup` 同步。 |
 
 **处理逻辑优化点**:
 - **先过滤再复制**:ArkTS 按 `supported_extensions` 检查 URI 文件名,不支持的格式不落盘(避免无谓 IO);
@@ -990,9 +990,8 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - **复用既有导入管线**:进度事件、冲突改名、`.rrlink`/sidecar 关联、缩略图生成全部沿用。
 
 **权限与装机边界**:
-- `READ_IMAGEVIDEO` 与 `FILE_ACCESS_PERSIST` 都是 **ACL 受限权限**:调试 profile 未声明 `allowed-acls` 时,带这两个权限的 HAP 装机报 `9568289 grant request permissions failed (READ_IMAGEVIDEO)`(2026-10-31 实证)。
-- 本机验证使用临时裁剪版(仅 `INTERNET + MEDIA_LOCATION`)构建;`module.json5` 最终恢复为包含两项权限的发布配置。真机安装/长期迭代需在 AGC 申请含 ACL 的调试 Profile,或继续用裁剪版。
-- 系统照片选择器本身**不需要** `READ_IMAGEVIDEO`;该权限用于媒体库读取(`getAssets`,后续做相册网格/按相册浏览时才真正消费)。
+- **`READ_IMAGEVIDEO` 不声明**:系统照片选择器(`PhotoViewPicker`)由系统 UI 承载,用户选择即授权,应用侧无需媒体库读权限;该权限属 ACL 受限、AGC 申请门槛高,遵循此前 v3 的决定(见 §6.17)继续排除。后续若要做"按相册网格浏览"(`getAssets`),再单独申请并消费。
+- `FILE_ACCESS_PERSIST` 仍是 **ACL 受限权限**:调试 profile 未声明 `allowed-acls` 时,带该权限的 HAP 装机报 `9568289 grant request permissions failed`。本机验证使用临时裁剪版(仅 `INTERNET + MEDIA_LOCATION`)构建;`module.json5` 最终恢复为包含 `FILE_ACCESS_PERSIST` 的发布配置。真机安装/长期迭代需在 AGC 申请含 ACL 的调试 Profile,或继续用裁剪版。
 
 **已知边界**:
 - 系统选择器只返回 `image/*`;相册里是否出现 DNG/RAW 取决于系统媒体库索引,相机 RAW 仍建议走 FileKit。
@@ -1030,7 +1029,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - [x] 窗口控制可用(2026-10-04,见 6.5):系统装饰栏原生提供 最小化/最大化/关闭;自绘标题栏保留(标题/拖动),拖动经 Rust↔ArkTS `startMoving` 桥(实测 +400px 精确);OHOS 隐藏自绘三按钮——系统装饰输入矩形残留发现,原"隐藏 decor 独占"方案(2026-10-03)已反转(历史与教训见 6.4)
 - [x] 应用图标与 label 对齐其他平台:entry 字符串资源 + layered_image 双层图标 + startIcon,均取自 `src-tauri/icons/full_res_original.png`(2026-10-03,见 6.4)。**注:以上 EntryAbility/字符串/图标三处改动均位于 gitignored 的 `gen/ohos/`,`cargo tauri ohos init` 重跑后需按 6.4 重打**
 - [x] 平板(tablet)形态适配(2026-10-31,见 6.21):ArkTS `deviceInfo` 形态桥(napi + tauri 命令 + 事件)、触控优先 `wide` 布局与抽屉交互、自绘标题栏在触控形态隐藏、栏位补文件夹树、`deviceTypes` 加 `tablet`;同时修复平板首次冷启动在 GPU warmup 期崩溃并把 backend 永久锁到 GLES 的问题(详见 6.21)
-- [x] 相册导入(2026-10-31,见 6.22):系统照片选择器(PhotoViewPicker)+ 扩展名预过滤/去重/原名暂存 + `import-complete` 清理;库视图第二个 FAB;新增 `READ_IMAGEVIDEO` 声明并保留 `FILE_ACCESS_PERSIST`(ACL,调试 profile 装机 9568289)
+- [x] 相册导入(2026-10-31,见 6.22):系统照片选择器(PhotoViewPicker)+ 扩展名预过滤/去重/原名暂存 + `import-complete` 清理;库视图第二个 FAB;保留 `FILE_ACCESS_PERSIST`(ACL),不声明 `READ_IMAGEVIDEO`(系统选择器无需且 ACL 申请门槛高)
 
 ### Phase 3 — 渲染验证(1~2 周)
 - [x] compute-only + IPC 回读路径点亮编辑器(Android 同款,零新增风险)(2026-10-04,见 6.8):Mali-G77 GLES 后端实测点亮——GPU Processor/apply_adjustments/estimate_export_size/generate_thumbnail_data 全链路日志铁证,交互 ROI ~29 FPS,曝光编辑视觉生效;`Fake map` 为回读路径良性产物
@@ -1135,7 +1134,7 @@ cargo tauri ohos build -d -t aarch64
 7. 中期 B:驻留瘦身 + rawler 校准/裁剪 in-place 小 fork(6.11,~50-100 LOC,可推回上游)
 8. ~~`app_cache_dir()` OHOS 指向用户公共存储区的长期方案~~ → **已解决(6.13)**:`app_paths.rs` 将全部 app 路径 OHOS 直连 `/data/storage/el2/base/` 沙箱,不再经过用户存储 FUSE(rename EACCES 场景随之消失);ArkTS 沙箱中转现仅导出桥仍在用
 9. **平板分发收尾(6.21)**:AGC「支持设备」补勾平板 + 采集平板截图;release 渠道验证平板文件夹授权持久化(调试 profile 无 `FILE_ACCESS_PERSIST` ACL,本机不可验);平板在 PC 模式/键鼠场景需要桌面布局时,加一个手动布局覆盖
-10. **相册导入后续(6.22)**:按相册网格浏览(`getAssets`,消费 `READ_IMAGEVIDEO`)、大批量导入的暂存进度提示、重复照片按内容哈希去重;当前逐文件复制,可在同一文件系统内尝试 rename
+10. **相册导入后续(6.22)**:按相册网格浏览(`getAssets`,需先申请 `READ_IMAGEVIDEO`)、大批量导入的暂存进度提示、重复照片按内容哈希去重;当前逐文件复制,可在同一文件系统内尝试 rename
 
 ### 9.4 条件性 / 低优先级 / 非本仓
 
