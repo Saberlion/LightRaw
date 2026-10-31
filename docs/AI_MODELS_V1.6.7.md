@@ -131,10 +131,15 @@
   - `nind_denoise_utnet_684.onnx` 118.4 MB(此前已在 20:07 落盘)。
 - **前景遮罩(BiRefNet,ORT CPU)**:AI 面板点「前景」→ 模型下载完成后生成成功,面板出现「前景」组件(反转/扩展/羽化可用);sidecar `adjustments.aiPatches` 1 条(~19.7 KB)。
 - **主体遮罩(SAM,ORT CPU)**:蒙版面板点「主体」→ SAM encoder/decoder 下载完成后生成成功;sidecar `adjustments.masks` 1 条(主体蒙版),蒙版属性面板可用。
-- **稳定性**:`/data/log/faultlog/faultlogger` 为空,无 `cppcrash`。测试期间应用 pid 变更一次,但无 faultlog(与屏幕自动锁/`aa start` 交互一致,非崩溃)。
-- **未覆盖**:
-  - AI 降噪(NIND):测试图为 JPEG,NIND 面向 RAW;标题/侧车注入 `aiDenoiseEnabled` 未触发数据流,需补一张 RAW 样张再测。
-  - 天空/文本/人脸/深度:本轮未逐一点选(深度模型 95 MB,文本/人脸需 ESAM3 + MediaPipe 全套)。
-  - CANN/NPU:平板未侧载 `.om` 模型(`nind_v2.om`/`u2net.om` 等),实际全部走 ORT CPU;与 §3 判定一致。
+- **AI 降噪(JPEG,ORT CPU)**:sidecar 置 `aiDenoiseEnabled` + `activeTools.noiseReduction`,打开 1600×1067 JPEG 后生成缓存 `cache/ai_denoise/<hash>.rrdn` 10.2 MB(00:03)。
+- **AI 降噪(JPEG,CANN NPU)**:删除 CPU 缓存、`aiDenoiseBackend=npu` 并侧载 `npu-models/om/kirinx90/nind_v2.om`(59.2 MB)到模型目录后重开同一 JPEG:
+  - 日志 `CANN .om model ready (1 input(s), 1 output(s), perf_mode requested 4)` + `NPU mode: using CANN .om denoise model.`(00:43:09);
+  - 缓存重新生成 10.2 MB(00:43),说明 `.om` 在 GEM-W40 上真机可用(此前只在 X90/XE90 验证过)。
+- **AI 降噪(100 MP Hasselblad .fff,CANN NPU)**:补测 `2022.6.14_Swiss_Linksphotograph.fff`(124 MB,100 MP):
+  - 打开/解码 + GPU 预览正常(`Raw enhancing ... 3.19s`,预览 960×1280 ~520–657 ms);
+  - `.om` 会话复用后生成 611,380,602 B 的降噪缓存(00:45,约 2 分钟),期间应用 RSS ~5.2 GB,无 OOM/`cppcrash`;
+  - 该 100MP 缓存意味着 CPU/NPU 分块全跑通,后续预览直接命中缓存。
+- **稳定性**:`/data/log/faultlog/faultlogger` 为空,无 `cppcrash`。屏幕自动锁后系统曾结束一次应用到后台(`AMS Kill process`,callingUid 0),不是崩溃。
+- **未覆盖**:天空/文本/人脸/深度未逐一点选(深度 95 MB;文本/人脸需 ESAM3 + MediaPipe 全套);BiRefNet/ESAM3 的 CANN `.om` 与 §3 判定一致(不转/不可转),本机仍走 ORT CPU。
 
-**结论**:CPU 路径在平板上可用(下载、建模、蒙版生成、侧车持久化全通);NPU 加速在此设备上没有产物可测,需按 `CANN_MODEL_MIGRATION.md` 侧载 `.om` 后另测。
+**结论**:GEM-W40 上 ORT CPU 与 CANN NPU 两条路径都可用:模型下载、BiRefNet/SAM 蒙版、NIND 降噪(JPEG CPU→NPU、100MP RAW NPU)、侧车/缓存持久化全部通过;NPU 需要侧载 `nind_v2.om`(59.2 MB,`npu-models/om/kirinx90/`)。
