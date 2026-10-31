@@ -106,6 +106,8 @@ export enum Invokes {
   OpenExternalUrl = 'open_external_url',
   PickOhosFiles = 'pick_ohos_files',
   PickOhosFolder = 'pick_ohos_folder',
+  PickOhosGalleryImages = 'pick_ohos_gallery_images',
+  CleanupOhosImportStaging = 'cleanup_ohos_import_staging',
   PickOhosSaveFile = 'pick_ohos_save_file',
   PickWhiteBalance = 'pick_white_balance',
   ReadExifForPaths = 'read_exif_for_paths',

@@ -10,6 +10,7 @@ import { JobKind, useProcessStore } from '../store/useProcessStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { ImageFlag, Invokes } from '../components/ui/AppProperties';
 import { Status } from '../components/ui/ExportImportProperties';
+import { setOhosImportStaging } from '../utils/ohosImportStaging';
 
 export const transferFiles = (kind: JobKind.Copy | JobKind.Move, sourcePaths: string[], destinationFolder: string) =>
   useProcessStore
@@ -331,7 +332,7 @@ export function useFileOperations(
   );
 
   const handleImportClick = useCallback(
-    async (targetPath: string) => {
+    async (targetPath: string, source: 'files' | 'album' = 'files') => {
       const { supportedTypes, osPlatform, isOhos } = useSettingsStore.getState();
       const { setUI } = useUIStore.getState();
       const isAndroid = osPlatform === 'android';
@@ -347,6 +348,51 @@ export function useFileOperations(
         const processedNonRaw = expandExtensions(nonRaw);
         const processedRaw = expandExtensions(raw);
         const allImageExtensions = [...processedNonRaw, ...processedRaw];
+        const allowedExtensions = new Set(allImageExtensions.map((e) => e.toLowerCase()));
+
+        const filterSupported = (paths: string[], names: string[] = paths) => {
+          const invalidExtensions = new Set<string>();
+          const validFiles = paths.filter((path, index) => {
+            const name = names[index] ?? path;
+            const ext = name.split('.').pop()?.toLowerCase() || 'unknown';
+            if (!allowedExtensions.has(ext)) {
+              invalidExtensions.add(`.${ext}`);
+              return false;
+            }
+            return true;
+          });
+          return { validFiles, invalidExtensions };
+        };
+
+        const DEFAULT_IMPORT_SETTINGS = {
+          filenameTemplate: '{original_filename}',
+          organizeByDate: false,
+          dateFolderFormat: 'YYYY/MM-DD',
+          deleteAfterImport: false,
+        };
+
+        // OHOS album import: the MediaLibraryKit picker returns media URIs and
+        // the ArkTS side stages the bytes into the app cache, so the regular
+        // import worker can copy them into the library. FileKit (source
+        // === 'files') stays available for RAW files outside the gallery.
+        if (isOhos && source === 'album') {
+          const albumPaths = await invoke<string[]>(Invokes.PickOhosGalleryImages, {
+            supportedExtensions: allImageExtensions,
+            maxSelect: 500,
+          });
+          if (albumPaths.length === 0) return;
+
+          const { validFiles, invalidExtensions } = filterSupported(albumPaths);
+          if (invalidExtensions.size > 0) {
+            toast.error(`Unsupported file format(s) detected: ${Array.from(invalidExtensions).join(', ')}`);
+            return;
+          }
+          if (validFiles.length === 0) return;
+
+          setOhosImportStaging(albumPaths);
+          await startImportFiles(validFiles, targetPath, DEFAULT_IMPORT_SETTINGS);
+          return;
+        }
 
         const typeFilters = isAndroid
           ? []
@@ -374,9 +420,6 @@ export function useFileOperations(
         }
 
         if (Array.isArray(selected) && selected.length > 0) {
-          const invalidExtensions = new Set<string>();
-          const allowedExtensions = new Set(allImageExtensions.map((e) => e.toLowerCase()));
-
           const resolvedFiles = await Promise.all(
             selected.map(async (path) => {
               if (isAndroid) {
@@ -391,30 +434,13 @@ export function useFileOperations(
             }),
           );
 
-          const validFiles = selected.filter((originalPath, index) => {
-            const resolvedName = resolvedFiles[index];
-            const ext = resolvedName.split('.').pop()?.toLowerCase() || 'unknown';
-
-            if (!allowedExtensions.has(ext)) {
-              invalidExtensions.add(`.${ext}`);
-              return false;
-            }
-            return true;
-          });
-
+          const { validFiles, invalidExtensions } = filterSupported(selected, resolvedFiles);
           if (invalidExtensions.size > 0) {
-            const extList = Array.from(invalidExtensions).join(', ');
-            toast.error(`Unsupported file format(s) detected: ${extList}`);
+            toast.error(`Unsupported file format(s) detected: ${Array.from(invalidExtensions).join(', ')}`);
             return;
           }
 
           if (isAndroid || isOhos) {
-            const DEFAULT_IMPORT_SETTINGS = {
-              filenameTemplate: '{original_filename}',
-              organizeByDate: false,
-              dateFolderFormat: 'YYYY/MM-DD',
-              deleteAfterImport: false,
-            };
             await startImportFiles(validFiles, targetPath, DEFAULT_IMPORT_SETTINGS);
             return;
           }

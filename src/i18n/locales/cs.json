@@ -1427,6 +1427,7 @@
     "tooltips": {
       "communityPresets": "Presety komunity",
       "goHome": "Přejít na domovskou stránku",
+      "importFromAlbum": "Importovat z alba",
       "importImages": "Import snímků",
       "select": "Vybrat"
     },

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
+import clsx from 'clsx';
 import {
   CheckCheck,
   Folder,
@@ -15,6 +16,7 @@ import {
   SlidersHorizontal,
   Rows3,
   X,
+  ImagePlus,
 } from 'lucide-react';
 import CullingView from './library/CullingView';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -81,6 +83,8 @@ interface MainLibraryProps {
   onImageClick(path: string, event: any): void;
   onImageDoubleClick(path: string): void;
   onImportClick(): void;
+  /** OHOS only: open the system gallery picker instead of FileKit. */
+  onImportFromAlbum?: () => void;
   onLibraryRefresh(): void;
   onOpenFolder(): void;
   onSettingsChange(settings: AppSettings): Promise<void>;
@@ -664,7 +668,10 @@ export default function MainLibrary(props: MainLibraryProps) {
       )}
       {(props.isTouchUi || useSettingsStore.getState().isOhos) && (
         <Button
-          className="absolute bottom-18 right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50"
+          className={clsx(
+            'absolute bottom-18 right-8 h-12 w-12 shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50',
+            props.onImportFromAlbum ? 'bg-surface text-text-primary' : 'bg-accent text-button-text',
+          )}
           onClick={(e) => {
             e.stopPropagation();
             props.onImportClick();
@@ -672,6 +679,18 @@ export default function MainLibrary(props: MainLibraryProps) {
           data-tooltip={t('library.tooltips.importImages')}
         >
           <FolderInput className="w-6 h-6" />
+        </Button>
+      )}
+      {props.onImportFromAlbum && (
+        <Button
+          className="absolute bottom-32 right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50"
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onImportFromAlbum?.();
+          }}
+          data-tooltip={t('library.tooltips.importFromAlbum')}
+        >
+          <ImagePlus className="w-6 h-6" />
         </Button>
       )}
     </div>

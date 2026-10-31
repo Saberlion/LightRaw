@@ -2674,6 +2674,8 @@ pub fn run() {
             ohos_integration::get_ohos_device_type,
                 ohos_integration::pick_ohos_folder,
                 ohos_integration::pick_ohos_files,
+                ohos_integration::pick_ohos_gallery_images,
+                ohos_integration::cleanup_ohos_import_staging,
                 ohos_integration::pick_ohos_save_file,
                 ohos_integration::open_external_url,
                 ohos_integration::revoke_ohos_folder_grants,

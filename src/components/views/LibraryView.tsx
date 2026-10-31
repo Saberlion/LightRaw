@@ -36,7 +36,7 @@ interface LibraryViewProps {
   handleGoHome: (...args: any) => void;
   handleOpenFolder: (...args: any) => void;
   handleNavigateToFolder: (path: string) => void;
-  handleImportClick: (path: string) => void;
+  handleImportClick: (path: string, source?: 'files' | 'album') => void;
   handleLibraryRefresh: () => Promise<void>;
   handleCopyAdjustments: () => void;
   handlePasteAdjustments: () => void;
@@ -101,11 +101,12 @@ export default function LibraryView({
     })),
   );
 
-  const { appSettings, supportedTypes, theme, handleSettingsChange } = useSettingsStore(
+  const { appSettings, supportedTypes, theme, isOhos, handleSettingsChange } = useSettingsStore(
     useShallow((state) => ({
       appSettings: state.appSettings,
       supportedTypes: state.supportedTypes,
       theme: state.theme,
+      isOhos: state.isOhos,
       handleSettingsChange: state.handleSettingsChange,
     })),
   );
@@ -122,6 +123,10 @@ export default function LibraryView({
 
   const handleMainLibraryImportClick = useCallback(
     () => handleImportClick(currentFolderPath as string),
+    [handleImportClick, currentFolderPath],
+  );
+  const handleImportFromAlbum = useCallback(
+    () => handleImportClick(currentFolderPath as string, 'album'),
     [handleImportClick, currentFolderPath],
   );
   const handleNavigateToCommunity = useCallback(() => setUI({ activeView: 'community' }), [setUI]);
@@ -161,6 +166,7 @@ export default function LibraryView({
             onImageClick={handleLibraryImageSingleClick}
             onImageDoubleClick={handleImageSelect}
             onImportClick={handleMainLibraryImportClick}
+            onImportFromAlbum={isOhos ? handleImportFromAlbum : undefined}
             onLibraryRefresh={handleLibraryRefresh}
             onOpenFolder={handleOpenFolder}
             onSettingsChange={handleSettingsChange}

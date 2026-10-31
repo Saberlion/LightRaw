@@ -1427,6 +1427,7 @@
     "tooltips": {
       "communityPresets": "Пресеты сообщества",
       "goHome": "На главную",
+      "importFromAlbum": "Импорт из альбома",
       "importImages": "Импортировать изображения",
       "select": "Выбрать"
     },

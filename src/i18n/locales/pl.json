@@ -1427,6 +1427,7 @@
     "tooltips": {
       "communityPresets": "Presety społeczności",
       "goHome": "Przejdź do strony głównej",
+      "importFromAlbum": "Importuj z albumu",
       "importImages": "Importuj obrazy",
       "select": "Zaznacz"
     },

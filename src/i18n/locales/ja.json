@@ -1355,6 +1355,7 @@
     "tooltips": {
       "communityPresets": "コミュニティプリセット",
       "goHome": "ホームへ移動",
+      "importFromAlbum": "アルバムから読み込む",
       "importImages": "画像をインポート",
       "select": "選択"
     },

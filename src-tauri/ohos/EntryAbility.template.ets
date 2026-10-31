@@ -31,6 +31,9 @@ export default class EntryAbility extends RustAbility {
     // keeps persistent folder grants; tablets/phones stay on per-launch
     // re-grant because the persistence capability is 2in1-only.
     console.info(`[RapidRAW] deviceType: ${deviceInfo.deviceType}`);
+    // Drop partial album-import staging from a previous run (cache, safe to
+    // clear before any import starts).
+    this.cleanupImportStaging();
     // Persistent folder grants are NOT auto-activated on app start: replay
     // the recorded ones now, ahead of the webview's library preload (which
     // fires seconds later). Fire-and-forget on purpose — awaiting lifecycle
@@ -230,6 +233,9 @@ export default class EntryAbility extends RustAbility {
         break;
       case 'pick_files':
         this.pickFiles(req, requestId, resolvePickFiles);
+        break;
+      case 'pick_gallery_images':
+        this.pickGalleryImages(req, requestId, resolvePickFiles);
         break;
       case 'save_to_gallery':
         this.saveToGallery(req, requestId, resolveSaveToGallery);
@@ -585,6 +591,175 @@ export default class EntryAbility extends RustAbility {
       console.error(`[RapidRAW] file picker failed: ${JSON.stringify(e)}`);
       resolvePickFiles(requestId, []);
     });
+  }
+
+  // Import photos from the system gallery (MediaLibraryKit picker). The picker
+  // returns media URIs with a permanent read grant; the import pipeline works
+  // on regular files, so the bytes are copied into the app cache first.
+  // Unsupported extensions and duplicate URIs are dropped before copying, and
+  // the caller removes the staged files once the import completes.
+  private pickGalleryImages(req: Record<string, Object>, requestId: number, resolvePickGallery: ESObject): void {
+    const wanted: Set<string> = new Set<string>();
+    const extensions: Array<string> = (req['extensions'] as Array<string>) ?? [];
+    for (const ext of extensions) {
+      wanted.add((ext.startsWith('.') ? ext : `.${ext}`).toLowerCase());
+    }
+    const maxSelect: number = (req['maxSelect'] as number) ?? 500;
+    const options: photoAccessHelper.PhotoSelectOptions = new photoAccessHelper.PhotoSelectOptions();
+    options.MIMEType = photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE;
+    options.maxSelectNumber = Math.min(maxSelect, 500);
+
+    const photoPicker: photoAccessHelper.PhotoViewPicker = new photoAccessHelper.PhotoViewPicker();
+    photoPicker.select(options).then((result: photoAccessHelper.PhotoSelectResult) => {
+      const uris: Array<string> = result.photoUris ?? [];
+      if (uris.length === 0) {
+        console.info('[RapidRAW] pick_gallery_images cancelled');
+        resolvePickGallery(requestId, []);
+        return;
+      }
+      const pickedUris: Array<string> = [];
+      const pickedNames: Array<string> = [];
+      const seen: Set<string> = new Set<string>();
+      for (let i = 0; i < uris.length; i++) {
+        const uri: string = uris[i];
+        if (seen.has(uri)) {
+          continue;
+        }
+        seen.add(uri);
+        const name: string = this.galleryAssetName(uri, i);
+        const dot: number = name.lastIndexOf('.');
+        const extension: string = dot >= 0 ? name.substring(dot).toLowerCase() : '';
+        if (wanted.size > 0 && !wanted.has(extension)) {
+          console.info(`[RapidRAW] pick_gallery_images skip unsupported ${name}`);
+          continue;
+        }
+        pickedUris.push(uri);
+        pickedNames.push(name);
+      }
+      if (pickedUris.length === 0) {
+        resolvePickGallery(requestId, []);
+        return;
+      }
+
+      const stagingRoot: string = `${this.context.cacheDir}/import_staging`;
+      const stagingDir: string = `${stagingRoot}/${requestId}`;
+      try {
+        try {
+          fs.accessSync(stagingRoot);
+        } catch (accessError) {
+          fs.mkdirSync(stagingRoot, true);
+        }
+        try {
+          fs.accessSync(stagingDir);
+        } catch (accessError) {
+          fs.mkdirSync(stagingDir, true);
+        }
+      } catch (e) {
+        console.error(`[RapidRAW] pick_gallery_images staging dir failed: ${JSON.stringify(e)}`);
+        resolvePickGallery(requestId, []);
+        return;
+      }
+
+      const staged: Array<string> = [];
+      const usedNames: Set<string> = new Set<string>();
+      const startedAt: number = Date.now();
+      for (let i = 0; i < pickedUris.length; i++) {
+        // Keep the original display name so the import filename template
+        // ({original_filename}) still produces the expected name. Duplicates
+        // within one pick get an index suffix.
+        let name: string = pickedNames[i];
+        if (usedNames.has(name)) {
+          const dot: number = name.lastIndexOf('.');
+          const stem: string = dot > 0 ? name.substring(0, dot) : name;
+          const extension: string = dot > 0 ? name.substring(dot) : '';
+          name = `${stem}_${i}${extension}`;
+        }
+        usedNames.add(name);
+        const target: string = `${stagingDir}/${name}`;
+        try {
+          const source: fs.File = fs.openSync(pickedUris[i], fs.OpenMode.READ_ONLY);
+          try {
+            fs.copyFileSync(source.fd, target);
+          } finally {
+            fs.closeSync(source);
+          }
+          staged.push(target);
+        } catch (e) {
+          console.error(`[RapidRAW] pick_gallery_images copy failed for ${pickedUris[i]}: ${JSON.stringify(e)}`);
+        }
+      }
+      console.info(
+        `[RapidRAW] pick_gallery_images staged ${staged.length}/${pickedUris.length} in ${Date.now() - startedAt}ms`,
+      );
+      resolvePickGallery(requestId, staged);
+    }).catch((e: BusinessError) => {
+      console.error(`[RapidRAW] gallery picker failed: ${JSON.stringify(e)}`);
+      resolvePickGallery(requestId, []);
+    });
+  }
+
+  // Display name for a media URI: strip the scheme/path, decode percent
+  // escapes and replace path separators so the staging file cannot escape its
+  // directory.
+  private galleryAssetName(uri: string, index: number): string {
+    let name: string = uri;
+    const slash: number = uri.lastIndexOf('/');
+    if (slash >= 0) {
+      name = uri.substring(slash + 1);
+    }
+    try {
+      name = decodeURIComponent(name);
+    } catch (e) {
+      // Keep the raw name when the URI is not valid percent-encoding.
+    }
+    let cut: number = name.indexOf('?');
+    const hash: number = name.indexOf('#');
+    if (cut < 0 || (hash >= 0 && hash < cut)) {
+      cut = hash;
+    }
+    if (cut >= 0) {
+      name = name.substring(0, cut);
+    }
+    name = name.split('\\').join('_').split('/').join('_');
+    return name.length > 0 ? name : `image_${index}`;
+  }
+
+  // Remove leftovers from an interrupted import at startup. Staging uses one
+  // directory per pick, so clear the files in each and drop the directory
+  // (rmdirSync is not recursive).
+  private cleanupImportStaging(): void {
+    const dir: string = `${this.context.cacheDir}/import_staging`;
+    try {
+      const entries: Array<string> = fs.listFileSync(dir);
+      let removed: number = 0;
+      for (const entry of entries) {
+        const requestDir: string = `${dir}/${entry}`;
+        try {
+          const files: Array<string> = fs.listFileSync(requestDir);
+          for (const file of files) {
+            try {
+              fs.unlinkSync(`${requestDir}/${file}`);
+              removed++;
+            } catch (e) {
+              // Ignore a single stuck entry.
+            }
+          }
+          fs.rmdirSync(requestDir);
+        } catch (e) {
+          // A flat file left by an older build: delete it directly.
+          try {
+            fs.unlinkSync(requestDir);
+            removed++;
+          } catch (unlinkError) {
+            // Ignore.
+          }
+        }
+      }
+      fs.rmdirSync(dir);
+      console.info(`[RapidRAW] cleared ${removed} staged import file(s)`);
+    } catch (e) {
+      // Directory absent on a clean first launch.
+    }
   }
 
   private saveToGallery(req: Record<string, Object>, requestId: number, resolveSaveToGallery: ESObject): void {

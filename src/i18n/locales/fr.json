@@ -1395,6 +1395,7 @@
     "tooltips": {
       "communityPresets": "Paramètres prédéfinis de la communauté",
       "goHome": "Aller à l'accueil",
+      "importFromAlbum": "Importer depuis l'album",
       "importImages": "Importer des images",
       "select": "Sélectionner"
     },

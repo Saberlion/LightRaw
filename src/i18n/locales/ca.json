@@ -1394,6 +1394,7 @@
     "tooltips": {
       "communityPresets": "Ajustos preestablerts de la comunitat",
       "goHome": "Anar a l'inici",
+      "importFromAlbum": "Importa des de l'àlbum",
       "importImages": "Importar imatges",
       "select": "Seleccionar"
     },

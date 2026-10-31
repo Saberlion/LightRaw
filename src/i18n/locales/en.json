@@ -1361,6 +1361,7 @@
     "tooltips": {
       "communityPresets": "Community Presets",
       "goHome": "Go to Home",
+      "importFromAlbum": "Import from Album",
       "importImages": "Import Images",
       "select": "Select"
     },

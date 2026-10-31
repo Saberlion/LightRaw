@@ -1355,6 +1355,7 @@
     "tooltips": {
       "communityPresets": "社区预设",
       "goHome": "返回首页",
+      "importFromAlbum": "从相册导入",
       "importImages": "导入图像",
       "select": "选择"
     },

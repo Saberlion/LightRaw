@@ -1355,6 +1355,7 @@
     "tooltips": {
       "communityPresets": "社群預設",
       "goHome": "返回首頁",
+      "importFromAlbum": "從相冊匯入",
       "importImages": "匯入影像",
       "select": "選擇"
     },

@@ -1355,6 +1355,7 @@
     "tooltips": {
       "communityPresets": "커뮤니티 프리셋",
       "goHome": "홈으로 이동",
+      "importFromAlbum": "앨범에서 가져오기",
       "importImages": "이미지 가져오기",
       "select": "선택"
     },

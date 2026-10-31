@@ -394,6 +394,29 @@ mod file_bridge {
         Ok(result["path"].as_str().map(str::to_string))
     }
 
+    /// Open the MediaLibraryKit photo picker and return the staged sandbox
+    /// paths of the selected images (see `pickGalleryImages` in the ability).
+    pub async fn pick_gallery_images(
+        extensions: &[String],
+        max_select: u32,
+    ) -> std::result::Result<Vec<String>, String> {
+        let result = request(serde_json::json!({
+            "op": "pick_gallery_images",
+            "extensions": extensions,
+            "maxSelect": max_select,
+        }))
+        .await?;
+        Ok(result["paths"]
+            .as_array()
+            .map(|paths| {
+                paths
+                    .iter()
+                    .filter_map(|path| path.as_str().map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default())
+    }
+
     /// FileKit caps `DocumentSelectOptions.fileSuffixFilters` at ~100
     /// characters for the whole input; longer filter lists make the picker
     /// dismiss itself. Deduplicate the extensions, group them into a single
@@ -508,6 +531,77 @@ pub async fn pick_ohos_files(
     {
         let _ = (supported_extensions, max_select);
         Err("pick_ohos_files is only available on OpenHarmony builds".to_string())
+    }
+}
+
+/// Open the system gallery (MediaLibraryKit photo picker) and return staged
+/// sandbox paths for the selected images. The picker returns media URIs; the
+/// ArkTS side copies the bytes into the app cache so the regular import
+/// pipeline can copy them into the library. Unsupported extensions are
+/// filtered before copying and the caller removes the staged files after the
+/// import completes (`cleanup_ohos_import_staging`).
+///
+/// Gated on the AppGallery privacy consent, like `pick_ohos_folder`.
+#[tauri::command]
+pub async fn pick_ohos_gallery_images(
+    supported_extensions: Vec<String>,
+    max_select: u32,
+) -> Result<Vec<String>, String> {
+    #[cfg(target_env = "ohos")]
+    {
+        privacy::ensure_consent().await?;
+        file_bridge::pick_gallery_images(&supported_extensions, max_select).await
+    }
+    #[cfg(not(target_env = "ohos"))]
+    {
+        let _ = (supported_extensions, max_select);
+        Err("pick_ohos_gallery_images is only available on OpenHarmony builds".to_string())
+    }
+}
+
+/// Remove the staged album-import files once the import worker is done.
+/// Only paths under `<app cache>/import_staging` are accepted, so a stale or
+/// crafted path cannot delete arbitrary files.
+#[tauri::command]
+pub fn cleanup_ohos_import_staging(
+    app_handle: tauri::AppHandle,
+    paths: Vec<String>,
+) -> Result<(), String> {
+    #[cfg(target_env = "ohos")]
+    {
+        let cache = crate::app_paths::app_cache_dir(&app_handle)
+            .map_err(|e| format!("Failed to resolve the app cache dir: {e}"))?;
+        let root = cache.join("import_staging");
+        let mut parents: std::collections::HashSet<std::path::PathBuf> =
+            std::collections::HashSet::new();
+        for path in paths {
+            let path = std::path::PathBuf::from(path);
+            if !path.starts_with(&root) {
+                return Err(format!(
+                    "Refusing to remove a path outside {:?}: {:?}",
+                    root, path
+                ));
+            }
+            if let Some(parent) = path.parent() {
+                parents.insert(parent.to_path_buf());
+            }
+            match std::fs::remove_file(&path) {
+                Ok(()) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) => log::warn!("Failed to remove staged import file {:?}: {e}", path),
+            }
+        }
+        for parent in parents {
+            let _ = std::fs::remove_dir(parent);
+        }
+        // Best effort: the root is shared by concurrent picks.
+        let _ = std::fs::remove_dir(&root);
+        Ok(())
+    }
+    #[cfg(not(target_env = "ohos"))]
+    {
+        let _ = (app_handle, paths);
+        Ok(())
     }
 }
 

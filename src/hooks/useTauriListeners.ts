@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { Status } from '../components/ui/ExportImportProperties';
 import { Invokes, Progress, WaveformData } from '../components/ui/AppProperties';
 import { MaskContainer } from '../utils/adjustments';
+import { cleanupOhosImportStaging } from '../utils/ohosImportStaging';
 import { AiJobsStatus, JobKind, JobStatus, useProcessStore } from '../store/useProcessStore';
 import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
@@ -314,6 +315,9 @@ export function useTauriListeners({
             refs.current.handleSelectSubfolder(currentPath, false);
           }
         }
+        // Album imports stage copies in the app cache; the worker has copied
+        // them into the library by now, so the staged bytes can go.
+        void cleanupOhosImportStaging();
       }),
       listen('import-error', (event: any) => {
         if (isEffectActive)

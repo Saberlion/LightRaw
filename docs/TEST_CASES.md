@@ -405,6 +405,18 @@ cargo check --target aarch64-unknown-linux-ohos   # OHOS(需 §6.1 环境变量)
 | TC-PAD-11 | 悬浮窗最小尺寸 | 同上 | 继续缩小窗口 | 宽度被 `minWindowWidth=480`vp 钳住;布局保持可用 | P2 | §6.21 |
 | TC-PAD-12 | 分屏/悬浮窗能力声明 | 提审包 | 检查 module.json5 | `supportWindowMode=["fullscreen","split","floating"]` + `minWindowWidth/minWindowHeight`;系统可把应用放入多窗 | P1 | §6.21 |
 
+### 3.18 TC-ALBUM —— 相册导入
+
+> 代码:`EntryAbility.pickGalleryImages`、`pick_ohos_gallery_images`/`cleanup_ohos_import_staging`、`useFileOperations`(album 分支)、`src/utils/ohosImportStaging.ts`;背景见 §6.22。
+
+| ID | 名称 | 前置条件 | 步骤 | 预期结果 | 优先级 | 依据 |
+|---|---|---|---|---|---|---|
+| TC-ALBUM-01 | 相册入口可见 | OHOS 库视图 | 查看右下角 | 两个 FAB:相册(主)+ 文件选图(次);非 OHOS 只有一个 | P1 | §6.22 |
+| TC-ALBUM-02 | 多选导入 | 系统相册有照片 | 点相册 FAB → 多选 → 确认 | app.log `pick_gallery_images staged N/N`;导入完成;库内文件名保留原名;缩略图/编辑可用 | P1 | §6.22 |
+| TC-ALBUM-03 | 格式过滤与去重 | 选择含不支持格式/重复项 | 同上 | 不支持项被跳过(`skip unsupported`),重复 URI 只导入一次 | P2 | §6.22 |
+| TC-ALBUM-04 | 暂存清理 | 导入完成 | 检查 `cache/import_staging` | 目录被删除;异常中断后重启日志 `cleared N staged import file(s)` | P2 | §6.22 |
+| TC-ALBUM-05 | ACL 装机边界 | 含 READ_IMAGEVIDEO/FILE_ACCESS_PERSIST 的包 | `hdc install` | 无 ACL 的调试 profile 报 `9568289`(已知);裁剪版可装 | P2 | §6.22/§6.17 |
+
 ---
 
 ## 4. 未覆盖 / 不在本次范围
