@@ -1008,8 +1008,8 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 |---|---|
 | ArkTS(`EntryAbility`) | 窗口桥新增 `keep_screen_on` / `keep_screen_off` → `win.setWindowKeepScreenOn(bool)`;`onCreate`/`onNewWant` 解析 `want.uri` 与 `ability.params.stream`,转成绝对路径后调 napi `notifyOhosOpenFile`(`file://media` 先复制到 `cacheDir/import_staging/open_with/`)。 |
 | Rust | 新命令 `set_ohos_keep_screen_on(enabled)`(非 OHOS 空实现);新命令 `get_ohos_ai_npu_status`(`ai_processing::denoise_om_status` 检查模型目录里的 `nind_v2.om`);`system_bridge` 新增 napi `notifyOhosOpenFile`,webview 未就绪时入队、`initialize_ohos` 落进 `initial_file_path`,就绪后直接发 `open-with-file` 事件。 |
-| 前端 | `useOhosKeepScreenOn`(export/import、`jobs`、`aiJobs`、`activeAiTasks` 任一在跑就保持常亮);`styles.css` 在 `@media (hover: none), (pointer: coarse)` 下强制翻开 `group-hover:opacity-100/0`、`pointer-events-auto`、`grid-rows-[1fr]`、`translate-y-0`、`w-6`;dnd-kit 由 `PointerSensor` 换成 `MouseSensor`(5/10px)+ `TouchSensor`(delay 200ms / tolerance 8px),覆盖布局页签(A `App.tsx`)与 AI/蒙版/预设面板的拖拽排序;设置页在 AI 降噪后端下方新增 NPU 模型状态行(就绪显示 `nind_v2.om` 大小,缺失时提示回退 CPU)。 |
-| 分发标识 | `gen/ohos/.../module.json5` 与 `.agc-backup` 的 EntryAbility `skills` 增加 `ohos.want.action.viewData` + `ohos.want.action.sendData`(`file` scheme × `general.image` / `general.raw-image`);`gen/` 为本地修改,重跑 `cargo tauri ohos init` 后需重打。 |
+| 前端 | `useOhosKeepScreenOn`(export/import、`jobs`、`aiJobs`、`activeAiTasks` 任一在跑就保持常亮);`styles.css` 在 `@media (hover: none), (pointer: coarse)` 下强制翻开 `group-hover:opacity-100/0`、`pointer-events-auto`、`grid-rows-[1fr]`、`translate-y-0`、`w-6`;dnd-kit 由 `PointerSensor` 换成 `MouseSensor`(5/10px)+ `TouchSensor`(delay 200ms / tolerance 8px),覆盖布局页签(`App.tsx`)与 AI/蒙版/预设面板的拖拽排序;设置页在 AI 降噪后端下方新增 NPU 模型状态行(就绪显示 `nind_v2.om` 大小,缺失时提示回退 CPU)。 |
+| 分发标识 | `gen/ohos/.../module.json5` 与 `.agc-backup` 的 EntryAbility `skills` 增加 `ohos.want.action.viewData` + `ohos.want.action.sendData`(`entities = [entity.system.default]`;`general.raw-image` / `general.image` / `general.jpeg` / `general.png` / `general.tiff` / `general.gif` / `com.microsoft.bmp` × `file` / `content` / 任意 scheme,形态对齐系统「文件预览」);`gen/` 为本地修改,重跑 `cargo tauri ohos init` 后需重打。 |
 
 **设计取舍**:
 - **常亮而非 `BackgroundTasksKit`**:长任务都在前台跑,锁屏只是系统超时;`setWindowKeepScreenOn` 改动最小,且直接解掉已实证的 `AMS Kill process`(2026-11-01 00:41,100MP 降噪期间)。任务结束/卸载即释放,避免长期占屏。
@@ -1033,7 +1033,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
   - **系统入口**:文件管理 → 文档 → 长按文件 → 「打开方式」菜单列出 **LightRaw**,点选后走热启动路径成功打开。
   - 说明:用 `aa start … --pb ohos.ability.params.showDefaultPicker true` 触发的系统选择器只列出 文本编辑器/笔记/天生会画,不含 LightRaw(与文件管理自己的「打开方式」菜单行为不同);以文件管理菜单为准。
   - skill 形态与系统自带「文件预览」对齐:`actions = viewData/sendData`、`entities = [entity.system.default]`、`uris` 覆盖 `general.raw-image` / `general.image` / `general.jpeg` / `general.png` / `general.tiff` / `general.gif` / `com.microsoft.bmp` × `file` / `content` / 任意 scheme。
-- **AI 回归**:JPEG 的 CANN NPU 降噪正常(`CANN .om model ready` + `NPU mode: using CANN .om denoise model.`,10.2MB 缓存重建);**100MP `.fff` 的 NPU 降噪本轮两次被系统 `LowMemoryKill`**(10:50:09、10:54:49,RSS 4.2→4.8GB,无 faultlog),与 00:45 那次成功(5.2GB)相比余量更紧——属 §9.3-? 的内存问题,不是本轮改动引入。
+- **AI 回归**:JPEG 的 CANN NPU 降噪正常(`CANN .om model ready` + `NPU mode: using CANN .om denoise model.`,10.2MB 缓存重建);**100MP `.fff` 的 NPU 降噪本轮两次被系统 `LowMemoryKill`**(10:50:09、10:54:49,RSS 4.2→4.8GB,无 faultlog),与 00:45 那次成功(5.2GB)相比余量更紧——属 §9.3-12 的内存问题,不是本轮改动引入。另:把 `nind_v2.om` 临时改名后重开设置页,状态行正确显示「未安装 nind_v2.om,NPU 后端将回退到 CPU」(黄色告警),验证完成已恢复模型文件。
 
 **构建产物坑(本次踩到,记录备查)**:`scripts/build-ohos.ps1` 结束后,`entry-default-unsigned.hap` 是**双 ABI、未注入**的原始包(无 ORT/CANN,130MB);真正注入了 ORT + CANN 的是 `entry-default-signed.hap`(名字有 signed,但实际未签名,42 个 `.so`,72MB)。装机必须对后者做 `hap-sign-tool sign-app`,否则缺 `libonnxruntime.so` / `libai_fmk_hcl_model_runtime.so`,AI 功能在运行时 panic(ORT)或回退 CPU。
 
