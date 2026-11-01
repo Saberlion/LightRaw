@@ -1000,7 +1000,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 
 ### 6.23 平板 P0 打磨 + 「用 LightRaw 打开」/分享(2026-11-01)
 
-**动机**:平板形态已「能用」(6.21/6.22),但日常使用盘点出 5 个 P0 缺口:长任务在锁屏/后台被系统杀掉、hover-only 控件触屏不可达、拖拽只有 `PointerSensor`、相册导入端到端未验收、NPU 模型是否随包不透明。本轮完成 4 项代码改动 + 相册导入的人工验收,并按用户要求只实现 P1 中的「用 LightRaw 打开」/分享。
+**动机**:平板形态已「能用」(6.21/6.22),但日常使用盘点出 5 个 P0 缺口:长任务在锁屏/后台被系统杀掉、hover-only 控件触屏不可达、拖拽只有 `PointerSensor`、相册导入端到端未验收、NPU 模型是否随包不透明。本轮完成其中 4 项(P0-1/2/3/5)的代码改动,并按用户要求只实现 P1 中的「用 LightRaw 打开」/分享;**P0-4(相册导入端到端)因系统选择器无法注入点击,仍待人工验收**(见文末「后续待做」)。
 
 **实现**:
 
@@ -1036,6 +1036,26 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - **AI 回归**:JPEG 的 CANN NPU 降噪正常(`CANN .om model ready` + `NPU mode: using CANN .om denoise model.`,10.2MB 缓存重建);**100MP `.fff` 的 NPU 降噪本轮两次被系统 `LowMemoryKill`**(10:50:09、10:54:49,RSS 4.2→4.8GB,无 faultlog),与 00:45 那次成功(5.2GB)相比余量更紧——属 §9.3-12 的内存问题,不是本轮改动引入。另:把 `nind_v2.om` 临时改名后重开设置页,状态行正确显示「未安装 nind_v2.om,NPU 后端将回退到 CPU」(黄色告警),验证完成已恢复模型文件。
 
 **构建产物坑(本次踩到,记录备查)**:`scripts/build-ohos.ps1` 结束后,`entry-default-unsigned.hap` 是**双 ABI、未注入**的原始包(无 ORT/CANN,130MB);真正注入了 ORT + CANN 的是 `entry-default-signed.hap`(名字有 signed,但实际未签名,42 个 `.so`,72MB)。装机必须对后者做 `hap-sign-tool sign-app`,否则缺 `libonnxruntime.so` / `libai_fmk_hcl_model_runtime.so`,AI 功能在运行时 panic(ORT)或回退 CPU。
+
+**后续待做(本轮未实现,平板适配剩余清单)**:
+
+> 本节是平板适配的权威遗留清单;§9.3-11/12 保留指向此处的短条目。优先级沿用 §6.23 开头的盘点口径。
+
+| 优先级 | 项 | 现状 / 证据 | 建议做法 |
+|---|---|---|---|
+| P0 | **相册导入端到端人工验收** | 系统 `PhotoViewPicker` 的 UIExtension 不接收 `uitest` 注入点击(§6.22),选择→导入→暂存清理闭环未走查 | 人工:库视图第二个 FAB → 多选 → 完成 → 确认原名/同名冲突改名/进度事件 → `<cache>/import_staging/<requestId>` 被清空 |
+| P1 | **触控热区偏小** | `Resizer.tsx` 命中区仅 8px;右侧栏位图标约 40px;裁剪/变换手柄更小,均低于 44px 推荐值 | `isTouchUi` 下把 `Resizer` 加宽到 16–20px(视觉仍 8px,用伪元素扩命中区);图标与手柄 ≥44px |
+| P1 | **竖屏 / 旋转未验证** | 只在 1298×799 横屏跑过;竖屏约 866 CSS 宽仍按 `wide` 布局 | 竖屏走一遍库/编辑器/抽屉;必要时给 `wide` 增加竖屏判定或收紧抽屉宽度 |
+| P1 | **AI 覆盖不全** | 天空/文本/人脸/深度未逐项点选;深度模型 95MB,文本/人脸需 ESAM3 + MediaPipe 全套;BiRefNet/ESAM3 按 §3 判定仍走 ORT CPU | 逐项点选并记录耗时与 RSS;再评估 ESAM3 全套是否值得进平板发布包 |
+| P1 | **AI 降噪 UX/性能** | 100MP = 588 块(504/12/64),NPU ~2 分钟、CPU ~12 分钟;无 ETA;100MP 已在内存临界(§9.3-12) | 「预览分辨率先出、全分辨率后台/导出时再跑」+ 进度 ETA;重叠 64→32 的提速需 A/B 复验拼接缝 |
+| P1 | **批量导出逐张弹系统框** | §9.3-4;`showAssetsCreationDialog` 每次只处理一张 | 收集式授权(`MediaAssetChangeRequest` 批量)或先直写公共目录再统一入库 |
+| P1 | **笔刷 / 裁剪触控精度** | 单指绘制与双指缩放/平移的冲突未实测 | 编辑器内实测涂抹与缩放;必要时加「绘制 / 导航」模式切换 |
+| P2 | **手写笔** | `TouchSensor` 只处理触摸事件,本轮换掉 `PointerSensor` 后**笔拖拽失效**;无压感(`pressure`)、无笔尾橡皮 | 增加 pen 专用 sensor(或自定义),接 `PointerEvent.pressure` |
+| P2 | **PC 模式 / 键鼠** | 平板在「电脑桌面」下 `deviceType` 仍是 `tablet`,沿用触控布局 | 设置里加手动布局覆盖项(触控 / 桌面) |
+| P2 | **Tooltip 触屏不可见** | `data-tooltip` 只响应 hover,图标含义在触屏上缺失 | 长按显示,或触屏下改为常显小标签 |
+| P2 | **悬浮窗圆角 / 安全区** | 自由窗口/悬浮窗圆角可能裁切边缘内容,未加 inset | 用 `getWindowAvoidArea` 或圆角半径做内边距 |
+| P2 | **后台通知** | AI 任务、模型下载完成无系统通知(锁屏保活已解决"被杀",但不提示完成) | NotificationKit(需权限与用户同意) |
+| 分发 | **AGC 平板收尾** | `deviceTypes` 已含 `tablet`;控制台「支持设备」与平板截图未完成(§9.3-9) | `-Release` 包(非 debug,避免「包含调试信息」)+ 平板截图 + 勾选设备 |
 
 ### Phase 0 — 技术验证(1~2 周)
 - [x] 全量平台门控审计与修正(本分支)
@@ -1174,7 +1194,7 @@ cargo tauri ohos build -d -t aarch64
 8. ~~`app_cache_dir()` OHOS 指向用户公共存储区的长期方案~~ → **已解决(6.13)**:`app_paths.rs` 将全部 app 路径 OHOS 直连 `/data/storage/el2/base/` 沙箱,不再经过用户存储 FUSE(rename EACCES 场景随之消失);ArkTS 沙箱中转现仅导出桥仍在用
 9. **平板分发收尾(6.21)**:AGC「支持设备」补勾平板 + 采集平板截图;release 渠道复用已验证的平板持久授权路径(ACL 调试 Profile 上 `persistPermission`/`activatePermission` 已实证,2026-10-31);平板在 PC 模式/键鼠场景需要桌面布局时,加一个手动布局覆盖
 10. **相册导入后续(6.22)**:按相册网格浏览(`getAssets`,需先申请 `READ_IMAGEVIDEO`)、大批量导入的暂存进度提示、重复照片按内容哈希去重;当前逐文件复制,可在同一文件系统内尝试 rename
-11. **平板触控余项(6.23 盘点,P1/P2)**:触控热区(8px `Resizer`、约 40px 栏位图标、裁剪/变换手柄)加宽到 ≥44px;竖屏/旋转未验证;手写笔压感与笔尾橡皮(`TouchSensor` 已放弃笔拖拽);`data-tooltip` 触屏不可见;批量导出逐张弹框;悬浮窗圆角安全区
+11. **平板触控余项(6.23)**:完整清单(触控热区、竖屏/旋转、AI 覆盖、降噪 UX、批量导出、笔刷精度、手写笔、PC 模式、Tooltip、悬浮窗安全区、后台通知、AGC 平板收尾)见 §6.23「后续待做」表
 12. **100MP AI 降噪内存余量(6.23 实测)**:同一 100MP `.fff` 的 NPU 降噪在 11-01 两次被 `LowMemoryKill`(RSS 4.8GB),00:45 那次成功(5.2GB);需要按 §9.3-1 的降分辨率/分块策略处理,或在 AI 任务前做内存预检
 
 ### 9.4 条件性 / 低优先级 / 非本仓
