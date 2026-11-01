@@ -233,6 +233,58 @@ const SettingItem = ({ children, description, label }: SettingItemProps) => (
   </div>
 );
 
+interface OhosAiNpuStatus {
+  available: boolean;
+  model: string;
+  sizeBytes: number;
+}
+
+/**
+ * OHOS only: the CANN `.om` denoise model is a per-SoC sideload artifact, not
+ * part of the package, so the NPU backend silently falls back to CPU without
+ * it. Show the actual state next to the backend picker instead of promising
+ * acceleration the device does not have.
+ */
+const OhosNpuModelStatus = ({ backend }: { backend: string }) => {
+  const { t } = useTranslation();
+  const [status, setStatus] = useState<OhosAiNpuStatus | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    invoke<OhosAiNpuStatus>(Invokes.GetOhosAiNpuStatus)
+      .then((value) => {
+        if (!cancelled) setStatus(value);
+      })
+      .catch(() => {
+        if (!cancelled) setStatus({ available: false, model: '', sizeBytes: 0 });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (status === null) {
+    return <Text variant={TextVariants.small}>{t('settings.processing.aiDenoiseNpuModelChecking')}</Text>;
+  }
+
+  if (status.available) {
+    return (
+      <Text variant={TextVariants.small} className="text-green-500">
+        {t('settings.processing.aiDenoiseNpuModelReady', {
+          model: status.model,
+          size: Math.round(status.sizeBytes / (1024 * 1024)),
+        })}
+      </Text>
+    );
+  }
+
+  return (
+    <Text variant={TextVariants.small} className={backend === 'npu' ? 'text-yellow-500' : undefined}>
+      {t('settings.processing.aiDenoiseNpuModelMissing', { model: status.model || 'nind_v2.om' })}
+    </Text>
+  );
+};
+
 interface AiProviderSwitchProps {
   selectedProvider: string;
   onProviderChange: (provider: string) => void;
@@ -1877,6 +1929,15 @@ export default function SettingsPanel({
                             }
                             triggerClassName="bg-bg-primary"
                           />
+                        </SettingItem>
+                      )}
+
+                      {isOhos && (
+                        <SettingItem
+                          label={t('settings.processing.aiDenoiseNpuModel')}
+                          description={t('settings.processing.aiDenoiseNpuModelDesc')}
+                        >
+                          <OhosNpuModelStatus backend={processingSettings.aiDenoiseBackend} />
                         </SettingItem>
                       )}
 

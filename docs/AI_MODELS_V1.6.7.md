@@ -139,6 +139,7 @@
   - 打开/解码 + GPU 预览正常(`Raw enhancing ... 3.19s`,预览 960×1280 ~520–657 ms);
   - `.om` 会话复用后生成 611,380,602 B 的降噪缓存(00:45,约 2 分钟),期间应用 RSS ~5.2 GB,无 OOM/`cppcrash`;
   - 该 100MP 缓存意味着 CPU/NPU 分块全跑通,后续预览直接命中缓存。
+  - **复测余量(11-01 10:50/10:54)**:同一张 100MP、同一 `.om`、同样清除缓存后重跑,**两次都被系统 `LowMemoryKill`**(RSS 4.2→4.8 GB,`/data/log/faultlog/faultlogger` 仍为空,不是崩溃);说明 100MP 全分辨率 NPU 降噪处在内存临界区,成功与否取决于当时整机余量(§6.23 / §9.3-12 的降分辨率或预检方向)。
 - **稳定性**:`/data/log/faultlog/faultlogger` 为空,无 `cppcrash`。屏幕自动锁后系统曾结束一次应用到后台(`AMS Kill process`,callingUid 0),不是崩溃。
 - **未覆盖**:天空/文本/人脸/深度未逐一点选(深度 95 MB;文本/人脸需 ESAM3 + MediaPipe 全套);BiRefNet/ESAM3 的 CANN `.om` 与 §3 判定一致(不转/不可转),本机仍走 ORT CPU。
 

@@ -437,3 +437,41 @@
     text-shadow: 0 0 18px rgba(255, 255, 255, 0.3);
   }
 }
+
+/*
+ * Touch adaptation (no hover): controls that only reveal themselves on
+ * `group-hover` are unreachable with a finger. Force the reveal half of those
+ * utilities on devices without hover, and keep hover-to-hide variants visible
+ * so a tap's trailing "hover" does not make them disappear again. These rules
+ * are intentionally unlayered so they win over Tailwind's `@layer utilities`
+ * regardless of selector specificity.
+ *
+ * Covered patterns (docs/HARMONYOS_PORTING.md 6.21):
+ *   opacity-0 group-hover:opacity-100          -> always visible
+ *   opacity-100 group-hover:opacity-0          -> never hidden
+ *   pointer-events-none group-hover:pointer-events-auto
+ *   grid-rows-[0fr] group-hover:grid-rows-[1fr] + translate-y-3 group-hover:translate-y-0
+ *   w-0 group-hover:w-6                        -> inline clear buttons stay tappable
+ */
+@media (hover: none), (pointer: coarse) {
+  .group-hover\:opacity-100,
+  .group-hover\:opacity-0 {
+    opacity: 1;
+  }
+
+  .group-hover\:pointer-events-auto {
+    pointer-events: auto;
+  }
+
+  .group-hover\:grid-rows-\[1fr\] {
+    grid-template-rows: 1fr;
+  }
+
+  .group-hover\:translate-y-0 {
+    --tw-translate-y: 0;
+  }
+
+  .group-hover\:w-6 {
+    width: 1.5rem;
+  }
+}

@@ -120,7 +120,7 @@ const DENOISE_MS_SHA256: &str = "05d7580e5a6e3c18bd286705f7524090cd69abe4b78067c
 // surgery -> omg (504 is the fixed tile size all TileParams variants use).
 // NCHW I/O (no NHWC conversion).
 #[cfg(target_env = "ohos")]
-const DENOISE_OM_FILENAME: &str = "nind_v2.om";
+pub const DENOISE_OM_FILENAME: &str = "nind_v2.om";
 /// HIAI_HCL perf-mode optimum for small-op-dense CNN graphs (§8.4: NIND
 /// 1.8× over the default 2; transformer/FFC graphs keep 2).
 #[cfg(target_env = "ohos")]
@@ -1082,6 +1082,19 @@ fn get_models_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
         fs::create_dir_all(&models_dir)?;
     }
     Ok(models_dir)
+}
+
+/// Report whether the side-loaded CANN denoise model is present in the models
+/// directory, plus its size. The `.om` is a per-SoC artifact that is not
+/// shipped with the app, so Settings uses this to tell the user whether the
+/// NPU backend can actually engage or will silently fall back to CPU.
+#[cfg(target_env = "ohos")]
+pub fn denoise_om_status(app_handle: &tauri::AppHandle) -> Result<(bool, u64)> {
+    let path = get_models_dir(app_handle)?.join(DENOISE_OM_FILENAME);
+    match fs::metadata(&path) {
+        Ok(meta) => Ok((true, meta.len())),
+        Err(_) => Ok((false, 0)),
+    }
 }
 
 fn persist_downloaded_asset(dest: &Path, bytes: &[u8]) -> Result<()> {

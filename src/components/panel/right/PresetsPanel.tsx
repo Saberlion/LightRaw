@@ -4,7 +4,8 @@ import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialo
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useDraggable,
   useDroppable,
   useSensor,
@@ -644,11 +645,8 @@ export default function PresetsPanel({ onNavigateToCommunity }: PresetsPanelProp
   }, []);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 10,
-      },
-    }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
   );
 
   const allItemsMap = useMemo(() => {

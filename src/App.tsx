@@ -6,7 +6,8 @@ import { ToastContainer, toast, Slide } from 'react-toastify';
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   Modifier,
@@ -53,6 +54,7 @@ import { useAppContextMenus } from './hooks/useAppContextMenus';
 import { useSortedLibrary } from './hooks/useSortedLibrary';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useExternalEditSession } from './hooks/useExternalEditSession';
+import { useOhosKeepScreenOn } from './hooks/useOhosKeepScreenOn';
 import ExternalEditBar from './components/ui/ExternalEditBar';
 import { Status } from './components/ui/ExportImportProperties';
 
@@ -276,6 +278,8 @@ function App() {
     setLibraryViewMode,
   });
 
+  useOhosKeepScreenOn();
+
   const isAndroid = osPlatform === 'android';
   // OpenHarmony form factor: tablets are touch-first and keep the desktop
   // three-column layout out of the way (rail + drawer); 2in1 keeps desktop.
@@ -328,7 +332,7 @@ function App() {
     if (lastLayoutLogRef.current === key) return;
     lastLayoutLogRef.current = key;
     console.info(
-      `[ohos-layout] deviceType=${ohosDeviceType ?? 'pending'} mode=${layoutMode} viewport=${viewportSize.width}x${viewportSize.height} touchUi=${isTouchUi}`,
+      `[ohos-layout] deviceType=${ohosDeviceType ?? 'pending'} mode=${layoutMode} viewport=${viewportSize.width}x${viewportSize.height} touchUi=${isTouchUi} hoverNone=${window.matchMedia('(hover: none)').matches} coarsePointer=${window.matchMedia('(pointer: coarse)').matches}`,
     );
   }, [isOhos, ohosDeviceType, layoutMode, isTouchUi, viewportSize.width, viewportSize.height]);
 
@@ -840,7 +844,12 @@ function App() {
     hasRenderedFirstFrame;
   const useMacWindowShell = osPlatform === 'macos' && !appSettings?.decorations && !isWindowFullScreen && !isFullScreen;
 
-  const layoutSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  // Mouse keeps the 5 px distance constraint; touch needs a short delay so a
+  // drag does not hijack scrolling (dnd-kit's TouchSensor uses delay+tolerance).
+  const layoutSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  );
   const handleDragStart = (e: any) => {
     if (e.active.data.current?.type === 'layout-tab') {
       setLayoutDragItem(e.active.data.current.panel as Panel);

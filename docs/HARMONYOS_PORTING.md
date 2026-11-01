@@ -998,6 +998,45 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - 系统选择器只返回 `image/*`;相册里是否出现 DNG/RAW 取决于系统媒体库索引,相机 RAW 仍建议走 FileKit。
 - 媒体 URI 不能被 Rust 直接 `std::fs` 读取,因此暂存复制不可避免(大相册导入会短暂占用 cache,完成后释放)。
 
+### 6.23 平板 P0 打磨 + 「用 LightRaw 打开」/分享(2026-11-01)
+
+**动机**:平板形态已「能用」(6.21/6.22),但日常使用盘点出 5 个 P0 缺口:长任务在锁屏/后台被系统杀掉、hover-only 控件触屏不可达、拖拽只有 `PointerSensor`、相册导入端到端未验收、NPU 模型是否随包不透明。本轮完成 4 项代码改动 + 相册导入的人工验收,并按用户要求只实现 P1 中的「用 LightRaw 打开」/分享。
+
+**实现**:
+
+| 层 | 变更 |
+|---|---|
+| ArkTS(`EntryAbility`) | 窗口桥新增 `keep_screen_on` / `keep_screen_off` → `win.setWindowKeepScreenOn(bool)`;`onCreate`/`onNewWant` 解析 `want.uri` 与 `ability.params.stream`,转成绝对路径后调 napi `notifyOhosOpenFile`(`file://media` 先复制到 `cacheDir/import_staging/open_with/`)。 |
+| Rust | 新命令 `set_ohos_keep_screen_on(enabled)`(非 OHOS 空实现);新命令 `get_ohos_ai_npu_status`(`ai_processing::denoise_om_status` 检查模型目录里的 `nind_v2.om`);`system_bridge` 新增 napi `notifyOhosOpenFile`,webview 未就绪时入队、`initialize_ohos` 落进 `initial_file_path`,就绪后直接发 `open-with-file` 事件。 |
+| 前端 | `useOhosKeepScreenOn`(export/import、`jobs`、`aiJobs`、`activeAiTasks` 任一在跑就保持常亮);`styles.css` 在 `@media (hover: none), (pointer: coarse)` 下强制翻开 `group-hover:opacity-100/0`、`pointer-events-auto`、`grid-rows-[1fr]`、`translate-y-0`、`w-6`;dnd-kit 由 `PointerSensor` 换成 `MouseSensor`(5/10px)+ `TouchSensor`(delay 200ms / tolerance 8px),覆盖布局页签(A `App.tsx`)与 AI/蒙版/预设面板的拖拽排序;设置页在 AI 降噪后端下方新增 NPU 模型状态行(就绪显示 `nind_v2.om` 大小,缺失时提示回退 CPU)。 |
+| 分发标识 | `gen/ohos/.../module.json5` 与 `.agc-backup` 的 EntryAbility `skills` 增加 `ohos.want.action.viewData` + `ohos.want.action.sendData`(`file` scheme × `general.image` / `general.raw-image`);`gen/` 为本地修改,重跑 `cargo tauri ohos init` 后需重打。 |
+
+**设计取舍**:
+- **常亮而非 `BackgroundTasksKit`**:长任务都在前台跑,锁屏只是系统超时;`setWindowKeepScreenOn` 改动最小,且直接解掉已实证的 `AMS Kill process`(2026-11-01 00:41,100MP 降噪期间)。任务结束/卸载即释放,避免长期占屏。
+- **CSS 而非逐组件 `isTouchUi`**:`group-hover` 可见性散落在 20+ 组件,统一在样式层翻开可一次覆盖;只翻「显现」语义(`opacity-0→1`、`pointer-events`、折叠行展开),不改 `hidden group-hover:flex` 这类图标互换,避免触屏上两个图标同时出现。
+- **`MouseSensor` + `TouchSensor`**:`TouchSensor` 需要延迟才能与列表滚动共存;代价是手写笔拖拽失效(M-Pencil 走 pointer 事件),列为 P2 手写笔专项。
+- **open-with 只做首个 URI**:编辑器一次只打开一张图,多选分享取第一项;其余项记录在日志里。
+
+**已知边界**:
+- 相册导入的系统选择器 UI 不接收 `uitest` 注入点击(§6.22),选择→导入→清理的端到端只能人工走查。
+- `TouchSensor` 的 200ms 延迟在拖动面板页签时体感略慢,若实测干扰可下调到 150ms。
+- NPU 状态行只反映 `nind_v2.om` 是否在模型目录,不校验 SoC/固件是否匹配(不匹配时初始化失败,后端自动回退 CPU)。
+
+**真机验证(2026-11-01,GEM-W40,`entry-pad-p0-signed.hap`,72.4MB,ACL 调试 profile)**:
+
+- **触控媒体查询**:`[ohos-layout] deviceType=tablet mode=wide viewport=1298x799 touchUi=true hoverNone=true coarsePointer=true` —— `@media (hover: none), (pointer: coarse)` 在平板 ArkWeb 上命中,`group-hover` 强制显现规则生效(层外 CSS 覆盖 Tailwind utilities)。
+- **保活**:启动时缩略图任务 → `[ohos-keep-screen] hold`,任务结束 → `release`,状态跟随忙碌判断,无卡死。100MP NPU 降噪期间(10:52:57–10:54:49,RSS 4.2→4.8GB)不做任何输入,10:53:53 / 10:54:49 / 10:55:45 三次采样 `powerStatus` 全为 `POWER_STATUS_ON`;对照:同一台设备空闲时约 1–2 分钟即自动锁屏(此前多次遇到)。
+- **AI 降噪后端状态行**:设置 → 处理 → 「NPU 模型」显示 `nind_v2.om 已就绪(59 MB)` 与说明文案;后端下拉仍为 `NPU(设备端)`。
+- **「用 LightRaw 打开」端到端**:
+  - 冷启动:`aa start -b … -a EntryAbility -A ohos.want.action.viewData -U file://docs/storage/Users/currentUser/2022.6.14_Swiss_Linksphotograph.fff` → `OHOS open-with request (cold start, parked): /storage/Users/currentUser/2022.6.14_Swiss_Linksphotograph.fff` → `Frontend is ready, returning initial path: …` → 编辑器打开(`Raw enhancing … took 3.09s`)。
+  - 热启动:应用已在前台时再发一个 `viewData`(JPEG)→ `OHOS open-with request (warm): …/Documents/ow-test.jpg`,编辑器直接切换。
+  - **系统入口**:文件管理 → 文档 → 长按文件 → 「打开方式」菜单列出 **LightRaw**,点选后走热启动路径成功打开。
+  - 说明:用 `aa start … --pb ohos.ability.params.showDefaultPicker true` 触发的系统选择器只列出 文本编辑器/笔记/天生会画,不含 LightRaw(与文件管理自己的「打开方式」菜单行为不同);以文件管理菜单为准。
+  - skill 形态与系统自带「文件预览」对齐:`actions = viewData/sendData`、`entities = [entity.system.default]`、`uris` 覆盖 `general.raw-image` / `general.image` / `general.jpeg` / `general.png` / `general.tiff` / `general.gif` / `com.microsoft.bmp` × `file` / `content` / 任意 scheme。
+- **AI 回归**:JPEG 的 CANN NPU 降噪正常(`CANN .om model ready` + `NPU mode: using CANN .om denoise model.`,10.2MB 缓存重建);**100MP `.fff` 的 NPU 降噪本轮两次被系统 `LowMemoryKill`**(10:50:09、10:54:49,RSS 4.2→4.8GB,无 faultlog),与 00:45 那次成功(5.2GB)相比余量更紧——属 §9.3-? 的内存问题,不是本轮改动引入。
+
+**构建产物坑(本次踩到,记录备查)**:`scripts/build-ohos.ps1` 结束后,`entry-default-unsigned.hap` 是**双 ABI、未注入**的原始包(无 ORT/CANN,130MB);真正注入了 ORT + CANN 的是 `entry-default-signed.hap`(名字有 signed,但实际未签名,42 个 `.so`,72MB)。装机必须对后者做 `hap-sign-tool sign-app`,否则缺 `libonnxruntime.so` / `libai_fmk_hcl_model_runtime.so`,AI 功能在运行时 panic(ORT)或回退 CPU。
+
 ### Phase 0 — 技术验证(1~2 周)
 - [x] 全量平台门控审计与修正(本分支)
 - [x] `ohos_integration.rs` 骨架
@@ -1029,6 +1068,7 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 - [x] 应用图标与 label 对齐其他平台:entry 字符串资源 + layered_image 双层图标 + startIcon,均取自 `src-tauri/icons/full_res_original.png`(2026-10-03,见 6.4)。**注:以上 EntryAbility/字符串/图标三处改动均位于 gitignored 的 `gen/ohos/`,`cargo tauri ohos init` 重跑后需按 6.4 重打**
 - [x] 平板(tablet)形态适配(2026-10-31,见 6.21):ArkTS `deviceInfo` 形态桥(napi + tauri 命令 + 事件)、触控优先 `wide` 布局与抽屉交互、自绘标题栏在触控形态隐藏、栏位补文件夹树、`deviceTypes` 加 `tablet`;同时修复平板首次冷启动在 GPU warmup 期崩溃并把 backend 永久锁到 GLES 的问题(详见 6.21)
 - [x] 相册导入(2026-10-31,见 6.22):系统照片选择器(PhotoViewPicker)+ 扩展名预过滤/去重/原名暂存 + `import-complete` 清理;库视图第二个 FAB;保留 `FILE_ACCESS_PERSIST`(ACL),不声明 `READ_IMAGEVIDEO`(系统选择器无需且 ACL 申请门槛高)
+- [x] 平板 P0 打磨 + 「用 LightRaw 打开」/分享(2026-11-01,见 6.23):长任务 `setWindowKeepScreenOn` 保活、触屏 `group-hover` 控件常显、dnd-kit `MouseSensor`+`TouchSensor`、AI 降噪 NPU 模型状态行、`viewData`/`sendData` skill + want URI → 路径 → `open-with-file` 管线(冷/热启动与文件管理「打开方式」均已真机验证)
 
 ### Phase 3 — 渲染验证(1~2 周)
 - [x] compute-only + IPC 回读路径点亮编辑器(Android 同款,零新增风险)(2026-10-04,见 6.8):Mali-G77 GLES 后端实测点亮——GPU Processor/apply_adjustments/estimate_export_size/generate_thumbnail_data 全链路日志铁证,交互 ROI ~29 FPS,曝光编辑视觉生效;`Fake map` 为回读路径良性产物
@@ -1134,6 +1174,8 @@ cargo tauri ohos build -d -t aarch64
 8. ~~`app_cache_dir()` OHOS 指向用户公共存储区的长期方案~~ → **已解决(6.13)**:`app_paths.rs` 将全部 app 路径 OHOS 直连 `/data/storage/el2/base/` 沙箱,不再经过用户存储 FUSE(rename EACCES 场景随之消失);ArkTS 沙箱中转现仅导出桥仍在用
 9. **平板分发收尾(6.21)**:AGC「支持设备」补勾平板 + 采集平板截图;release 渠道复用已验证的平板持久授权路径(ACL 调试 Profile 上 `persistPermission`/`activatePermission` 已实证,2026-10-31);平板在 PC 模式/键鼠场景需要桌面布局时,加一个手动布局覆盖
 10. **相册导入后续(6.22)**:按相册网格浏览(`getAssets`,需先申请 `READ_IMAGEVIDEO`)、大批量导入的暂存进度提示、重复照片按内容哈希去重;当前逐文件复制,可在同一文件系统内尝试 rename
+11. **平板触控余项(6.23 盘点,P1/P2)**:触控热区(8px `Resizer`、约 40px 栏位图标、裁剪/变换手柄)加宽到 ≥44px;竖屏/旋转未验证;手写笔压感与笔尾橡皮(`TouchSensor` 已放弃笔拖拽);`data-tooltip` 触屏不可见;批量导出逐张弹框;悬浮窗圆角安全区
+12. **100MP AI 降噪内存余量(6.23 实测)**:同一 100MP `.fff` 的 NPU 降噪在 11-01 两次被 `LowMemoryKill`(RSS 4.8GB),00:45 那次成功(5.2GB);需要按 §9.3-1 的降分辨率/分块策略处理,或在 AI 任务前做内存预检
 
 ### 9.4 条件性 / 低优先级 / 非本仓
 

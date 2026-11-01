@@ -16,6 +16,10 @@ pub fn initialize_ohos(window: &tauri::WebviewWindow) {
     );
 
     system_bridge::set_app_handle(window.app_handle().clone());
+    // A file-manager "open with" / share want is delivered from
+    // EntryAbility.onCreate, which runs before this function; hand those
+    // paths to the same launch pipeline the desktop uses (docs 6.22).
+    system_bridge::flush_pending_open_files(window.app_handle());
 
     // Phase 2 work items (see docs/HARMONYOS_PORTING.md):
     // - File access via FileKit / photoAccessHelper: DONE (file_bridge +
@@ -144,8 +148,8 @@ pub fn exit_app(app_handle: tauri::AppHandle) {
 
 #[cfg(target_env = "ohos")]
 mod system_bridge {
-    use std::sync::OnceLock;
     use std::sync::atomic::{AtomicU8, Ordering};
+    use std::sync::{Mutex, OnceLock};
 
     use napi_ohos::bindgen_prelude::Result;
 
@@ -178,6 +182,50 @@ mod system_bridge {
             use tauri::Emitter;
             let _ = handle.emit(event, payload);
         }
+    }
+
+    // ---- "open with" / share (docs 6.22) ----
+    //
+    // EntryAbility receives `want.uri` (file manager "open with") or the share
+    // stream entries and forwards them as absolute paths. onCreate runs before
+    // the webview (and therefore before APP_HANDLE exists), so those paths are
+    // queued here and drained by initialize_ohos; a delivery while the app is
+    // already running goes straight out as the desktop `open-with-file` event.
+    static PENDING_OPEN_FILES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+    fn park_or_emit(handle: &tauri::AppHandle, path: String) {
+        use tauri::Manager;
+
+        let state = handle.state::<crate::app_state::AppState>();
+        if state.window_setup_complete.load(Ordering::Relaxed) {
+            log::info!("OHOS open-with request (warm): {path}");
+            emit("open-with-file", serde_json::json!(path));
+        } else {
+            log::info!("OHOS open-with request (cold start, parked): {path}");
+            *state.initial_file_path.lock().unwrap() = Some(path);
+        }
+    }
+
+    pub(super) fn deliver_open_file(path: String) {
+        match APP_HANDLE.get() {
+            Some(handle) => park_or_emit(handle, path),
+            None => PENDING_OPEN_FILES.lock().unwrap().push(path),
+        }
+    }
+
+    pub(super) fn flush_pending_open_files(handle: &tauri::AppHandle) {
+        let pending: Vec<String> = std::mem::take(&mut *PENDING_OPEN_FILES.lock().unwrap());
+        for path in pending {
+            park_or_emit(handle, path);
+        }
+    }
+
+    /// NAPI export (ArkTS name: `notifyOhosOpenFile`). EntryAbility forwards a
+    /// `want.uri` / share stream entry already converted to an absolute path.
+    #[napi_derive_ohos::napi]
+    pub fn notify_ohos_open_file(path: String) -> Result<()> {
+        deliver_open_file(path);
+        Ok(())
     }
 
     /// NAPI export (ArkTS name: `notifyOhosBackPressed`). Called by the app's
@@ -245,6 +293,43 @@ pub fn get_ohos_device_type() -> Option<String> {
     #[cfg(not(target_env = "ohos"))]
     {
         None
+    }
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OhosAiNpuStatus {
+    /// Whether the side-loaded CANN denoise model exists in the models dir.
+    pub available: bool,
+    /// Expected file name (`nind_v2.om`), shown by the Settings row.
+    pub model: String,
+    pub size_bytes: u64,
+}
+
+/// Whether the AI denoise NPU backend has a model to run with. The CANN `.om`
+/// is built per SoC and is not part of the release package, so Settings shows
+/// the real state instead of promising acceleration the device cannot provide
+/// (the backend silently falls back to CPU without it).
+#[tauri::command]
+pub fn get_ohos_ai_npu_status(app_handle: tauri::AppHandle) -> Result<OhosAiNpuStatus, String> {
+    #[cfg(target_env = "ohos")]
+    {
+        let (available, size_bytes) = crate::ai_processing::denoise_om_status(&app_handle)
+            .map_err(|e| format!("Failed to inspect the CANN denoise model: {e}"))?;
+        Ok(OhosAiNpuStatus {
+            available,
+            model: crate::ai_processing::DENOISE_OM_FILENAME.to_string(),
+            size_bytes,
+        })
+    }
+    #[cfg(not(target_env = "ohos"))]
+    {
+        let _ = app_handle;
+        Ok(OhosAiNpuStatus {
+            available: false,
+            model: String::new(),
+            size_bytes: 0,
+        })
     }
 }
 
@@ -1111,6 +1196,27 @@ pub fn ohos_window_control(operation: String) -> Result<(), String> {
         Err(format!(
             "ohos_window_control('{operation}') is only available on OpenHarmony"
         ))
+    }
+}
+
+/// Keep the screen awake while a long foreground job runs (export, AI masks,
+/// denoise, model download). HarmonyOS locks the screen on its own timeout and
+/// a backgrounded/locked app can be killed mid-job, so the frontend holds the
+/// screen for the duration of these jobs and releases it when they finish.
+#[tauri::command]
+pub fn set_ohos_keep_screen_on(enabled: bool) -> Result<(), String> {
+    #[cfg(target_env = "ohos")]
+    {
+        window_controller::dispatch(if enabled {
+            "keep_screen_on"
+        } else {
+            "keep_screen_off"
+        })
+    }
+    #[cfg(not(target_env = "ohos"))]
+    {
+        let _ = enabled;
+        Ok(())
     }
 }
 

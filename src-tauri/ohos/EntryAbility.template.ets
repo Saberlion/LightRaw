@@ -21,12 +21,19 @@ export default class EntryAbility extends RustAbility {
   public defaultPage: boolean = false;
   public mode: 'xcomponent' | 'webview' = 'webview'
   private rapidrawModule: ESObject | null = null;
+  // Path of a file manager "open with" / share request that arrived before
+  // the native module finished loading (onCreate runs first); flushed once
+  // registerRapidrawWindowController resolves the module (docs 6.22).
+  private pendingOpenPath: string | null = null;
   // PRIVACY_STATE_CHANGED subscription (AppGallery standardized privacy
   // hosting); kept so a future teardown path can unsubscribe.
   private privacySubscriber: commonEventManager.CommonEventSubscriber | null = null;
 
   async onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): Promise<void> {
     super.onCreate(want, launchParam);
+    // A cold start from the file manager ("open with") or a share panel
+    // carries the target in want.uri / the share stream (docs 6.22).
+    this.captureOpenWant(want);
     // Form-factor evidence for the folder-grant strategy (docs 6.14): 2in1
     // keeps persistent folder grants; tablets/phones stay on per-launch
     // re-grant because the persistence capability is 2in1-only.
@@ -39,6 +46,15 @@ export default class EntryAbility extends RustAbility {
     // fires seconds later). Fire-and-forget on purpose — awaiting lifecycle
     // helpers here once caused the ability to terminate (docs 6.4).
     this.activatePersistedGrants();
+  }
+
+  // Launch type is singleton, so a second "open with" / share while the app
+  // is already running arrives as a new want instead of a new ability. The
+  // Rust side re-emits it as the desktop `open-with-file` event, which the
+  // frontend's existing launch pipeline consumes (docs 6.22).
+  onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    console.info('[RapidRAW] onNewWant: forwarding open-with request');
+    this.captureOpenWant(want);
   }
 
   async onWindowStageCreate(windowStage: window.WindowStage): Promise<void> {
@@ -153,6 +169,16 @@ export default class EntryAbility extends RustAbility {
             case 'start_drag':
               win.startMoving();
               break;
+            case 'keep_screen_on':
+              win.setWindowKeepScreenOn(true).catch((e: BusinessError) => {
+                console.error(`[RapidRAW] setWindowKeepScreenOn(true) failed: ${JSON.stringify(e)}`);
+              });
+              break;
+            case 'keep_screen_off':
+              win.setWindowKeepScreenOn(false).catch((e: BusinessError) => {
+                console.error(`[RapidRAW] setWindowKeepScreenOn(false) failed: ${JSON.stringify(e)}`);
+              });
+              break;
             case 'exit_app':
               this.context.terminateSelf().catch((e: BusinessError) => {
                 console.error(`[RapidRAW] window op 'exit_app' failed: ${JSON.stringify(e)}`);
@@ -170,6 +196,11 @@ export default class EntryAbility extends RustAbility {
       this.rapidrawModule = mod;
       this.pushColorMode(this.context.config?.colorMode);
       this.pushDeviceType();
+      if (this.pendingOpenPath !== null) {
+        const pendingPath: string = this.pendingOpenPath;
+        this.pendingOpenPath = null;
+        this.deliverOpenFile(pendingPath);
+      }
       // Subscribe only now that the module handle exists: the consent
       // subscription pushes through notifyOhosPrivacyChanged below.
       this.subscribePrivacyEvents();
@@ -211,6 +242,115 @@ export default class EntryAbility extends RustAbility {
       return;
     }
     notify(deviceInfo.deviceType);
+  }
+
+  // ---- "open with" / share (docs 6.22) ----
+  //
+  // The file manager launches the app with `ohos.want.action.viewData` and the
+  // target in want.uri; the share panel sends `ohos.want.action.sendData` with
+  // an `ability.params.stream` array. Both are converted to an absolute path
+  // the Rust editor can open (media URIs are copied into the app cache first,
+  // because only the URI grant makes them readable).
+
+  private captureOpenWant(want: Want): void {
+    const uris: Array<string> = this.collectWantUris(want);
+    const uri: string = uris.length > 0 ? uris[0] : '';
+    if (uri.length === 0) {
+      return;
+    }
+    console.info(`[RapidRAW] open-with want: action=${want.action ?? ''}, uri=${uri}`);
+    if (uri.startsWith('file://media')) {
+      this.stageMediaUriForOpen(uri);
+      return;
+    }
+    const path: string | null = this.wantUriToPath(uri);
+    if (path === null) {
+      console.error(`[RapidRAW] open-with: cannot resolve a path for ${uri}`);
+      return;
+    }
+    this.deliverOpenFile(path);
+  }
+
+  private collectWantUris(want: Want): Array<string> {
+    const uris: Array<string> = [];
+    const uri: string = want.uri ?? '';
+    if (uri.length > 0) {
+      uris.push(uri);
+    }
+    const params: Record<string, Object> = want.parameters ?? {};
+    const stream: Object | undefined = params['ability.params.stream'];
+    if (Array.isArray(stream)) {
+      const entries: Array<string> = stream as Array<string>;
+      for (const entry of entries) {
+        if (typeof entry === 'string' && entry.length > 0) {
+          uris.push(entry);
+        }
+      }
+    }
+    const single: Object | undefined = params['ability.params.fileUri'];
+    if (typeof single === 'string' && single.length > 0) {
+      uris.push(single);
+    }
+    return uris;
+  }
+
+  // DocumentViewPicker and the file manager hand out file://docs/... URIs;
+  // FileUri.path yields the app-sandbox path directly (readable in-process).
+  private wantUriToPath(uri: string): string | null {
+    if (uri.startsWith('/')) {
+      return uri;
+    }
+    try {
+      const path: string = new fileUri.FileUri(uri).path;
+      return path.length > 0 ? path : null;
+    } catch (e) {
+      console.error(`[RapidRAW] open-with URI resolution failed: ${JSON.stringify(e)}`);
+      return null;
+    }
+  }
+
+  // Gallery shares use file://media/... URIs, which the Rust side cannot open
+  // by path; copy the bytes into the same staging root the album import uses so
+  // an interrupted run is cleaned up at the next start.
+  private stageMediaUriForOpen(uri: string): void {
+    const stagingDir: string = `${this.context.cacheDir}/import_staging/open_with`;
+    try {
+      try {
+        fs.accessSync(stagingDir);
+      } catch (accessError) {
+        fs.mkdirSync(stagingDir, true);
+      }
+      const name: string = this.galleryAssetName(uri, 0);
+      const target: string = `${stagingDir}/${name}`;
+      const source: fs.File = fs.openSync(uri, fs.OpenMode.READ_ONLY);
+      try {
+        fs.copyFileSync(source.fd, target);
+      } finally {
+        fs.closeSync(source);
+      }
+      console.info(`[RapidRAW] open-with: staged media request at ${target}`);
+      this.deliverOpenFile(target);
+    } catch (e) {
+      console.error(`[RapidRAW] open-with media staging failed for ${uri}: ${JSON.stringify(e)}`);
+    }
+  }
+
+  private deliverOpenFile(path: string): void {
+    const notify: ESObject =
+      this.rapidrawModule?.notifyOhosOpenFile ?? this.rapidrawModule?.default?.notifyOhosOpenFile;
+    if (typeof notify !== 'function') {
+      // The module import resolves after onCreate; keep the last request and
+      // flush it from registerRapidrawWindowController.
+      this.pendingOpenPath = path;
+      console.info(`[RapidRAW] open-with request deferred until the module loads: ${path}`);
+      return;
+    }
+    try {
+      notify(path);
+      console.info(`[RapidRAW] open-with request delivered: ${path}`);
+    } catch (e) {
+      console.error(`[RapidRAW] notifyOhosOpenFile failed: ${JSON.stringify(e)}`);
+    }
   }
 
   // Every handler MUST resolve its request exactly once — the Rust side parks
