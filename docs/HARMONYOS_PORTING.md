@@ -1079,18 +1079,21 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 
 **现象**:鸿蒙冷启动,首页首帧出现黑色块(暗色主题最明显)。
 
-**根因**:三条透明链叠加。`tauri.conf.json` 的 `transparent: true` 经 tauri `WebviewWindowBuilder::transparent` 同时置了 webview 的 `transparent`(`crates/tauri/src/webview/webview_window.rs`),wry 的 OHOS 后端原样传给 `@ohos-rs/ability`,`DefaultXComponent.ets` 在 `transparent && 无 backgroundColor` 时把 ArkWeb 组件背景强制成 `Color.Transparent`;同时 `src/styles.css` 的 `html`/`body` 也是 transparent(桌面无边框圆角需要)。ArkWeb 组件背景只在「页面透明处」可见,所以这些像素露出的是**窗口表面**——OHOS 上即黑色。
+**根因**:三层透明链叠加。`tauri.conf.json` 里 `transparent: true` 让 tauri `WebviewWindowBuilder::transparent` 同时置 webview 的 `transparent`(crates/tauri/src/webview/webview_window.rs),wry 的 OHOS 后端原样传给 `@ohos-rs/ability`;`DefaultXComponent.ets` 在 `transparent && !backgroundColor` 时把 ArkWeb 组件背景强制为 `Color.Transparent`;`src/styles.css` 的 `html`/`body` 也是 transparent(桌面无边框圆角需要)。**透明 ArkWeb 露出的是窗口表面,不是 z 序下层的 ArkUI 兄弟节点**——所以像素最终落在黑色窗口表面(初版修复用 Index.ets `Stack` 垫底,实测无效,已回退)。
 
-**修复**(两处 ArkTS 后置补丁,模板在 `src-tauri/ohos/`,同步到 gitignored 的 `gen/ohos/`;重跑 `ohos init` 后用模板重打):
+**修复**(webview 组件背景 = 主题底色):
 
 | 位置 | 变更 |
 |---|---|
-| `EntryAbility.ets` | 新增 `applyBaseColor(colorMode)`:**暗色 -> `#000000`,其余 -> `#ffffff`**;`setWindowBackgroundColor` 刷窗口表面,并写 `AppStorage('ohosBaseDark')`;`onWindowStageCreate`(loadContent 之前)与 `onConfigurationUpdate` 各调一次,系统深浅色切换实时跟随 |
-| `pages/Index.ets` | `Stack()` 底层加同色 `Column`(`@StorageProp('ohosBaseDark')` 驱动):透明 webview 之下始终有底色,首帧不再是黑的 |
+| `DefaultXComponent.ets`(vendored `@ohos-rs/ability`,`src-tauri/vendor/openharmony-ability/`) | `transparent && !backgroundColor` 时 webview 背景由 `Color.Transparent` 改为 `ohosThemeBackgroundColor()`(读 `AppStorage('ohosBaseDark')`:暗→`Color.Black`,其余→`Color.White`);`@StorageProp('ohosBaseDark') + @Watch` 在系统深浅色切换时对已建 webview 实时 `updateWebviewStyle` 重刷背景(主 webview 记 `mainWebTag`;嵌入式 webview 只取建时颜色) |
+| `EntryAbility.ets`(模板 `src-tauri/ohos/`) | `applyBaseColor(colorMode)`:写 `AppStorage('ohosBaseDark')`(DefaultXComponent 消费)+ `setWindowBackgroundColor` best-effort(该 API 在 phone/tablet/2in1 被 SDK 标记不可用,`void` 返回值不能 `.catch()`,try/catch 包裹);`onWindowStageCreate`(loadContent 前)与 `onConfigurationUpdate` 各调一次 |
+| `pages/Index.ets` | 回退到原始 `Row/Column + DefaultXComponent`(Stack 垫底无效) |
 
-**未做**:不改 `transparent`(桌面圆角依赖它),也不给 ArkWeb 传固定 `background_color`(无法随主题变化)。若真机仍见黑块,说明 ArkWeb 的透明 surface 没有与 ArkUI 层合成,退路是在 `lib.rs` 建窗时用 `WebviewWindowBuilder::background_color` 给组件一次性不透明底色(仅在启动时深浅色正确)。
+**同步注意(流程坑,2026-11-02 实证)**:构建解析到的 `gen/ohos/oh_modules/.ohpm/@ohos-rs+ability@0.4.0-beta.0/…` 是 **ohpm 仓库发布的 0.4.0-beta.0**(lock: `https://ohpm.openharmony.cn/…/ability-0.4.0-beta.0.har`,sha512 `de35c5d1…a884`),**与 `src-tauri/vendor/openharmony-ability/` 的 master pin 不是同一份代码**(旧版无 `helper/permission`/`EmbeddedWebviewManager`/`updateWebviewStyle`,controller 走 `getWebviewNode().update(init)`);把 master 文件整拷过去会直接打挂 `CompileArkTS`(实测 11 错)。补丁必须**按各自 API 分别打**:`.ohpm` 版改 `init.style!.backgroundColor` + `getWebviewNode(tag).update(init)`;vendored master 版改同分支 + `updateWebviewStyle`。**ohpm 重装会把 `.ohpm` 副本还原成仓库版,补丁即丢失**——重装后需按本节重打(建议后续改为 `file:` 指向 vendored 打好的 har,消除该坑)。`gen/ohos/` 内的 EntryAbility/Index 同理,重跑 `cargo tauri ohos init` 后用模板重打。
 
-**验证待办**:2in1 与平板各跑一次冷启动(暗色 + 浅色各一次),并实测系统深浅色切换。
+**未做**:不改 `transparent`(桌面圆角依赖)。若将来 tauri/wry 链能透传 `background_color`,可以回到配置式方案。
+
+**验证待办**:2in1 与平板各跑冷启动(暗色 + 浅色各一次),实测系统深浅色切换实时跟随;build 已通过 hvigor `CompileArkTS`。
 
 ### Phase 0 — 技术验证(1~2 周)
 - [x] 全量平台门控审计与修正(本分支)

@@ -17,6 +17,20 @@ import {
 } from "../webview/DefaultWebview";
 
 export const RouteName = "NativeAbility";
+
+// Theme base color for the webview surface. tauri.conf.json keeps
+// `transparent: true` (the desktop frameless window needs it), which used to
+// force the ArkWeb component background to Color.Transparent here; pixels the
+// page has not painted yet then showed the WINDOW surface - black on OHOS -
+// because a transparent ArkWeb reveals the window, not the ArkUI siblings
+// behind it (docs HARMONYOS_PORTING.md 6.25). Paint the theme base color
+// instead. EntryAbility seeds AppStorage('ohosBaseDark') from the system
+// color mode before the page loads and on every onConfigurationUpdate, and
+// the @StorageProp below follows it live.
+const ohosThemeBackgroundColor = (): string => {
+  return AppStorage.get<boolean>('ohosBaseDark') === false ? '#ffffff' : '#000000';
+};
+
 @Component
 export struct DefaultXComponent {
   moduleName: string = "";
@@ -24,6 +38,10 @@ export struct DefaultXComponent {
   private webviewController = new RustWebviewNodeController(this.getUIContext());
   private embeddedWebviewManager = new EmbeddedWebviewManager(this.getUIContext());
   private nativeModule: ESObject;
+  // Webview created last through createWebview; used to push live theme
+  // changes into its background style.
+  private mainWebTag: string | null = null;
+  @StorageProp("ohosBaseDark") @Watch("onBaseDarkChanged") baseDark: boolean = true;
   private helper: ArkHelper = {
     exit,
     requestPermission: async (permission: string | string[]): Promise<number | number[]> => {
@@ -71,9 +89,10 @@ export struct DefaultXComponent {
       init.style = init.style || {};
 
       if (data?.transparent && !init.style.backgroundColor) {
-        init.style.backgroundColor = Color.Transparent;
+        init.style.backgroundColor = ohosThemeBackgroundColor();
       }
       const ret = this.webviewController.addWebview(init);
+      this.mainWebTag = ret.webTag;
       const applyStyle = (style: WebviewStyle) => {
         objectAssign(init.style as Record<string, ESObject>, style);
         this.webviewController.updateWebviewStyle(ret.webTag, init.style as WebviewStyle);
@@ -121,7 +140,7 @@ export struct DefaultXComponent {
       init.style = init.style || {};
 
       if (data?.transparent && !init.style.backgroundColor) {
-        init.style.backgroundColor = Color.Transparent;
+        init.style.backgroundColor = ohosThemeBackgroundColor();
       }
 
       const ret = this.embeddedWebviewManager.createWebview(init);
@@ -146,6 +165,18 @@ export struct DefaultXComponent {
     },
   };
   @StorageProp("loadMode") loadMode: "async" | "sync" = "async";
+
+  // Live theme change: repaint the already-created webview's background
+  // (docs 6.25). Embedded webviews only get the creation-time color.
+  onBaseDarkChanged(): void {
+    const tag = this.mainWebTag;
+    if (tag === null) {
+      return;
+    }
+    this.webviewController.updateWebviewStyle(tag, {
+      backgroundColor: this.baseDark ? '#000000' : '#ffffff',
+    } as WebviewStyle);
+  }
 
   async aboutToAppear(): Promise<void> {
     const moduleName = this.moduleName.trim();
