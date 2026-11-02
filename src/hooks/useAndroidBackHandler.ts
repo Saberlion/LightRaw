@@ -90,13 +90,15 @@ export function useAndroidBackHandler() {
         return;
       }
 
-      // Touch tablets: the adjustments/folder drawer behaves like an overlay, so
-      // the back gesture closes it before leaving the library/editor (desktop
-      // panels are permanent columns and must not respond to back).
+      // Touch form factors: the adjustments/folder drawer behaves like an
+      // overlay, so the back gesture closes it before leaving the
+      // library/editor (desktop panels are permanent columns and must not
+      // respond to back). Phones only hit this in landscape / free windows,
+      // where the same rail + drawer layout is used.
       const settings = useSettingsStore.getState();
       if (
         settings.isOhos &&
-        settings.ohosDeviceType === 'tablet' &&
+        (settings.ohosDeviceType === 'tablet' || settings.ohosDeviceType === 'phone') &&
         ui.uiVisibility.rightPanel &&
         window.innerWidth >= 700
       ) {

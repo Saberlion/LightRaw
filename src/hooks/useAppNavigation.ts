@@ -562,7 +562,15 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         // OHOS: tauri-plugin-dialog is excluded (its rfd backend has no
         // OpenHarmony support); the ArkTS DocumentViewPicker bridge returns
         // the picked folder path (null when the user cancelled).
-        selectedPath = (await invoke<string | null>(Invokes.PickOhosFolder)) ?? '';
+        // Phones cannot persist folder grants (2in1-only, docs 6.14/6.22), so
+        // a picker on every cold start would be the only way in. Their natural
+        // entry is the album, so land in the app's internal library root; the
+        // library's own "add folder" action still offers the picker.
+        const deviceType = useSettingsStore.getState().ohosDeviceType;
+        selectedPath =
+          deviceType === 'phone'
+            ? await invoke<string>(Invokes.GetOrCreateInternalLibraryRoot)
+            : ((await invoke<string | null>(Invokes.PickOhosFolder)) ?? '');
       } else {
         const selected = await open({ directory: true, multiple: false, defaultPath: await homeDir() });
         if (typeof selected === 'string') {

@@ -283,8 +283,11 @@ function App() {
   const isAndroid = osPlatform === 'android';
   // OpenHarmony form factor: tablets are touch-first and keep the desktop
   // three-column layout out of the way (rail + drawer); 2in1 keeps desktop.
+  // Phones reuse the Android phone rules (compact bottom sheet in portrait,
+  // wide in landscape, full only on a genuinely desktop-sized viewport).
   const isOhosTablet = isOhos && ohosDeviceType === 'tablet';
-  const isTouchUi = isAndroid || isOhosTablet;
+  const isOhosPhone = isOhos && ohosDeviceType === 'phone';
+  const isTouchUi = isAndroid || isOhosTablet || isOhosPhone;
   const COMPACT_EDITOR_MAX_WIDTH = 900;
   const ANDROID_COMPACT_MAX_WIDTH = 600;
   const ANDROID_FULL_MIN_WIDTH = 1000;
@@ -292,7 +295,8 @@ function App() {
   const isPortraitViewport = viewportSize.width > 0 && viewportSize.height > viewportSize.width;
 
   type LayoutMode = 'compact' | 'wide' | 'full';
-  const layoutMode: LayoutMode = isAndroid
+  const usePhoneLayout = isAndroid || isOhosPhone;
+  const layoutMode: LayoutMode = usePhoneLayout
     ? viewportSize.width >= ANDROID_FULL_MIN_WIDTH
       ? 'full'
       : isPortraitViewport && viewportSize.width < ANDROID_COMPACT_MAX_WIDTH
@@ -1137,8 +1141,7 @@ function App() {
 }
 
 const AppWrapper = () => {
-  useEffect(() => {
-  }, []);
+  useEffect(() => {}, []);
 
   return (
     <ContextMenuProvider>

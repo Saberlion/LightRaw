@@ -280,6 +280,16 @@ pub fn get_ohos_color_mode() -> Option<bool> {
     }
 }
 
+/// Phone form factor check used by the export pipeline: phones have no
+/// user-reachable working directory (the library root is the app sandbox after
+/// album import, and folder grants do not persist there), so exports go to the
+/// system gallery instead of a direct file write.
+/// See `docs/HARMONYOS_PHONE_PLAN.md` §4.3.
+#[cfg(target_env = "ohos")]
+pub fn is_phone_form_factor() -> bool {
+    system_bridge::device_type().as_deref() == Some("phone")
+}
+
 /// OHOS device form factor ("phone" | "tablet" | "2in1" | …) as reported by
 /// ArkTS `deviceInfo`, or `None` before the ArkTS bridge has registered (and
 /// on every other platform). The frontend picks its layout mode from this:

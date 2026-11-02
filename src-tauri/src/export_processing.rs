@@ -1194,23 +1194,32 @@ fn save_image_with_metadata(
         }
         #[cfg(target_env = "ohos")]
         {
-            // Prefer a direct write to the destination: it is a public
-            // directory the user granted through the folder picker (custom
-            // folder) or the source's own folder (original folder), and the
-            // .rrdata sidecars already write to the same trees. Fall back to
-            // the gallery bridge only when the destination is not writable
-            // (e.g. a grant that expired after a reboot).
-            let direct = (|| -> std::io::Result<()> {
-                if let Some(parent) = output_path.parent() {
-                    if !parent.as_os_str().is_empty() {
-                        std::fs::create_dir_all(parent)?;
+            // Phones have no user-reachable working directory: the library
+            // root is usually the app sandbox (album import) and folder
+            // grants do not persist there, so exports must land in the
+            // system gallery. Other form factors prefer a direct write to
+            // the destination: it is a public directory the user granted
+            // through the folder picker (custom folder) or the source's own
+            // folder (original folder), and the .rrdata sidecars already
+            // write to the same trees. The gallery bridge is the fallback
+            // when the destination is not writable (e.g. a grant that
+            // expired after a reboot).
+            let is_phone = crate::ohos_integration::is_phone_form_factor();
+            let direct = if is_phone {
+                Err(std::io::Error::other("phone form factor"))
+            } else {
+                (|| -> std::io::Result<()> {
+                    if let Some(parent) = output_path.parent() {
+                        if !parent.as_os_str().is_empty() {
+                            std::fs::create_dir_all(parent)?;
+                        }
                     }
-                }
-                std::fs::write(output_path, &image_bytes)
-            })();
+                    std::fs::write(output_path, &image_bytes)
+                })()
+            };
             if let Err(e) = direct {
                 log::warn!(
-                    "OHOS direct export write to '{}' failed ({}), falling back to the gallery bridge",
+                    "OHOS export to '{}' via the gallery bridge instead of a direct write ({})",
                     output_path.display(),
                     e
                 );
@@ -1590,20 +1599,26 @@ fn export_masks_for_image(
                 }
                 #[cfg(target_env = "ohos")]
                 {
-                    // Same direct-write policy as save_image_with_metadata:
-                    // land next to the exported mask in the public
-                    // destination, gallery bridge only as a fallback.
-                    let direct = (|| -> std::io::Result<()> {
-                        if let Some(parent) = mask_alpha_path.parent() {
-                            if !parent.as_os_str().is_empty() {
-                                std::fs::create_dir_all(parent)?;
+                    // Same policy as save_image_with_metadata: phones always
+                    // go through the gallery (no reachable working folder);
+                    // other form factors land next to the exported mask in
+                    // the public destination.
+                    let is_phone = crate::ohos_integration::is_phone_form_factor();
+                    let direct = if is_phone {
+                        Err(std::io::Error::other("phone form factor"))
+                    } else {
+                        (|| -> std::io::Result<()> {
+                            if let Some(parent) = mask_alpha_path.parent() {
+                                if !parent.as_os_str().is_empty() {
+                                    std::fs::create_dir_all(parent)?;
+                                }
                             }
-                        }
-                        std::fs::write(&mask_alpha_path, &alpha_bytes)
-                    })();
+                            std::fs::write(&mask_alpha_path, &alpha_bytes)
+                        })()
+                    };
                     if let Err(e) = direct {
                         log::warn!(
-                            "OHOS direct mask-alpha write to '{}' failed ({}), falling back to the gallery bridge",
+                            "OHOS mask-alpha export to '{}' via the gallery bridge instead of a direct write ({})",
                             mask_alpha_path.display(),
                             e
                         );
