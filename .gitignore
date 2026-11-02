@@ -41,6 +41,12 @@ src-tauri/libs/
 **/keystore.jks
 **/key.properties
 
+# local test assets: real camera RAW samples (~390 MB) + generated JPEGs.
+# Only MANIFEST.md is tracked; rebuild binaries via scripts/fetch-test-assets.ps1
+# and scripts/make-jpeg-test-assets.ps1.
+test-assets/*
+!test-assets/MANIFEST.md
+
 # HarmonyOS signing material: private key (.p12), certs, profiles, material keys,
 # and the un-tracked signing recipe doc. NEVER commit.
 .csr/
