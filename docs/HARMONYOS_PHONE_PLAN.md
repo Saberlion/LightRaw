@@ -64,8 +64,8 @@
 | ② | 触控形态 | `isTouchUi = isAndroid \|\| isOhosTablet \|\| isOhosPhone` | ✅ 已改 |
 | ③ | 布局路由 | `usePhoneLayout = isAndroid \|\| isOhosPhone`，复用 Android 规则：`≥1000` → full，竖屏 `<600` → compact，其余 → wide | ✅ 已改 |
 | ④ | 返回手势 | 抽屉浮层关闭分支从 `tablet` 扩到 `tablet \| phone` | ✅ 已改 |
-| ⑤ | 首次进入不逼用户选目录 | `useAppNavigation.handleOpenFolder()` 的 OHOS 分支：`phone` 形态直接落 `get_or_create_internal_library_root()`（应用内库根），库内「添加文件夹」仍可拉起 picker | ✅ 已改（按钮文案建议后续改「导入照片」，需 15 locale 同步） |
-| ⑥ | 导出落点 | `export_processing.rs`：`device_type == "phone"` 时跳过直写，直接走图库桥（`save_image_bytes_to_ohos_gallery`）；2in1/平板行为不变 | ✅ 已改 |
+| ⑤ | 首次进入不逼用户选目录 | `handleOpenFolder(intent)`:欢迎页主入口传 `'open'`(手机落应用内库根),「添加文件夹」与已有库时的按钮传 `'add'`(照常拉起 FileKit picker)——两个语义不再共用一条路径 | ✅ 已改(按钮文案建议后续改「导入照片」,需 15 locale 同步) |
+| ⑥ | 导出落点 | `export_processing.rs`:**导出目标位于应用沙箱内**(`app_data_dir` / `app_cache_dir` 前缀,即手机内部库根或其上的"原始文件夹")→ 走图库桥;用户显式选择的公共目录照常直写。判定与形态无关,同时修掉 2in1/平板上同一隐患 | ✅ 已改 |
 | ⑦ | 安全区 | 把 `getWindowAvoidArea` 的 top/bottom 通过新命令 `get_ohos_avoid_area` 传给前端，用 CSS 变量做 `padding-top/bottom`（ArkWeb 的 `env(safe-area-inset-*)` 不可依赖） | ⬜ 待做 |
 
 ### 4.2 P1 —— 手机上"好用"
@@ -102,8 +102,9 @@
 src/App.tsx                          + isOhosPhone / isTouchUi 纳入 phone
                                      + usePhoneLayout 复用 Android 三档规则
 src/hooks/useAndroidBackHandler.ts   + 抽屉返回关闭覆盖 phone
-src/hooks/useAppNavigation.ts        + phone 首进落应用内库根（不强制选目录）
-src-tauri/src/export_processing.rs   + phone 导出强制走图库桥（图片 + 蒙版 alpha 两条路径）
+src/hooks/useAppNavigation.ts        + handleOpenFolder(intent)：'open'（手机落应用内库根）与 'add'（picker）分离
+src/components/panel/MainLibrary.tsx + 欢迎页按钮按 hasLastPath 传 intent
+src-tauri/src/export_processing.rs   + export_destination_is_sandboxed()：目标在应用沙箱内 → 图库桥（图片 + 蒙版 alpha）
 src-tauri/gen/ohos/entry/src/main/module.json5  deviceTypes += "phone"（本地生成文件）
 ```
 
@@ -125,6 +126,15 @@ src-tauri/gen/ohos/entry/src/main/module.json5  deviceTypes += "phone"（本地�
 | PC（2in1） | `deviceType=2in1 mode=full touchUi=false` | ✅ 与改动前一致 |
 | 平板（tablet） | `deviceType=tablet mode=wide touchUi=true` | ✅ 与改动前一致 |
 | 平板导出 | `Batch Export … → process_image_for_export`，**无** `via the gallery bridge` 告警，成品直写库目录 | ✅ 直写路径未被电话分支影响 |
+
+导出路由修复后的定向验证（2026-11-02，2in1，`export_destination_is_sandboxed()` 版本）：
+
+| 场景 | 结果 |
+|---|---|
+| 目标 = 公共目录（`/storage/Users/currentUser/Download`） | ✅ `regression_directwrite.jpg` 直写落盘，日志零告警 |
+| 目标 = 应用沙箱（`…/files/appdata/library`） | ✅ 日志 `OHOS export to '…' via the gallery bridge instead of a direct write (destination is inside the app sandbox)`，沙箱内**未**创建任何文件 |
+
+> 平板(GEM-W40)在 2026-11-02 晨间断开,本轮回归在 2in1 上执行;两条路径(直写/图库桥)覆盖了同一代码分支,平板重连后按 TC-PAD-06/07 顺带复测即可。
 
 ---
 

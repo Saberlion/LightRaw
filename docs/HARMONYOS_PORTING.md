@@ -1067,8 +1067,8 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 |---|---|
 | 前端形态路由 | `App.tsx`:`isOhosPhone = isOhos && deviceType === 'phone'`;`isTouchUi` 纳入 phone;`layoutMode` 复用 Android 三档规则(竖屏 <600 → compact、≥1000 → full、其余 wide) |
 | 返回手势 | `useAndroidBackHandler.ts`:抽屉浮层关闭分支由 `tablet` 扩到 `tablet \| phone` |
-| 首次进入 | `useAppNavigation.handleOpenFolder()`:手机直接落 `get_or_create_internal_library_root()`(应用内库根),不再强制选目录;库内「添加文件夹」仍可拉起 FileKit picker |
-| 导出落点 | `export_processing.rs`:新增 `is_phone_form_factor()`(`ohos_integration.rs`),手机跳过直写、直接走 `save_image_bytes_to_ohos_gallery`(图片与蒙版 alpha 两条路径);2in1/平板行为不变 |
+| 首次进入 | `handleOpenFolder(intent)`:欢迎页主入口(`'open'`)在手机上落 `get_or_create_internal_library_root()`,「添加文件夹」(`'add'`)仍拉起 FileKit picker(两个语义此前共用一条路径,2026-11-02 复查后拆分) |
+| 导出落点 | `export_processing.rs`:新增 `export_destination_is_sandboxed()` —— 导出目标位于应用沙箱内(手机内部库根、或其上的"原始文件夹")时走图库桥,图片与蒙版 alpha 两条路径;用户显式选择的公共目录照常直写。判定与形态无关,同时修掉 2in1/平板同一隐患(此前为 `is_phone_form_factor()` 一刀切,会忽略用户显式选择的目录,已废弃) |
 | 打包形态 | `module.json5` 的 `deviceTypes` 增 `"phone"`(`gen/` 本地修改,`cargo tauri ohos init` 重跑后需重打;AGC 控制台须同步勾选手机) |
 
 **验证边界**:本轮无手机实机,仅验证宿主 `fmt`/`clippy`、aarch64 交叉编译、以及 2in1/平板回归(布局与导出行为未变)。手机侧 P0 用例见计划文档 §6。

@@ -86,7 +86,7 @@ interface MainLibraryProps {
   /** OHOS only: open the system gallery picker instead of FileKit. */
   onImportFromAlbum?: () => void;
   onLibraryRefresh(): void;
-  onOpenFolder(): void;
+  onOpenFolder(intent?: 'open' | 'add'): void;
   onSettingsChange(settings: AppSettings): Promise<void>;
   onThumbnailAspectRatioChange(aspectRatio: ThumbnailAspectRatio): void;
   onThumbnailSizeChange(size: ThumbnailSize): void;
@@ -398,7 +398,7 @@ export default function MainLibrary(props: MainLibraryProps) {
                           className={`rounded-md grow flex justify-center items-center shadow-md h-11 transition-transform duration-200 hover:scale-[1.01] active:scale-[.98] ${
                             hasLastPath ? 'bg-surface text-text-primary' : ''
                           }`}
-                          onClick={props.onOpenFolder}
+                          onClick={() => props.onOpenFolder(hasLastPath ? 'add' : 'open')}
                           size="lg"
                         >
                           <Folder size={20} className="mr-2" />

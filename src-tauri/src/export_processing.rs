@@ -1152,6 +1152,21 @@ fn set_timestamps_from_exif(src: &Path, dst: &Path) {
     }
 }
 
+/// An export must never land inside the app sandbox: files written there are
+/// invisible to the user (no file-manager access). A phone's library root is
+/// usually the internal library root (album imports), and any form factor can
+/// end up with a sandboxed destination via "original folder" on such a library
+/// - those exports go to the system gallery instead. User-granted public
+/// folders keep the direct write.
+#[cfg(target_env = "ohos")]
+fn export_destination_is_sandboxed(app_handle: &tauri::AppHandle, path: &std::path::Path) -> bool {
+    let under = |base: tauri::Result<std::path::PathBuf>| {
+        base.map(|b| path.starts_with(&b)).unwrap_or(false)
+    };
+    under(crate::app_paths::app_data_dir(app_handle))
+        || under(crate::app_paths::app_cache_dir(app_handle))
+}
+
 fn save_image_with_metadata(
     image: &DynamicImage,
     output_path: &std::path::Path,
@@ -1194,19 +1209,21 @@ fn save_image_with_metadata(
         }
         #[cfg(target_env = "ohos")]
         {
-            // Phones have no user-reachable working directory: the library
-            // root is usually the app sandbox (album import) and folder
-            // grants do not persist there, so exports must land in the
-            // system gallery. Other form factors prefer a direct write to
-            // the destination: it is a public directory the user granted
-            // through the folder picker (custom folder) or the source's own
-            // folder (original folder), and the .rrdata sidecars already
-            // write to the same trees. The gallery bridge is the fallback
-            // when the destination is not writable (e.g. a grant that
-            // expired after a reboot).
-            let is_phone = crate::ohos_integration::is_phone_form_factor();
-            let direct = if is_phone {
-                Err(std::io::Error::other("phone form factor"))
+            // A destination inside the app sandbox (phone internal library,
+            // "original folder" on such a library) must go to the system
+            // gallery - files written into the sandbox are invisible to the
+            // user. Everything else prefers a direct write to the
+            // destination: it is a public directory the user granted through
+            // the folder picker (custom folder) or the source's own folder
+            // (original folder), and the .rrdata sidecars already write to
+            // the same trees. The gallery bridge is the fallback when the
+            // destination is not writable (e.g. a grant that expired after a
+            // reboot).
+            let via_gallery = export_destination_is_sandboxed(_app_handle, output_path);
+            let direct = if via_gallery {
+                Err(std::io::Error::other(
+                    "destination is inside the app sandbox",
+                ))
             } else {
                 (|| -> std::io::Result<()> {
                     if let Some(parent) = output_path.parent() {
@@ -1599,13 +1616,15 @@ fn export_masks_for_image(
                 }
                 #[cfg(target_env = "ohos")]
                 {
-                    // Same policy as save_image_with_metadata: phones always
-                    // go through the gallery (no reachable working folder);
-                    // other form factors land next to the exported mask in
-                    // the public destination.
-                    let is_phone = crate::ohos_integration::is_phone_form_factor();
-                    let direct = if is_phone {
-                        Err(std::io::Error::other("phone form factor"))
+                    // Same policy as save_image_with_metadata: a sandboxed
+                    // destination (phone internal library, "original folder"
+                    // on such a library) goes to the gallery; public folders
+                    // keep the direct write.
+                    let via_gallery = export_destination_is_sandboxed(app_handle, &mask_alpha_path);
+                    let direct = if via_gallery {
+                        Err(std::io::Error::other(
+                            "destination is inside the app sandbox",
+                        ))
                     } else {
                         (|| -> std::io::Result<()> {
                             if let Some(parent) = mask_alpha_path.parent() {

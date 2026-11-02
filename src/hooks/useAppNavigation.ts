@@ -549,66 +549,74 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
     }
   }, [handleSelectSubfolder, handleSelectAlbum]);
 
-  const handleOpenFolder = useCallback(async () => {
-    const { osPlatform, isOhos, appSettings, handleSettingsChange } = useSettingsStore.getState();
-    const { rootPaths, folderTrees, setLibrary } = useLibraryStore.getState();
-    const isAndroid = osPlatform === 'android';
+  // intent: 'open' = the welcome splash's primary entry (first run / "open
+  // library"), 'add' = explicit add-folder. Phones resolve 'open' to the
+  // internal library root; 'add' always opens the system folder picker.
+  const handleOpenFolder = useCallback(
+    async (intent: 'open' | 'add' = 'add') => {
+      const { osPlatform, isOhos, appSettings, handleSettingsChange } = useSettingsStore.getState();
+      const { rootPaths, folderTrees, setLibrary } = useLibraryStore.getState();
+      const isAndroid = osPlatform === 'android';
 
-    try {
-      let selectedPath = '';
-      if (isAndroid) {
-        selectedPath = await invoke<string>(Invokes.GetOrCreateInternalLibraryRoot);
-      } else if (isOhos) {
-        // OHOS: tauri-plugin-dialog is excluded (its rfd backend has no
-        // OpenHarmony support); the ArkTS DocumentViewPicker bridge returns
-        // the picked folder path (null when the user cancelled).
-        // Phones cannot persist folder grants (2in1-only, docs 6.14/6.22), so
-        // a picker on every cold start would be the only way in. Their natural
-        // entry is the album, so land in the app's internal library root; the
-        // library's own "add folder" action still offers the picker.
-        const deviceType = useSettingsStore.getState().ohosDeviceType;
-        selectedPath =
-          deviceType === 'phone'
+      try {
+        let selectedPath = '';
+        if (isAndroid) {
+          selectedPath = await invoke<string>(Invokes.GetOrCreateInternalLibraryRoot);
+        } else if (isOhos) {
+          // OHOS: tauri-plugin-dialog is excluded (its rfd backend has no
+          // OpenHarmony support); the ArkTS DocumentViewPicker bridge returns
+          // the picked folder path (null when the user cancelled).
+          // intent distinguishes the two call sites: 'open' is the welcome
+          // splash's primary entry (a phone cannot persist folder grants and
+          // its album imports land in the internal library root, so the phone
+          // opens that instead of forcing a picker on every cold start),
+          // while 'add' - the folder tree's add-folder button, and any splash
+          // tap when a library already exists - always offers the picker.
+          const deviceType = useSettingsStore.getState().ohosDeviceType;
+          const toInternalRoot = intent === 'open' && deviceType === 'phone';
+          selectedPath = toInternalRoot
             ? await invoke<string>(Invokes.GetOrCreateInternalLibraryRoot)
             : ((await invoke<string | null>(Invokes.PickOhosFolder)) ?? '');
-      } else {
-        const selected = await open({ directory: true, multiple: false, defaultPath: await homeDir() });
-        if (typeof selected === 'string') {
-          selectedPath = selected;
-        }
-      }
-
-      if (selectedPath) {
-        if (!rootPaths.includes(selectedPath)) {
-          const newRootPaths = [...rootPaths, selectedPath];
-          setLibrary({ rootPaths: newRootPaths });
-
-          if (appSettings) {
-            handleSettingsChange({ ...appSettings, rootFolders: newRootPaths } as any);
-          }
-
-          setLibrary({ isTreeLoading: true });
-          try {
-            const newTree = await invoke(Invokes.GetFolderTree, {
-              path: selectedPath,
-              expandedFolders: [selectedPath],
-              showImageCounts:
-                appSettings?.enableFolderImageCounts || appSettings?.folderTreeSort?.key === 'imageCount',
-            });
-            setLibrary({ folderTrees: [...folderTrees, newTree] });
-          } catch (e) {
-            toast.error(`Failed to load folder tree: ${e}`);
-          } finally {
-            setLibrary({ isTreeLoading: false });
+        } else {
+          const selected = await open({ directory: true, multiple: false, defaultPath: await homeDir() });
+          if (typeof selected === 'string') {
+            selectedPath = selected;
           }
         }
-        await handleSelectSubfolder(selectedPath, true);
+
+        if (selectedPath) {
+          if (!rootPaths.includes(selectedPath)) {
+            const newRootPaths = [...rootPaths, selectedPath];
+            setLibrary({ rootPaths: newRootPaths });
+
+            if (appSettings) {
+              handleSettingsChange({ ...appSettings, rootFolders: newRootPaths } as any);
+            }
+
+            setLibrary({ isTreeLoading: true });
+            try {
+              const newTree = await invoke(Invokes.GetFolderTree, {
+                path: selectedPath,
+                expandedFolders: [selectedPath],
+                showImageCounts:
+                  appSettings?.enableFolderImageCounts || appSettings?.folderTreeSort?.key === 'imageCount',
+              });
+              setLibrary({ folderTrees: [...folderTrees, newTree] });
+            } catch (e) {
+              toast.error(`Failed to load folder tree: ${e}`);
+            } finally {
+              setLibrary({ isTreeLoading: false });
+            }
+          }
+          await handleSelectSubfolder(selectedPath, true);
+        }
+      } catch (err) {
+        console.error(isAndroid ? 'Failed to open Android library root:' : 'Failed to open directory dialog:', err);
+        toast.error(isAndroid ? 'Failed to open library.' : 'Failed to open folder selection dialog.');
       }
-    } catch (err) {
-      console.error(isAndroid ? 'Failed to open Android library root:' : 'Failed to open directory dialog:', err);
-      toast.error(isAndroid ? 'Failed to open library.' : 'Failed to open folder selection dialog.');
-    }
-  }, [handleSelectSubfolder]);
+    },
+    [handleSelectSubfolder],
+  );
 
   const handleContinueSession = () => {
     const restore = async () => {
