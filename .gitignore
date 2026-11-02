@@ -69,3 +69,6 @@ npu-models/eval/**/*.jpg
 
 # agent-session scratch data (plans / run-continuation / ultraresearch)
 .omo/
+
+# docs/ is its own repository: https://github.com/SaberLion/LightRaw-docs
+/docs/
