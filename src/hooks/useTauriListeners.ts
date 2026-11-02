@@ -87,6 +87,18 @@ export function useTauriListeners({
     let aiTaggingJobId: string | null = null;
     const modelDownloadJobIds: Record<string, string> = {};
 
+    // Seed the AI job state (and the per-thumbnail badges) from the
+    // authoritative backend status once; the ai-jobs-status listener
+    // reconciles them afterwards.
+    invoke<AiJobsStatus>(Invokes.GetAiJobsStatus)
+      .then((status) => {
+        if (!isEffectActive) return;
+        const pendingPaths: Record<string, true> = {};
+        for (const path of status.pending || []) pendingPaths[path] = true;
+        useProcessStore.getState().setProcess({ aiJobs: status, aiPendingPaths: pendingPaths });
+      })
+      .catch(() => undefined);
+
     const flushThumbnailBatch = () => {
       flushHandle.current = null;
       if (!isEffectActive) return;
@@ -364,7 +376,14 @@ export function useTauriListeners({
         event.payload.failed
           .filter((job) => job.path === selectedPath && !aiJobs.failed.some((prev) => prev.path === job.path))
           .forEach((job) => toast.error(`AI Processing Failed: ${job.error}`));
-        setProcess({ aiJobs: event.payload });
+        // Reconcile the per-thumbnail badges against the authoritative
+        // pending set instead of relying on incremental ai-jobs-pending
+        // events alone - a missed event (or a restart between add/remove)
+        // used to leave stale spinner badges, and their perpetual CSS
+        // animations, behind (docs CPU_IDLE_SPINNERS.md).
+        const pendingPaths: Record<string, true> = {};
+        for (const path of event.payload.pending || []) pendingPaths[path] = true;
+        setProcess({ aiJobs: event.payload, aiPendingPaths: pendingPaths });
       }),
       listen<{ added: string[]; removed: string[]; resolved: boolean }>('ai-jobs-pending', (event) => {
         if (!isEffectActive) return;

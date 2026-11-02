@@ -274,7 +274,11 @@ export default function MainLibrary(props: MainLibraryProps) {
     [t],
   );
 
-  const hasThumbnailWork = useProcessStore((state) => (state.thumbnailProgress?.total ?? 0) > 0);
+  const hasThumbnailWork = useProcessStore(
+    (state) =>
+      (state.thumbnailProgress?.total ?? 0) > 0 &&
+      (state.thumbnailProgress?.current ?? 0) < (state.thumbnailProgress?.total ?? 0),
+  );
   const isGeneratingThumbnails = useProcessStore(
     (state) =>
       (state.thumbnailProgress?.total ?? 0) > 0 &&
@@ -299,6 +303,23 @@ export default function MainLibrary(props: MainLibraryProps) {
       setIsBusyLoaderMounted(true);
     }
   }, [isBusyDelayed]);
+
+  // Stall containment (docs CPU_IDLE_SPINNERS.md): a busy state that stops
+  // making progress (a hung decode job, a folder load that never settles)
+  // used to spin this loader forever, and a single perpetual CSS animation
+  // pins the whole page to a 60fps style/layout/paint lifecycle (~53% of a
+  // core while idle). Cap the animation after 30s without progress; genuine
+  // work keeps restarting the timer through the thumbnail progress ticks.
+  const thumbnailTick = useProcessStore((state) => state.thumbnailProgress?.current ?? 0);
+  const [isSpinCapped, setIsSpinCapped] = useState(false);
+  useEffect(() => {
+    if (!isBusyDelayed) {
+      setIsSpinCapped(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setIsSpinCapped(true), 30000);
+    return () => clearTimeout(timer);
+  }, [isBusyDelayed, thumbnailTick]);
 
   useEffect(() => {
     const loadAppVersion = async () => {
@@ -546,7 +567,12 @@ export default function MainLibrary(props: MainLibraryProps) {
                       }
                     }}
                   >
-                    {isBusyLoaderMounted && <Loader2 size={14} className="animate-spin text-text-secondary shrink-0" />}
+                    {isBusyLoaderMounted && (
+                      <Loader2
+                        size={14}
+                        className={`${isSpinCapped ? '' : 'animate-spin'} text-text-secondary shrink-0`}
+                      />
+                    )}
                     <div
                       className={`flex items-center transition-all duration-300 ease-out overflow-hidden ${
                         isProgressHovered && isBusyDelayed && hasThumbnailWork

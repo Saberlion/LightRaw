@@ -298,7 +298,9 @@ const FilmstripThumbnail = memo(
               {isAiPaused ? (
                 <Pause size={12} className="text-white" />
               ) : (
-                <Loader2 size={12} className="text-white animate-spin" />
+                // Static on purpose (docs CPU_IDLE_SPINNERS.md): perpetual CSS
+                // animations pin the page to a 60fps paint lifecycle.
+                <Loader2 size={12} className="text-white" />
               )}
             </div>
           </div>

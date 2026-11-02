@@ -31,6 +31,8 @@ export interface AiJobsStatus {
   completed: number;
   paused: boolean;
   failed: Array<{ path: string; error: string }>;
+  /** Authoritative pending-path set; badges reconcile against this. */
+  pending: string[];
 }
 
 export enum JobKind {
@@ -179,7 +181,7 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
   initialFileToOpen: null,
   externalEditSession: null,
   activeAiTasks: {},
-  aiJobs: { current: null, queued: 0, completed: 0, paused: false, failed: [] },
+  aiJobs: { current: null, queued: 0, completed: 0, paused: false, failed: [], pending: [] },
   aiPendingPaths: {},
   jobs: {},
   jobsSeenAt: Date.now(),

@@ -369,7 +369,10 @@ const ThumbnailComponent = ({
             {isAiPaused ? (
               <Pause size={12} className="text-white" />
             ) : (
-              <Loader2 size={12} className="text-white animate-spin" />
+              // Static on purpose (docs CPU_IDLE_SPINNERS.md): this badge is
+              // rendered once per thumbnail, and perpetual CSS animations pin
+              // the whole page to a 60fps style/layout/paint lifecycle.
+              <Loader2 size={12} className="text-white" />
             )}
           </div>
         </div>

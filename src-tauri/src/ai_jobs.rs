@@ -423,6 +423,13 @@ pub struct AiJobsStatus {
     completed: usize,
     paused: bool,
     failed: Vec<FailedAiJob>,
+    /// Authoritative set of paths with pending AI jobs (queued plus the one
+    /// currently processing). The frontend reconciles its per-thumbnail
+    /// badges from this list, so a missed incremental `ai-jobs-pending`
+    /// event (or a restart in between) can no longer leave stale spinner
+    /// badges - and their perpetual CSS animations - behind
+    /// (docs CPU_IDLE_SPINNERS.md).
+    pending: Vec<String>,
 }
 
 #[derive(Serialize, Clone)]
@@ -511,8 +518,19 @@ fn queue() -> MutexGuard<'static, Queue> {
     JOBS.queue.lock().unwrap_or_else(|e| e.into_inner())
 }
 
-fn emit_status(app_handle: &AppHandle, queue: &mut Queue) {
+/// Refresh the derived fields of `queue.status` from the queue itself; the
+/// pending-path set is what the frontend reconciles its badges against.
+fn refresh_status(queue: &mut Queue) {
     queue.status.queued = queue.pending.len();
+    let mut pending: Vec<String> = queue.pending.iter().cloned().collect();
+    if let Some(processing) = queue.processing.as_deref() {
+        pending.push(processing.to_string());
+    }
+    queue.status.pending = pending;
+}
+
+fn emit_status(app_handle: &AppHandle, queue: &mut Queue) {
+    refresh_status(queue);
     let _ = app_handle.emit("ai-jobs-status", &queue.status);
 }
 
@@ -1147,7 +1165,7 @@ fn commit_results(
 #[tauri::command]
 pub fn get_ai_jobs_status() -> AiJobsStatus {
     let mut queue = queue();
-    queue.status.queued = queue.pending.len();
+    refresh_status(&mut queue);
     queue.status.clone()
 }
 
