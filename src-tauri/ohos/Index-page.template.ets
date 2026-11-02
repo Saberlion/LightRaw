@@ -12,6 +12,12 @@ import { DefaultXComponent } from '@ohos-rs/ability';
 @Component
 struct Index {
   private nativeModule: ESObject | null = null;
+  // Base color painted under the transparent webview (docs 6.25). ArkWeb's
+  // component background is Color.Transparent (`transparent: true` in
+  // tauri.conf.json) and the document keeps html/body transparent as well, so
+  // any pixel the page has not painted shows this layer. Seeded by
+  // EntryAbility from the system color mode: dark -> black, otherwise white.
+  @StorageProp('ohosBaseDark') baseDark: boolean = true;
 
   async aboutToAppear(): Promise<void> {
     // Must be a variable: a literal module specifier fails ArkTS resolution
@@ -35,10 +41,18 @@ struct Index {
   }
 
   build() {
-    Row() {
-      Column() {
-        DefaultXComponent()
-      }.width('100%')
-    }.height('100%')
+    Stack() {
+      // Opaque base: without it the first frame shows the window surface
+      // (black on OHOS) until the React bundle paints (docs 6.25).
+      Column()
+        .width('100%')
+        .height('100%')
+        .backgroundColor(this.baseDark ? Color.Black : Color.White)
+      Row() {
+        Column() {
+          DefaultXComponent()
+        }.width('100%')
+      }.width('100%').height('100%')
+    }.width('100%').height('100%')
   }
 }

@@ -1075,6 +1075,23 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 
 **剩余(需实机)**:安全区 inset(挖孔/手势条)、输入法遮挡、底部抽屉下滑关闭、触控热区 ≥44px、加载前资源预检、AI 模型按需分发。
 
+### 6.25 首屏黑块:主题底色(2026-11-02)
+
+**现象**:鸿蒙冷启动,首页首帧出现黑色块(暗色主题最明显)。
+
+**根因**:三条透明链叠加。`tauri.conf.json` 的 `transparent: true` 经 tauri `WebviewWindowBuilder::transparent` 同时置了 webview 的 `transparent`(`crates/tauri/src/webview/webview_window.rs`),wry 的 OHOS 后端原样传给 `@ohos-rs/ability`,`DefaultXComponent.ets` 在 `transparent && 无 backgroundColor` 时把 ArkWeb 组件背景强制成 `Color.Transparent`;同时 `src/styles.css` 的 `html`/`body` 也是 transparent(桌面无边框圆角需要)。ArkWeb 组件背景只在「页面透明处」可见,所以这些像素露出的是**窗口表面**——OHOS 上即黑色。
+
+**修复**(两处 ArkTS 后置补丁,模板在 `src-tauri/ohos/`,同步到 gitignored 的 `gen/ohos/`;重跑 `ohos init` 后用模板重打):
+
+| 位置 | 变更 |
+|---|---|
+| `EntryAbility.ets` | 新增 `applyBaseColor(colorMode)`:**暗色 -> `#000000`,其余 -> `#ffffff`**;`setWindowBackgroundColor` 刷窗口表面,并写 `AppStorage('ohosBaseDark')`;`onWindowStageCreate`(loadContent 之前)与 `onConfigurationUpdate` 各调一次,系统深浅色切换实时跟随 |
+| `pages/Index.ets` | `Stack()` 底层加同色 `Column`(`@StorageProp('ohosBaseDark')` 驱动):透明 webview 之下始终有底色,首帧不再是黑的 |
+
+**未做**:不改 `transparent`(桌面圆角依赖它),也不给 ArkWeb 传固定 `background_color`(无法随主题变化)。若真机仍见黑块,说明 ArkWeb 的透明 surface 没有与 ArkUI 层合成,退路是在 `lib.rs` 建窗时用 `WebviewWindowBuilder::background_color` 给组件一次性不透明底色(仅在启动时深浅色正确)。
+
+**验证待办**:2in1 与平板各跑一次冷启动(暗色 + 浅色各一次),并实测系统深浅色切换。
+
 ### Phase 0 — 技术验证(1~2 周)
 - [x] 全量平台门控审计与修正(本分支)
 - [x] `ohos_integration.rs` 骨架

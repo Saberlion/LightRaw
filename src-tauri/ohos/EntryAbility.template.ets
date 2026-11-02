@@ -25,6 +25,9 @@ export default class EntryAbility extends RustAbility {
   // the native module finished loading (onCreate runs first); flushed once
   // registerRapidrawWindowController resolves the module (docs 6.22).
   private pendingOpenPath: string | null = null;
+  // Main window handle, kept so the theme-aware base color can be re-applied
+  // when the system color mode changes (docs 6.25).
+  private mainWindow: window.Window | null = null;
   // PRIVACY_STATE_CHANGED subscription (AppGallery standardized privacy
   // hosting); kept so a future teardown path can unsubscribe.
   private privacySubscriber: commonEventManager.CommonEventSubscriber | null = null;
@@ -62,6 +65,11 @@ export default class EntryAbility extends RustAbility {
     // import and break enum access like window.AvoidAreaType (docs 6.8).
     const win = windowStage.getMainWindowSync();
     await win.setWindowLayoutFullScreen(false);
+    // Base color before the page loads: dark -> black, otherwise white. The
+    // webview is transparent end to end, so this is what the first frame
+    // shows instead of the window's black surface (docs 6.25).
+    this.mainWindow = win;
+    this.applyBaseColor(this.context.config?.colorMode);
     // Safe-area evidence: with layoutFullScreen(false) the window manager
     // reserves the system bars already; log the remaining avoid rect.
     try {
@@ -213,6 +221,7 @@ export default class EntryAbility extends RustAbility {
   onConfigurationUpdate(newConfig: Configuration): void {
     super.onConfigurationUpdate(newConfig);
     this.pushColorMode(newConfig.colorMode);
+    this.applyBaseColor(newConfig.colorMode);
   }
 
   // Forward the system color mode into the Rust bridge; the webview receives
@@ -227,6 +236,37 @@ export default class EntryAbility extends RustAbility {
       notify(true);
     } else if (colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT) {
       notify(false);
+    }
+  }
+
+  // ---- theme base color (docs 6.25) ----
+  //
+  // The webview is created with ArkWeb's backgroundColor = Color.Transparent
+  // (tauri.conf.json `transparent: true` -> tauri -> wry -> @ohos-rs/ability
+  // DefaultXComponent), and src/styles.css keeps html/body transparent too
+  // (the desktop frameless window needs it for rounded corners). ArkWeb paints
+  // its component background only where the page is transparent, so every such
+  // pixel is the WINDOW surface -- black on OHOS, which is what showed up as
+  // black blocks before the first frame / React bundle painted.
+  //
+  // Paint that surface with the theme's base color instead: dark -> black,
+  // otherwise white. The same decision goes to AppStorage so pages/Index.ets
+  // can mirror it on the ArkUI layer directly under the webview, which keeps
+  // the window covered while the page itself is still transparent.
+  private applyBaseColor(colorMode: number | undefined): void {
+    const dark: boolean = colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
+    AppStorage.setOrCreate('ohosBaseDark', dark);
+    const win: window.Window | null = this.mainWindow;
+    if (win === null) {
+      return;
+    }
+    // setWindowBackgroundColor is void in this SDK (and flagged as not
+    // available on phone/tablet/2in1 form factors) - call it best-effort in a
+    // try/catch; the Index page's opaque base layer is the actual fix.
+    try {
+      win.setWindowBackgroundColor(dark ? '#000000' : '#ffffff');
+    } catch (e) {
+      console.error(`[RapidRAW] setWindowBackgroundColor failed: ${JSON.stringify(e)}`);
     }
   }
 
