@@ -115,6 +115,7 @@
 | D-06 | 平板 AI 降噪开关「关→开」后 3 分钟内未重新生成 `.rrdn` 缓存 | P2 | 确认是否只在导出/全分辨率请求时才触发 `ensure_generated`；若预览应即时生效则为 UX 缺陷 |
 | D-01 | `build-ohos.ps1` 末尾打印 `size: 108.9 MB`，实际产物 51.74 MB（`ZipFile` Update 模式后读 `$Length` 的时序问题） | P2（工具） | 改为 `Get-Item $hap.FullName` 重新取长度 |
 | 观察 | release 包不可调试（无 `webview_devtools_remote` socket），功能级取证需 debug 包；本轮按此执行（与 10-30 报告同法） | — | 可考虑给 release 加 `debug` 变体开关（仅内测） |
+| **D-07** | **跨加载状态泄漏**（2026-11-02 新增，test-assets 语料首战成果）：加载 Canon 5D4 CR2 后紧接着加载下一个 RAW（CR2 或 X-T5 RAF）→ `PANIC! at vendor\rawler\src\pixarray.rs:119:5 - assertion failed: self.initialized`，该次 `load_image` promise 永不 resolve（编辑器卡死在加载，无任何 UI 提示）；单独加载同一文件正常；panic 后进程存活、后续加载恢复。debug 包断言（`debug_assert!`）在 release 不触发，但未初始化读取 + invoke 挂起与 profile 无关 | **P1** | ① release 包复测；② 定位 rawler 跨加载状态；③ 在 panic 边界把 `load_image` 的 promise 以 Err 结束，不让前端无限等待 |
 
 ## 8. 未执行 / 边界
 

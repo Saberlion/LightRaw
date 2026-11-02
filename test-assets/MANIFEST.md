@@ -52,6 +52,10 @@ c13a8675294456b9c979e6c1e556951654f35377b2870af2874bfb556f21ce40  raw/nikon/Niko
 851b43c2116c4139104a5036f83ac3b6a148789b2142214dd7192c13972b25b6  raw/sony/ILCE-7M4_DSC06674_FullFrame-LossLess-Compressed-Large.ARW
 ```
 
+## 已知问题(首个由本语料抓到的缺陷)
+
+**D-TA-01(2026-11-02,2in1 实机复现 3 次)**:在 debug 包上,**加载 `Canon_EOS_5DM4_B13A0732.CR2` 后紧接着加载下一个 RAW(再次 CR2 或 X-T5 RAF)→ `PANIC! at vendor\rawler\src\pixarray.rs:119:5 - assertion failed: self.initialized`**,且该次 `load_image` 的 promise **永远不 resolve**(CDP 240s 超时,UI 无提示、编辑器卡在加载)。单独加载同一 RAF/NEF 正常(NEF 高效压缩走内嵌预览兜底,符合设计);panic 后进程存活、后续加载恢复。`pixarray.rs:119` 是 `pixels()` 的 `debug_assert!(self.initialized)` —— release 构建不会触发该断言,但**状态泄漏(PixArray 未初始化即被读取)与 invoke 挂起与构建 profile 无关**。待办:① release 包复测;② 定位跨加载的状态泄漏(疑似 rawler 全局/静态解码状态);③ `load_image` 应在 panic 边界 resolve(而非挂起)。
+
 ## 用法
 
 - **桌面/模拟器**:把 `test-assets/raw` 与 `test-assets/jpeg` 里的文件放进一个文件夹,在应用里「打开文件夹」选它。
