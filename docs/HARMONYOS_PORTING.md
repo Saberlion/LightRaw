@@ -1057,6 +1057,24 @@ hdc shell "hilog -x | grep -iE 'RapidRAW.+(privacy|consent)'"
 | P2 | **后台通知** | AI 任务、模型下载完成无系统通知(锁屏保活已解决"被杀",但不提示完成) | NotificationKit(需权限与用户同意) |
 | 分发 | **AGC 平板收尾** | `deviceTypes` 已含 `tablet`;控制台「支持设备」与平板截图未完成(§9.3-9) | `-Release` 包(非 debug,避免「包含调试信息」)+ 平板截图 + 勾选设备 |
 
+### 6.24 手机(phone)形态支持(2026-11-01)
+
+**动机**:平板(6.21/6.23)与 2in1 已覆盖,手机是唯一未适配的鸿蒙形态。手机上 `deviceInfo.deviceType = "phone"`,但前端只把 `android` 与 `ohos-tablet` 视为触控形态,`phone` 会落进桌面分支(三栏布局 + hover 工具条);此外 `FILE_ACCESS_PERSIST` 仅 2in1 提供,手机每次冷启都要重新授权文件夹。
+
+**本轮落地**(完整方案与验证用例见 `docs/HARMONYOS_PHONE_PLAN.md`):
+
+| 层 | 变更 |
+|---|---|
+| 前端形态路由 | `App.tsx`:`isOhosPhone = isOhos && deviceType === 'phone'`;`isTouchUi` 纳入 phone;`layoutMode` 复用 Android 三档规则(竖屏 <600 → compact、≥1000 → full、其余 wide) |
+| 返回手势 | `useAndroidBackHandler.ts`:抽屉浮层关闭分支由 `tablet` 扩到 `tablet \| phone` |
+| 首次进入 | `useAppNavigation.handleOpenFolder()`:手机直接落 `get_or_create_internal_library_root()`(应用内库根),不再强制选目录;库内「添加文件夹」仍可拉起 FileKit picker |
+| 导出落点 | `export_processing.rs`:新增 `is_phone_form_factor()`(`ohos_integration.rs`),手机跳过直写、直接走 `save_image_bytes_to_ohos_gallery`(图片与蒙版 alpha 两条路径);2in1/平板行为不变 |
+| 打包形态 | `module.json5` 的 `deviceTypes` 增 `"phone"`(`gen/` 本地修改,`cargo tauri ohos init` 重跑后需重打;AGC 控制台须同步勾选手机) |
+
+**验证边界**:本轮无手机实机,仅验证宿主 `fmt`/`clippy`、aarch64 交叉编译、以及 2in1/平板回归(布局与导出行为未变)。手机侧 P0 用例见计划文档 §6。
+
+**剩余(需实机)**:安全区 inset(挖孔/手势条)、输入法遮挡、底部抽屉下滑关闭、触控热区 ≥44px、加载前资源预检、AI 模型按需分发。
+
 ### Phase 0 — 技术验证(1~2 周)
 - [x] 全量平台门控审计与修正(本分支)
 - [x] `ohos_integration.rs` 骨架
