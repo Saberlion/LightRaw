@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { RotateCcw } from 'lucide-react';
 import { GLOBAL_KEYS } from './AppProperties';
 
 export type SliderChangeEvent =
@@ -598,34 +599,58 @@ const Slider = ({
   };
 
   const numericValue = isNaN(Number(value)) ? 0 : Number(value);
+  const isModified = Math.abs(numericValue - Number(defaultValue)) > 1e-9;
 
   return (
     <div className={`mb-2 group ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} ref={containerRef}>
-      <div className="flex justify-between items-center mb-1">
-        <div
-          className={`grid ${typeof label === 'string' && !disabled ? 'cursor-pointer' : ''}`}
-          onClick={typeof label === 'string' && !disabled ? handleReset : undefined}
-          onDoubleClick={typeof label === 'string' && !disabled ? handleReset : undefined}
-          onMouseEnter={typeof label === 'string' && !disabled ? () => setIsLabelHovered(true) : undefined}
-          onMouseLeave={typeof label === 'string' && !disabled ? () => setIsLabelHovered(false) : undefined}
-        >
-          <span
-            aria-hidden={isLabelHovered && typeof label === 'string'}
-            className={`col-start-1 row-start-1 text-sm font-medium text-text-secondary select-none transition-opacity duration-200 ease-in-out ${
-              isLabelHovered && typeof label === 'string' ? 'opacity-0' : 'opacity-100'
-            }`}
+      <div className="flex justify-between items-center mb-1 gap-2">
+        <div className="flex items-center gap-1 min-w-0">
+          <div
+            className={`grid ${typeof label === 'string' && !disabled ? 'cursor-pointer' : ''}`}
+            onClick={typeof label === 'string' && !disabled ? handleReset : undefined}
+            onDoubleClick={typeof label === 'string' && !disabled ? handleReset : undefined}
+            onMouseEnter={typeof label === 'string' && !disabled ? () => setIsLabelHovered(true) : undefined}
+            onMouseLeave={typeof label === 'string' && !disabled ? () => setIsLabelHovered(false) : undefined}
           >
-            {label}
-          </span>
-          {typeof label === 'string' && (
             <span
-              aria-hidden={!isLabelHovered}
-              className={`col-start-1 row-start-1 text-sm font-medium text-text-primary select-none transition-opacity duration-200 ease-in-out pointer-events-none ${
-                isLabelHovered ? 'opacity-100' : 'opacity-0'
+              aria-hidden={isLabelHovered && typeof label === 'string'}
+              className={`col-start-1 row-start-1 text-sm font-medium text-text-secondary select-none transition-opacity duration-200 ease-in-out ${
+                isLabelHovered && typeof label === 'string' ? 'opacity-0' : 'opacity-100'
               }`}
             >
-              {t('ui.slider.reset')}
+              {label}
             </span>
+            {typeof label === 'string' && (
+              <span
+                aria-hidden={!isLabelHovered}
+                className={`col-start-1 row-start-1 text-sm font-medium text-text-primary select-none transition-opacity duration-200 ease-in-out pointer-events-none ${
+                  isLabelHovered ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                {t('ui.slider.reset')}
+              </span>
+            )}
+          </div>
+          {/* Explicit reset affordance: touch has no hover, so the "tap the
+              label to reset" hint is invisible on phones. Rendered (hidden)
+              even at the default value so the row never shifts. */}
+          {typeof label === 'string' && (
+            <button
+              type="button"
+              aria-label={t('ui.slider.reset')}
+              aria-hidden={!isModified || disabled}
+              tabIndex={isModified && !disabled ? 0 : -1}
+              data-tooltip={t('ui.slider.reset')}
+              disabled={disabled}
+              onClick={handleReset}
+              className={`shrink-0 p-1 -my-1 rounded-full text-text-secondary transition-opacity duration-150 ${
+                isModified && !disabled
+                  ? 'opacity-100 hover:text-text-primary hover:bg-surface'
+                  : 'opacity-0 pointer-events-none'
+              }`}
+            >
+              <RotateCcw size={12} />
+            </button>
           )}
         </div>
         <div className="w-14 text-right shrink-0">

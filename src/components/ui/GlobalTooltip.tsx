@@ -136,14 +136,14 @@ export default function GlobalTooltip() {
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseout', handleMouseOut);
     document.addEventListener('mousedown', dismiss);
-    document.addEventListener('scroll', dismiss, true);
+    document.addEventListener('scroll', dismiss, { passive: true, capture: true });
     document.addEventListener('keydown', onKey);
 
     return () => {
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseout', handleMouseOut);
       document.removeEventListener('mousedown', dismiss);
-      document.removeEventListener('scroll', dismiss, true);
+      document.removeEventListener('scroll', dismiss, { capture: true });
       document.removeEventListener('keydown', onKey);
       clearTimer();
       stopWatch();

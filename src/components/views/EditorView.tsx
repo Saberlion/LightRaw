@@ -1,4 +1,4 @@
-import { type RefObject, type PointerEvent as ReactPointerEvent } from 'react';
+import { type RefObject, type PointerEvent as ReactPointerEvent, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,7 +39,7 @@ interface EditorViewProps {
   handleZoomChange: (zoom: number) => void;
   handlePanelSelect: (panelId: any) => void;
   requestThumbnails: any;
-  renderAppPanel: (panelId: any) => React.ReactNode;
+  renderAppPanel: (panelId: any, opts?: { compact?: boolean }) => React.ReactNode;
 }
 
 export default function EditorView({
@@ -99,6 +99,20 @@ export default function EditorView({
       isPasted: state.isPasted,
     })),
   );
+
+  // Phone sheet: the tool strip is always visible; the panel body collapses
+  // when the active tool is tapped again (see MobilePanelSwitcher below).
+  const [isCompactPanelCollapsed, setCompactPanelCollapsed] = useState(false);
+  const isCompactSheetOpen = !!activePanel && !isCompactPanelCollapsed;
+
+  // Re-open the sheet when the active panel changes by adjusting state during
+  // render. Doing it in an effect would leave the sheet collapsed for the first
+  // painted frame, then snap it open.
+  const [lastActivePanel, setLastActivePanel] = useState(activePanel);
+  if (lastActivePanel !== activePanel) {
+    setLastActivePanel(activePanel);
+    setCompactPanelCollapsed(false);
+  }
 
   const editorNode = (
     <Editor
@@ -174,20 +188,21 @@ export default function EditorView({
           !isResizing && !isInstantTransition && 'transition-all duration-300 ease-in-out',
         )}
         style={{
-          height: isFullScreen ? 0 : activePanel ? compactEditorPanelHeight : compactEditorPanelCollapsedHeight,
+          height: isFullScreen ? 0 : isCompactSheetOpen ? compactEditorPanelHeight : compactEditorPanelCollapsedHeight,
           opacity: isFullScreen ? 0 : 1,
         }}
       >
-        {activePanel && !isFullScreen && (
+        {isCompactSheetOpen && !isFullScreen && (
           <Resizer
             direction={Orientation.Horizontal}
             onMouseDown={createResizeHandler('compact', compactEditorPanelHeight)}
             onDoubleClick={createResizeResetHandler('compact')}
+            showHandle
           />
         )}
         <div className="min-h-0 flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">
-            {activePanel && (
+            {isCompactSheetOpen && (
               <motion.div
                 key={activePanel}
                 initial={{ opacity: 0, y: 10 }}
@@ -196,13 +211,29 @@ export default function EditorView({
                 transition={{ duration: 0.15 }}
                 className="absolute inset-0 overflow-y-auto custom-scrollbar"
               >
-                {renderAppPanel(activePanel)}
+                {renderAppPanel(activePanel, { compact: true })}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-        <MobilePanelSwitcher activePanel={activePanel} onPanelSelect={handlePanelSelect} />
-        <div className="shrink-0 border-t border-surface">{editorBottomBarComponent}</div>
+        <MobilePanelSwitcher
+          activePanel={activePanel}
+          variant="labeled"
+          onPanelSelect={(id) => {
+            // Tapping the open tool collapses the sheet back to the strip so
+            // the canvas gets the whole screen (same affordance as the tablet
+            // rail). The rating / copy / paste row only lives in the collapsed
+            // state, which keeps the bottom chrome to a single bar while
+            // editing.
+            if (id === activePanel && !isCompactPanelCollapsed) {
+              setCompactPanelCollapsed(true);
+              return;
+            }
+            setCompactPanelCollapsed(false);
+            handlePanelSelect(id);
+          }}
+        />
+        {!isCompactSheetOpen && <div className="shrink-0 border-t border-surface">{editorBottomBarComponent}</div>}
       </div>
     ) : null;
 

@@ -114,7 +114,7 @@ function SubMenu({ cancelCloseSubmenu, closeSubmenu, hideContextMenu, options, p
       {safeAreaPath && (
         <svg
           className="fixed top-0 left-0 w-full h-full pointer-events-none z-100"
-          style={{ width: '100vw', height: '100vh' }}
+          style={{ width: '100dvw', height: '100dvh' }}
         >
           <path
             d={safeAreaPath}
@@ -358,13 +358,13 @@ export function ContextMenuProvider({ children }: ContextMenuProviderProps) {
 
     if (menuState.isVisible) {
       document.addEventListener('mousedown', handleClickOutside);
-      window.addEventListener('scroll', hideContextMenu, true);
+      window.addEventListener('scroll', hideContextMenu, { passive: true, capture: true });
       document.addEventListener('keydown', handleKeyDown);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', hideContextMenu, true);
+      window.removeEventListener('scroll', hideContextMenu, { capture: true });
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [menuState.isVisible, hideContextMenu]);
