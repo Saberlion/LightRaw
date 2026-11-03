@@ -837,7 +837,6 @@
       },
       "status": {
         "empty": "Aún no hay ajustes guardados. Crea el tuyo, impórtalo desde un archivo o explora los de la comunidad.",
-        "getCommunity": "Obtener ajustes de la comunidad",
         "loading": "Cargando ajustes preestablecidos..."
       },
       "supports": {
@@ -847,7 +846,6 @@
       },
       "title": "Ajustes preestablecidos",
       "tooltips": {
-        "explore": "Explorar ajustes de la comunidad",
         "export": "Exportar todos los ajustes a un archivo .rrpreset",
         "import": "Importar ajustes desde un archivo .rrpreset",
         "saveNew": "Guardar como nuevo ajuste preestablecido"
@@ -1107,22 +1105,6 @@
       "unprocessed_many": "{{count}} imágenes necesitan procesamiento con IA",
       "unprocessed_other": "{{count}} imágenes necesitan procesamiento con IA",
       "waiting": "Preparando el procesamiento con IA…"
-    },
-    "community": {
-      "actionSave": "Guardar",
-      "actionSaved": "Guardado",
-      "actionSaving": "Guardando...",
-      "fetchingPresets": "Obteniendo ajustes preestablecidos desde GitHub...",
-      "footerHeading": "¿Quieres que tu ajuste preestablecido aparezca aquí?",
-      "footerLinkText": "Crea un issue en GitHub",
-      "headerDesc": "Descubre ajustes preestablecidos creados por la comunidad.",
-      "headerTitle": "Ajustes de la comunidad",
-      "presetBy": "por {{creator}}",
-      "searchPlaceholder": "Buscar ajustes preestablecidos...",
-      "sortBy": "Ordenar por:",
-      "sortMethods": {
-        "name": "Nombre (A-Z)"
-      }
     },
     "culling": {
       "addTagPlaceholder": "Añadir etiqueta...",
@@ -1392,7 +1374,6 @@
       "small": "Pequeño"
     },
     "tooltips": {
-      "communityPresets": "Ajustes de la comunidad",
       "goHome": "Ir al Inicio",
       "importFromAlbum": "Importar desde el álbum",
       "importImages": "Importar imágenes",

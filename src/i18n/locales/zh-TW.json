@@ -808,8 +808,7 @@
         "sortAll": "全部按字母排序"
       },
       "status": {
-        "empty": "尚未儲存預設。建立您自己的預設、從檔案匯入或探索社群預設。",
-        "getCommunity": "取得社群預設",
+        "empty": "尚未儲存預設。建立您自己的預設，或從檔案匯入。",
         "loading": "載入預設中..."
       },
       "supports": {
@@ -819,7 +818,6 @@
       },
       "title": "預設",
       "tooltips": {
-        "explore": "探索社群預設",
         "export": "將所有預設匯出為 .rrpreset 檔案",
         "import": "從 .rrpreset 檔案匯入預設",
         "saveNew": "儲存為新預設"
@@ -1075,22 +1073,6 @@
       "title": "AI 處理",
       "unprocessed_other": "{{count}} 張影像需要 AI 處理",
       "waiting": "正在準備 AI 處理…"
-    },
-    "community": {
-      "actionSave": "儲存",
-      "actionSaved": "已儲存",
-      "actionSaving": "儲存中...",
-      "fetchingPresets": "正在從 GitHub 取得預設...",
-      "footerHeading": "想讓您的預設被推薦？",
-      "footerLinkText": "在 GitHub 上建立 Issue",
-      "headerDesc": "發現社群建立的預設。",
-      "headerTitle": "社群預設",
-      "presetBy": "作者 {{creator}}",
-      "searchPlaceholder": "搜尋預設...",
-      "sortBy": "排序方式：",
-      "sortMethods": {
-        "name": "名稱（A-Z）"
-      }
     },
     "culling": {
       "addTagPlaceholder": "新增標籤...",
@@ -1353,7 +1335,6 @@
       "small": "小"
     },
     "tooltips": {
-      "communityPresets": "社群預設",
       "goHome": "返回首頁",
       "importFromAlbum": "從相冊匯入",
       "importImages": "匯入影像",

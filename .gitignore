@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 *.log
 npm-debug.log*
@@ -72,3 +72,16 @@ npu-models/eval/**/*.jpg
 
 # docs/ is its own repository: https://github.com/SaberLion/LightRaw-docs
 /docs/
+
+# CamRAW LUT pack: local test asset, NOT redistributable in this public repo
+# (private archive: https://github.com/Saberlion/LightRaw-luts)
+# spektrafilm (CC BY-SA 4.0) stays tracked; everything else is local-only.
+src-tauri/resources/film_luts/*
+!src-tauri/resources/film_luts/F-Pro 400H.cube
+!src-tauri/resources/film_luts/K-Ektar 100.cube
+!src-tauri/resources/film_luts/K-Gold 200.cube
+!src-tauri/resources/film_luts/K-Portra 400.cube
+!src-tauri/resources/film_luts/K-Vision 250D Cinematic.cube
+!src-tauri/resources/film_luts/K-Vision 500T Cinematic.cube
+!src-tauri/resources/film_luts/SPEKTRAFILM_LICENSE.txt
+!src-tauri/resources/film_luts/manifest.json

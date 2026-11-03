@@ -862,7 +862,6 @@
       },
       "status": {
         "empty": "Brak zapisanych presetów. Utwórz własne, zaimportuj z pliku lub odkryj presety społeczności.",
-        "getCommunity": "Pobierz presety społeczności",
         "loading": "Wczytywanie presetów..."
       },
       "supports": {
@@ -872,7 +871,6 @@
       },
       "title": "Presety",
       "tooltips": {
-        "explore": "Odkryj presety społeczności",
         "export": "Eksportuj wszystkie presety do pliku .rrpreset",
         "import": "Importuj presety z pliku .rrpreset",
         "saveNew": "Zapisz jako nowy preset"
@@ -1135,22 +1133,6 @@
       "unprocessed_many": "{{count}} obrazów wymaga przetwarzania AI",
       "unprocessed_other": "{{count}} obrazu wymaga przetwarzania AI",
       "waiting": "Przygotowywanie przetwarzania AI…"
-    },
-    "community": {
-      "actionSave": "Zapisz",
-      "actionSaved": "Zapisano",
-      "actionSaving": "Zapisywanie...",
-      "fetchingPresets": "Pobieranie presetów z GitHuba...",
-      "footerHeading": "Chcesz, by Twój preset tu trafił?",
-      "footerLinkText": "Utwórz zgłoszenie na GitHubie",
-      "headerDesc": "Odkrywaj presety stworzone przez społeczność.",
-      "headerTitle": "Presety społeczności",
-      "presetBy": "od {{creator}}",
-      "searchPlaceholder": "Szukaj presetów...",
-      "sortBy": "Sortuj według:",
-      "sortMethods": {
-        "name": "Nazwa (A-Z)"
-      }
     },
     "culling": {
       "addTagPlaceholder": "Dodaj tag...",
@@ -1425,7 +1407,6 @@
       "small": "Mały"
     },
     "tooltips": {
-      "communityPresets": "Presety społeczności",
       "goHome": "Przejdź do strony głównej",
       "importFromAlbum": "Importuj z albumu",
       "importImages": "Importuj obrazy",

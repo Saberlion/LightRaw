@@ -808,8 +808,7 @@
         "sortAll": "全部按字母排序"
       },
       "status": {
-        "empty": "尚未保存预设。创建您自己的预设、从文件导入或探索社区预设。",
-        "getCommunity": "获取社区预设",
+        "empty": "尚未保存预设。创建您自己的预设，或从文件导入。",
         "loading": "加载预设中..."
       },
       "supports": {
@@ -819,7 +818,6 @@
       },
       "title": "预设",
       "tooltips": {
-        "explore": "探索社区预设",
         "export": "将所有预设导出为 .rrpreset 文件",
         "import": "从 .rrpreset 文件导入预设",
         "saveNew": "保存为新预设"
@@ -1075,22 +1073,6 @@
       "title": "AI 处理",
       "unprocessed_other": "{{count}} 张图像需要 AI 处理",
       "waiting": "正在准备 AI 处理…"
-    },
-    "community": {
-      "actionSave": "保存",
-      "actionSaved": "已保存",
-      "actionSaving": "保存中...",
-      "fetchingPresets": "正在从 GitHub 获取预设...",
-      "footerHeading": "想让您的预设被推荐？",
-      "footerLinkText": "在 GitHub 上创建 Issue",
-      "headerDesc": "发现社区创建的预设。",
-      "headerTitle": "社区预设",
-      "presetBy": "作者 {{creator}}",
-      "searchPlaceholder": "搜索预设...",
-      "sortBy": "排序方式：",
-      "sortMethods": {
-        "name": "名称（A-Z）"
-      }
     },
     "culling": {
       "addTagPlaceholder": "添加标签...",
@@ -1353,7 +1335,6 @@
       "small": "小"
     },
     "tooltips": {
-      "communityPresets": "社区预设",
       "goHome": "返回首页",
       "importFromAlbum": "从相册导入",
       "importImages": "导入图像",

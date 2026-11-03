@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import CommunityPage from '../panel/CommunityPage';
 import MainLibrary from '../panel/MainLibrary';
 import BottomBar from '../panel/BottomBar';
 
@@ -129,20 +128,11 @@ export default function LibraryView({
     () => handleImportClick(currentFolderPath as string, 'album'),
     [handleImportClick, currentFolderPath],
   );
-  const handleNavigateToCommunity = useCallback(() => setUI({ activeView: 'community' }), [setUI]);
 
   return (
     <div className="flex flex-row grow h-full min-h-0">
       <div className="flex-1 flex flex-col min-w-0 gap-2">
-        {activeView === 'community' ? (
-          <CommunityPage
-            onBackToLibrary={() => setUI({ activeView: 'library' })}
-            supportedTypes={supportedTypes}
-            imageList={sortedImageList}
-            currentFolderPath={currentFolderPath}
-          />
-        ) : (
-          <MainLibrary
+        <MainLibrary
             activePath={libraryActivePath}
             aiModelDownloadStatus={aiModelDownloadStatus}
             aiTaggingJob={aiTaggingJob}
@@ -178,9 +168,7 @@ export default function LibraryView({
             theme={theme}
             thumbnailAspectRatio={thumbnailAspectRatio}
             thumbnailSize={thumbnailSize}
-            onNavigateToCommunity={handleNavigateToCommunity}
           />
-        )}
         {rootPaths && rootPaths.length > 0 && (
           <BottomBar
             isCopied={isCopied}

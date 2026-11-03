@@ -17,30 +17,35 @@ import {
 } from 'lucide-react';
 import { Panel, PanelRegion } from '../ui/AppProperties';
 import { SwitcherPlacement, useUIStore } from '../../store/useUIStore';
+import LutIcon from '../ui/LutIcon';
 
-export const PANEL_ICONS: Record<Panel, LucideIcon> = {
+type PanelIconComponent = React.ComponentType<{ size?: number; className?: string }>;
+
+export const PANEL_ICONS: Record<Panel, PanelIconComponent> = {
   [Panel.Metadata]: Info,
   [Panel.Adjustments]: SlidersHorizontal,
   [Panel.Crop]: Crop,
   [Panel.Masks]: Layers,
   [Panel.Ai]: Paintbrush,
+  [Panel.Lut]: LutIcon,
   [Panel.Presets]: SwatchBook,
   [Panel.Export]: FileInput,
   [Panel.FolderTree]: FolderIcon,
   [Panel.Tethering]: Camera,
 };
 
-const PANEL_TITLES: Record<Panel, string> = {
+const PANEL_TITLES = {
   [Panel.Metadata]: 'editor.switcher.tooltips.info',
   [Panel.Adjustments]: 'editor.switcher.tooltips.adjust',
   [Panel.Crop]: 'editor.switcher.tooltips.crop',
   [Panel.Masks]: 'editor.switcher.tooltips.masks',
   [Panel.Ai]: 'editor.switcher.tooltips.inpaint',
+  [Panel.Lut]: 'ui.lut.label',
   [Panel.Presets]: 'editor.switcher.tooltips.presets',
   [Panel.Export]: 'editor.switcher.tooltips.export',
   [Panel.FolderTree]: 'library.folders.sourcesTitle',
   [Panel.Tethering]: 'editor.switcher.tooltips.tethering',
-};
+} as const satisfies Record<Panel, string>;
 
 function PanelTab({ panel, region, side }: { panel: Panel; region: PanelRegion; side: 'left' | 'right' }) {
   const { t } = useTranslation();
@@ -245,6 +250,7 @@ export function MobilePanelSwitcher({
   onPanelSelect,
   placement = 'bottom',
   showFolderTree = false,
+  variant = 'icons',
 }: {
   activePanel: Panel | null;
   onPanelSelect: (id: Panel) => void;
@@ -252,7 +258,12 @@ export function MobilePanelSwitcher({
   /** Tablets keep the folder tree reachable from the rail (the desktop left
    *  column is hidden in the touch layout). */
   showFolderTree?: boolean;
+  /** 'labeled' renders icon + caption inside a 56px touch target (phone sheet,
+   *  see docs: CamRAW reference). The tablet rail stays icon-only so it can
+   *  keep its 58px collapsed width. */
+  variant?: 'icons' | 'labeled';
 }) {
+  const { t } = useTranslation();
   const MOBILE_PANELS = [
     ...(showFolderTree ? [Panel.FolderTree] : []),
     Panel.Metadata,
@@ -260,33 +271,54 @@ export function MobilePanelSwitcher({
     Panel.Crop,
     Panel.Masks,
     Panel.Ai,
+    Panel.Lut,
     Panel.Presets,
     Panel.Export,
   ];
 
   const isVertical = placement === 'right';
+  const isLabeled = variant === 'labeled' && !isVertical;
 
   return (
-    <div className={clsx(
-      'flex items-center p-1.5 gap-1 shrink-0 custom-scrollbar',
-      isVertical ? 'flex-col overflow-y-auto h-full border-l border-surface' : 'flex-row overflow-x-auto w-full border-t border-surface',
-    )}>
+    <div
+      className={clsx(
+        'flex items-center shrink-0 custom-scrollbar',
+        isVertical
+          ? 'flex-col p-1.5 gap-1 overflow-y-auto h-full border-l border-surface'
+          : clsx(
+              'flex-row w-full border-t border-surface',
+              isLabeled ? 'px-1 py-1 gap-0.5 overflow-x-auto' : 'p-1.5 gap-1 overflow-x-auto',
+            ),
+      )}
+    >
       {MOBILE_PANELS.map((id) => {
         const Icon = PANEL_ICONS[id];
         const isActive = activePanel === id;
+        const title = t(PANEL_TITLES[id]);
 
         return (
           <button
             key={id}
+            aria-pressed={isActive}
             onClick={() => onPanelSelect(id)}
+            data-tooltip={isLabeled ? undefined : title}
             className={clsx(
-              'p-2 rounded-md shrink-0 transition-colors',
-              isActive
-                ? 'bg-surface text-text-primary'
-                : 'text-text-secondary hover:bg-surface hover:text-text-primary',
+              'shrink-0 transition-colors',
+              isLabeled
+                ? clsx(
+                    'min-w-15 px-2 py-1.5 rounded-xl flex flex-col items-center justify-center gap-1',
+                    isActive ? 'bg-surface text-accent' : 'text-text-secondary active:bg-surface',
+                  )
+                : clsx(
+                    'p-2 rounded-md',
+                    isActive
+                      ? 'bg-surface text-text-primary'
+                      : 'text-text-secondary hover:bg-surface hover:text-text-primary',
+                  ),
             )}
           >
-            <Icon size={20} />
+            <Icon size={isLabeled ? 22 : 20} />
+            {isLabeled && <span className="text-[11px] font-medium leading-none">{title}</span>}
           </button>
         );
       })}

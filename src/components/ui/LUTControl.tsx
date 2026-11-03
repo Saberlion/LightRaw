@@ -1,9 +1,10 @@
 import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ImageOff, Upload, X, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
+import clsx from 'clsx';
 import { useContextMenu } from '../../context/ContextMenuContext';
 import { toast } from 'react-toastify';
 import Slider from './Slider';
@@ -15,6 +16,10 @@ interface LutEntry {
   name: string;
   path: string;
   isBuiltIn: boolean;
+  /** Which shader slot the LUT belongs to (V-Log scene input vs sRGB display input). */
+  isSceneReferred: boolean;
+  /** Human-readable name from manifest.json; falls back to `name`. */
+  displayName?: string;
 }
 
 interface LutPreview {
@@ -26,19 +31,38 @@ interface LUTControlProps {
   lutPath: string | null;
   lutName: string | null;
   lutIntensity: number;
-  onLutSelect: (path: string, isBuiltIn: boolean) => void;
-  onLutHover?: (path: string | null, isBuiltIn?: boolean) => void;
+  onLutSelect: (path: string, isSceneReferred: boolean) => void;
+  onLutHover?: (path: string | null, isSceneReferred?: boolean) => void;
   onIntensityChange: (intensity: number) => void;
   onClear: () => void;
   onDragStateChange?: (isDragging: boolean) => void;
 }
 
+/** Group a LUT by its brand prefix for the filter bar. */
+const CAMERA_BRANDS = ['Sony', 'Fuji', 'Canon', 'Nikon', 'Ricoh', 'Panasonic', 'Leica'] as const;
+
+function getLutBrand(name: string): string {
+  for (const brand of CAMERA_BRANDS) {
+    if (name.startsWith(brand + ' ')) return brand;
+  }
+  if (/^[FK]-/.test(name)) return 'Film';
+  return 'Creative';
+}
+
+/** Strip the camera-brand prefix for swatch labels ("Sony ST" → "ST"). */
+// NOTE: display names now come from manifest.json `displayNames` via
+// LutEntry.displayName; this is only the fallback when the manifest is absent.
+function getLutDisplayName(name: string): string {
+  for (const brand of CAMERA_BRANDS) {
+    if (name.startsWith(brand + ' ')) return name.slice(brand.length + 1);
+  }
+  return name;
+}
 const PREVIEW_SIZE = 112;
 const SUPPORTED_EXTENSIONS = ['cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff'];
 
 export default function LUTControl({
-  lutPath,
-  lutName,
+  lutPath,  lutName,
   lutIntensity,
   onLutSelect,
   onLutHover,
@@ -52,6 +76,7 @@ export default function LUTControl({
   const isImageReady = useEditorStore((state) => state.selectedImage?.isReady ?? false);
 
   const [isExpanded, setIsExpanded] = useState(false);
+  const [activeBrand, setActiveBrand] = useState<string | null>(null);
   const [entries, setEntries] = useState<LutEntry[]>([]);
   const [previews, setPreviews] = useState<Record<string, string | null>>({});
   const [isLoadingPreviews, setIsLoadingPreviews] = useState(false);
@@ -108,7 +133,7 @@ export default function LUTControl({
       return;
     }
     const cacheKey = `${selectedImagePath}|${entries
-      .map((entry) => `${entry.path}:${entry.isBuiltIn ? 1 : 0}`)
+      .map((entry) => `${entry.path}:${entry.isBuiltIn ? 1 : 0}:${entry.isSceneReferred ? 1 : 0}`)
       .join(',')}`;
     const cached = previewCache.current.get(cacheKey);
     if (cached) {
@@ -119,7 +144,10 @@ export default function LUTControl({
     let isActive = true;
     setIsLoadingPreviews(true);
     invoke<LutPreview[]>('generate_lut_previews', {
-      luts: entries.map((entry) => ({ path: entry.path, isBuiltIn: entry.isBuiltIn })),
+      luts: entries.map((entry) => ({
+        path: entry.path,
+        isSceneReferred: entry.isSceneReferred,
+      })),
       size: PREVIEW_SIZE,
     })
       .then((results) => {
@@ -212,20 +240,80 @@ export default function LUTControl({
     if (entry.path === lutPath) {
       onClear();
     } else {
-      onLutSelect(entry.path, entry.isBuiltIn);
+      onLutSelect(entry.path, entry.isSceneReferred);
     }
   };
 
   const builtInLuts = entries.filter((e) => e.isBuiltIn);
   const customLuts = entries.filter((e) => !e.isBuiltIn);
 
+  // Repair projects saved before the LUT files were renamed (e.g. the CamRAW
+  // pack lost its "CamRAW " prefix): the stored lutPath no longer exists, so
+  // the renderer silently drops the LUT while the label still shows it. Match
+  // by stem / display name and re-select the current file once.
+  const repairedPathRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!lutPath || entries.length === 0 || repairedPathRef.current === lutPath) return;
+    if (entries.some((e) => e.path === lutPath)) return;
+
+    const stem = (p: string) =>
+      (p.split(/[\\/]/).pop() || '').replace(/\.(cube|3dl|png|jpe?g|tiff)$/i, '');
+    const storedStem = stem(lutPath);
+    const candidates = entries.filter((e) => {
+      const entryStem = e.name;
+      return (
+        entryStem === storedStem ||
+        entryStem === storedStem.replace(/^CamRAW /, '') ||
+        e.displayName === storedStem
+      );
+    });
+
+    if (candidates.length !== 1) return;
+    repairedPathRef.current = lutPath;
+    const target = candidates[0];
+    console.log(`[lut] repairing stale path: ${lutPath} -> ${target.path}`);
+    onLutSelect(target.path, target.isSceneReferred);
+  }, [entries, lutPath, onLutSelect]);
+
+  // Show the manifest displayName in the collapsed label too, so the header
+  // reads "PROVIA" instead of "Fuji PROVIA.cube"; falls back to the stored
+  // lutName (imported LUTs are not in the list when the dir is unreadable).
+  const selectedLabel = useMemo(
+    () => entries.find((e) => e.path === lutPath)?.displayName || lutName,
+    [entries, lutPath, lutName],
+  );
+
+  const availableBrands = useMemo<Array<{ brand: string; count: number }>>(() => {
+    if (builtInLuts.length === 0) return [];
+    const set = new Map<string, number>();
+    for (const e of builtInLuts) {
+      const b = getLutBrand(e.name);
+      set.set(b, (set.get(b) || 0) + 1);
+    }
+    return [...set.entries()]
+      .sort(([a], [b]) => {
+        const ai = (CAMERA_BRANDS as readonly string[]).indexOf(a);
+        const bi = (CAMERA_BRANDS as readonly string[]).indexOf(b);
+        return (ai >= 0 ? ai : 90) - (bi >= 0 ? bi : 90);
+      })
+      .map(([brand, count]) => ({ brand, count }));
+  }, [builtInLuts]);
+
+  const visibleBuiltInLuts = useMemo(
+    () => (activeBrand ? builtInLuts.filter((e) => getLutBrand(e.name) === activeBrand) : builtInLuts),
+    [builtInLuts, activeBrand],
+  );
+
   const renderSwatch = (entry: LutEntry) => {
     const thumb = previews[entry.path];
     const isSelected = entry.path === lutPath;
+    // The brand filter bar above already identifies the group; strip the
+    // camera-brand prefix so the swatch just reads "ST" / "PROVIA" / "Standard".
+    const displayName = entry.displayName || entry.name;
     return (
       <button
         key={entry.path}
-        onMouseEnter={() => onLutHover?.(entry.path, entry.isBuiltIn)}
+        onMouseEnter={() => onLutHover?.(entry.path, entry.isSceneReferred)}
         onMouseLeave={() => onLutHover?.(null)}
         onClick={() => handleSwatchClick(entry)}
         onContextMenu={entry.isBuiltIn ? undefined : (e) => handleContextMenu(e, entry)}
@@ -237,14 +325,14 @@ export default function LUTControl({
         {isLoadingPreviews && thumb === undefined ? (
           <div className="w-full h-full animate-pulse bg-surface" />
         ) : thumb ? (
-          <img src={thumb} alt={entry.name} className="w-full h-full object-cover" draggable={false} />
+          <img src={thumb} alt={displayName} className="w-full h-full object-cover" draggable={false} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-text-secondary">
             <ImageOff size={18} />
           </div>
         )}
         <span className="absolute inset-x-0 bottom-0 px-1 py-0.5 text-[10px] text-white bg-black/60 truncate text-left">
-          {entry.name}
+          {displayName}
         </span>
       </button>
     );
@@ -269,7 +357,7 @@ export default function LUTControl({
             className="flex items-center gap-1 text-sm text-text-secondary select-none cursor-pointer hover:text-accent transition-colors"
             data-tooltip={lutName || t('ui.lut.selectLutFile')}
           >
-            <span className="truncate max-w-35 text-right">{lutName || t('ui.lut.select')}</span>
+            <span className="truncate max-w-35 text-right">{selectedLabel || t('ui.lut.select')}</span>
             <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
           </button>
         </div>
@@ -313,10 +401,36 @@ export default function LUTControl({
             <div className={`${lutName ? '' : 'mt-3'} pb-1 space-y-4`}>
               {builtInLuts.length > 0 && (
                 <div>
-                  <span className="text-sm font-medium text-text-secondary select-none block mb-2">
-                    {t('ui.lut.filmEmulations')}
-                  </span>
-                  <div className="grid grid-cols-3 gap-2">{builtInLuts.map(renderSwatch)}</div>
+                  {availableBrands.length > 1 && (
+                    <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-2 mb-1" style={{ scrollbarWidth: 'none' }}>
+                      <button
+                        onClick={() => setActiveBrand(null)}
+                        className={clsx(
+                          'shrink-0 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                          activeBrand === null
+                            ? 'bg-accent text-button-text'
+                            : 'bg-surface text-text-secondary hover:text-text-primary',
+                        )}
+                      >
+                        {t('ui.lut.all', 'All')} ({builtInLuts.length})
+                      </button>
+                      {availableBrands.map(({ brand, count }) => (
+                        <button
+                          key={brand}
+                          onClick={() => setActiveBrand(activeBrand === brand ? null : brand)}
+                          className={clsx(
+                            'shrink-0 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+                            activeBrand === brand
+                              ? 'bg-accent text-button-text'
+                              : 'bg-surface text-text-secondary hover:text-text-primary',
+                          )}
+                        >
+                          {brand} ({count})
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-3 gap-2">{visibleBuiltInLuts.map(renderSwatch)}</div>
                 </div>
               )}
 

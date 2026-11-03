@@ -836,8 +836,7 @@
         "sortAll": "Ordina Tutti in Ordine Alfabetico"
       },
       "status": {
-        "empty": "Ancora nessun predefinito salvato. Creane uno, importalo da un file o esplora i predefiniti della community.",
-        "getCommunity": "Ottieni Predefiniti della Community",
+        "empty": "Ancora nessun predefinito salvato. Creane uno o importalo da un file.",
         "loading": "Caricamento Predefiniti..."
       },
       "supports": {
@@ -847,7 +846,6 @@
       },
       "title": "Predefiniti",
       "tooltips": {
-        "explore": "Esplora i Predefiniti della Community",
         "export": "Esporta tutti i predefiniti in un file .rrpreset",
         "import": "Importa predefiniti da un file .rrpreset",
         "saveNew": "Salva come nuovo predefinito"
@@ -1107,22 +1105,6 @@
       "unprocessed_many": "{{count}} immagini richiedono l'elaborazione IA",
       "unprocessed_other": "{{count}} immagini richiedono l'elaborazione IA",
       "waiting": "Preparazione dell'elaborazione IA…"
-    },
-    "community": {
-      "actionSave": "Salva",
-      "actionSaved": "Salvato",
-      "actionSaving": "Salvataggio...",
-      "fetchingPresets": "Recupero predefiniti da GitHub...",
-      "footerHeading": "Vuoi che il tuo predefinito sia messo in primo piano?",
-      "footerLinkText": "Crea una issue su GitHub",
-      "headerDesc": "Scopri i predefiniti creati dalla community.",
-      "headerTitle": "Predefiniti della Community",
-      "presetBy": "di {{creator}}",
-      "searchPlaceholder": "Cerca predefiniti...",
-      "sortBy": "Ordina per:",
-      "sortMethods": {
-        "name": "Nome (A-Z)"
-      }
     },
     "culling": {
       "addTagPlaceholder": "Aggiungi tag...",
@@ -1392,7 +1374,6 @@
       "small": "Piccola"
     },
     "tooltips": {
-      "communityPresets": "Predefiniti della Community",
       "goHome": "Torna alla Home page",
       "importFromAlbum": "Importa dall'album",
       "importImages": "Importa Immagini",

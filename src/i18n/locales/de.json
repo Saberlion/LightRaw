@@ -811,8 +811,7 @@
         "sortAll": "Alle alphabetisch sortieren"
       },
       "status": {
-        "empty": "Noch keine Vorgaben gespeichert. Eigene erstellen, importieren oder Community-Vorgaben entdecken.",
-        "getCommunity": "Community-Vorgaben holen",
+        "empty": "Noch keine Vorgaben gespeichert. Eigene erstellen oder aus einer Datei importieren.",
         "loading": "Vorgaben laden..."
       },
       "supports": {
@@ -822,7 +821,6 @@
       },
       "title": "Vorgaben",
       "tooltips": {
-        "explore": "Community-Vorgaben entdecken",
         "export": "Alle Vorgaben als .rrpreset exportieren",
         "import": "Vorgaben aus .rrpreset importieren",
         "saveNew": "Als neue Vorgabe speichern"
@@ -1079,22 +1077,6 @@
       "unprocessed_one": "{{count}} Bild benötigt KI-Verarbeitung",
       "unprocessed_other": "{{count}} Bilder benötigen KI-Verarbeitung",
       "waiting": "KI-Verarbeitung wird vorbereitet…"
-    },
-    "community": {
-      "actionSave": "Speichern",
-      "actionSaved": "Gespeichert",
-      "actionSaving": "Speichert...",
-      "fetchingPresets": "Vorgaben werden von GitHub abgerufen...",
-      "footerHeading": "Möchten Sie Ihre Vorgabe hier sehen?",
-      "footerLinkText": "Erstellen Sie ein Issue auf GitHub",
-      "headerDesc": "Entdecken Sie Vorgaben, die von der Community erstellt wurden.",
-      "headerTitle": "Community-Vorgaben",
-      "presetBy": "von {{creator}}",
-      "searchPlaceholder": "Vorgaben durchsuchen...",
-      "sortBy": "Sortieren nach:",
-      "sortMethods": {
-        "name": "Name (A-Z)"
-      }
     },
     "culling": {
       "addTagPlaceholder": "Tag hinzufügen...",
@@ -1359,7 +1341,6 @@
       "small": "Klein"
     },
     "tooltips": {
-      "communityPresets": "Community-Vorgaben",
       "goHome": "Zur Startseite",
       "importFromAlbum": "Aus Album importieren",
       "importImages": "Bilder importieren",

@@ -837,7 +837,6 @@
       },
       "status": {
         "empty": "Encara no s'ha desat cap ajust preestablert. Creeu el vostre, importeu-ne des d'un fitxer o exploreu els de la comunitat.",
-        "getCommunity": "Obtenir ajustos de la comunitat",
         "loading": "S'estan carregant els ajustos preestablerts..."
       },
       "supports": {
@@ -847,7 +846,6 @@
       },
       "title": "Ajustos preestablerts",
       "tooltips": {
-        "explore": "Explorar ajustos de la comunitat",
         "export": "Exportar tots els ajustos preestablerts a un fitxer .rrpreset",
         "import": "Importar ajustos preestablerts des d'un fitxer .rrpreset",
         "saveNew": "Desar com a nou ajust preestablert"
@@ -1107,22 +1105,6 @@
       "unprocessed_many": "{{count}} imatges necessiten processament amb IA",
       "unprocessed_other": "{{count}} imatges necessiten processament amb IA",
       "waiting": "Preparant el processament amb IA…"
-    },
-    "community": {
-      "actionSave": "Desar",
-      "actionSaved": "Desat",
-      "actionSaving": "S'està desant...",
-      "fetchingPresets": "S'estan obtenint els ajustos preestablerts des de GitHub...",
-      "footerHeading": "Voleu que el vostre ajust preestablert hi aparegui?",
-      "footerLinkText": "Creeu una incidència (issue) a GitHub",
-      "headerDesc": "Descobriu els ajustos preestablerts creats per la comunitat.",
-      "headerTitle": "Ajustos preestablerts de la comunitat",
-      "presetBy": "per {{creator}}",
-      "searchPlaceholder": "Cercar ajustos preestablerts...",
-      "sortBy": "Ordenar per:",
-      "sortMethods": {
-        "name": "Nom (A-Z)"
-      }
     },
     "culling": {
       "addTagPlaceholder": "Afegir etiqueta...",
@@ -1392,7 +1374,6 @@
       "small": "Petita"
     },
     "tooltips": {
-      "communityPresets": "Ajustos preestablerts de la comunitat",
       "goHome": "Anar a l'inici",
       "importFromAlbum": "Importa des de l'àlbum",
       "importImages": "Importar imatges",

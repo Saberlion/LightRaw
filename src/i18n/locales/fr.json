@@ -837,7 +837,6 @@
       },
       "status": {
         "empty": "Aucun paramètre prédéfini enregistré pour le moment. Créez les vôtres, importez-en à partir d'un fichier ou explorez ceux de la communauté.",
-        "getCommunity": "Obtenir les paramètres de la communauté",
         "loading": "Chargement des paramètres prédéfinis..."
       },
       "supports": {
@@ -847,7 +846,6 @@
       },
       "title": "Paramètres prédéfinis",
       "tooltips": {
-        "explore": "Explorer les paramètres prédéfinis de la communauté",
         "export": "Exporter tous les paramètres prédéfinis vers un fichier .rrpreset",
         "import": "Importer des paramètres prédéfinis à partir d'un fichier .rrpreset",
         "saveNew": "Enregistrer comme nouveau paramètre prédéfini"
@@ -1107,22 +1105,6 @@
       "unprocessed_many": "{{count}} images nécessitent un traitement IA",
       "unprocessed_other": "{{count}} images nécessitent un traitement IA",
       "waiting": "Préparation du traitement IA…"
-    },
-    "community": {
-      "actionSave": "Enregistrer",
-      "actionSaved": "Enregistré",
-      "actionSaving": "Enregistrement en cours...",
-      "fetchingPresets": "Récupération des paramètres prédéfinis depuis GitHub...",
-      "footerHeading": "Vous souhaitez proposer votre paramètre prédéfini ?",
-      "footerLinkText": "Créez une issue sur GitHub",
-      "headerDesc": "Découvrez des paramètres prédéfinis créés par la communauté.",
-      "headerTitle": "Paramètres prédéfinis de la communauté",
-      "presetBy": "par {{creator}}",
-      "searchPlaceholder": "Rechercher des paramètres...",
-      "sortBy": "Trier par :",
-      "sortMethods": {
-        "name": "Nom (A-Z)"
-      }
     },
     "culling": {
       "addTagPlaceholder": "Ajouter un tag...",
@@ -1393,7 +1375,6 @@
       "small": "Petit"
     },
     "tooltips": {
-      "communityPresets": "Paramètres prédéfinis de la communauté",
       "goHome": "Aller à l'accueil",
       "importFromAlbum": "Importer depuis l'album",
       "importImages": "Importer des images",

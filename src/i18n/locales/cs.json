@@ -862,7 +862,6 @@
       },
       "status": {
         "empty": "Zatím nejsou uloženy žádné presety. Vytvořte si vlastní, importujte ze souboru nebo prozkoumejte presety komunity.",
-        "getCommunity": "Získejte presety komunity",
         "loading": "Načítání presetů..."
       },
       "supports": {
@@ -872,7 +871,6 @@
       },
       "title": "Předvolby",
       "tooltips": {
-        "explore": "Prozkoumejte předvolby komunity",
         "export": "Exportujte všechny předvolby do souboru .rrpreset",
         "import": "Importujte předvolby ze souboru .rrpreset",
         "saveNew": "Uložit jako novou předvolbu"
@@ -1135,22 +1133,6 @@
       "unprocessed_many": "{{count}} obrázku vyžaduje AI zpracování",
       "unprocessed_other": "{{count}} obrázků vyžaduje AI zpracování",
       "waiting": "Příprava AI zpracování…"
-    },
-    "community": {
-      "actionSave": "Uložit",
-      "actionSaved": "Uloženo",
-      "actionSaving": "Ukládání...",
-      "fetchingPresets": "Načítání presetů z GitHubu...",
-      "footerHeading": "Chcete, aby se váš preset zveřejnil?",
-      "footerLinkText": "Vytvořte problém na GitHubu",
-      "headerDesc": "Objevte předvolby vytvořené komunitou.",
-      "headerTitle": "Presety komunity",
-      "presetBy": "podle {{creator}}",
-      "searchPlaceholder": "Hledat preset...",
-      "sortBy": "Seřadit podle:",
-      "sortMethods": {
-        "name": "Jméno (A–Z)"
-      }
     },
     "culling": {
       "addTagPlaceholder": "Přidat značku...",
@@ -1425,7 +1407,6 @@
       "small": "Malý"
     },
     "tooltips": {
-      "communityPresets": "Presety komunity",
       "goHome": "Přejít na domovskou stránku",
       "importFromAlbum": "Importovat z alba",
       "importImages": "Import snímků",

@@ -15,6 +15,17 @@ use base64::{Engine as _, engine::general_purpose};
 use mozjpeg_rs::{Encoder, Preset};
 use tauri::{AppHandle, Manager, State};
 
+#[cfg(any(target_os = "android", target_env = "ohos"))]
+use include_dir::{Dir, include_dir};
+
+/// Built-in LUTs are bundled as Tauri resources on desktop, but the mobile
+/// platforms cannot resolve `BaseDirectory::Resource` (on OHOS the tauri fork's
+/// resource resolver returns `UnsupportedPlatform`, and the HAP does not ship
+/// `src-tauri/resources` at all). Embed them in the binary and unpack once into
+/// app_data_dir, mirroring lens_correction.rs.
+#[cfg(any(target_os = "android", target_env = "ohos"))]
+static BUILTIN_LUTS: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/film_luts");
+
 use crate::AppState;
 use crate::cache_utils::calculate_transform_hash;
 use crate::image_processing::{
@@ -34,13 +45,23 @@ pub struct LutEntry {
     pub name: String,
     pub path: String,
     pub is_built_in: bool,
+    /// Which shader slot this LUT belongs to: scene-referred LUTs are sampled
+    /// with the working colour V-Log-encoded (before the tone curve), display
+    /// LUTs with the final sRGB signal (after the curves). Packed with the
+    /// entry because the old "built-in implies scene-referred" guess breaks
+    /// for display-domain packs (e.g. the sRGB -> sRGB camera styles).
+    pub is_scene_referred: bool,
+    /// Human-readable name from manifest.json displayNames; falls back to the
+    /// file stem when the manifest does not list the file.
+    pub display_name: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LutPreviewRequest {
     pub path: String,
-    pub is_built_in: bool,
+    #[serde(default)]
+    pub is_scene_referred: bool,
 }
 
 #[derive(Serialize)]
@@ -60,11 +81,94 @@ fn strip_verbatim(path: &Path) -> PathBuf {
 }
 
 fn film_luts_dir(app_handle: &AppHandle) -> Option<PathBuf> {
+    #[cfg(any(target_os = "android", target_env = "ohos"))]
+    if let Some(dir) = extract_builtin_luts(app_handle) {
+        return Some(dir);
+    }
+
     app_handle
         .path()
         .resolve("resources/film_luts", tauri::path::BaseDirectory::Resource)
         .ok()
         .map(|p| strip_verbatim(&p))
+}
+
+/// Unpack the embedded LUT set into `app_data_dir/builtin_luts`.
+///
+/// The stamp covers crate version + file count + total bytes, so shipping a
+/// different LUT set re-extracts on the next launch without touching the user's
+/// own LUT directory.
+#[cfg(any(target_os = "android", target_env = "ohos"))]
+fn extract_builtin_luts(app_handle: &AppHandle) -> Option<PathBuf> {
+    let dir = crate::app_paths::app_data_dir(app_handle)
+        .ok()?
+        .join("builtin_luts");
+    let stamp = format!(
+        "{}:{}:{}",
+        env!("CARGO_PKG_VERSION"),
+        BUILTIN_LUTS.files().count(),
+        BUILTIN_LUTS
+            .files()
+            .map(|f| {
+                let name = f
+                    .path()
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or_default();
+                // include the name so a rename re-extracts even if count and
+                // total bytes happen to stay the same
+                format!("{name}:{}", f.contents().len())
+            })
+            .collect::<Vec<_>>()
+            .join("|")
+    );
+    let marker = dir.join(".stamp");
+
+    if let Ok(existing) = std::fs::read_to_string(&marker) {
+        if existing == stamp {
+            return Some(dir);
+        }
+    }
+
+    if let Err(e) = create_dir_all(&dir) {
+        log::warn!("built-in LUT dir {:?} is unusable: {e}", dir);
+        return None;
+    }
+
+    // Remove files that are no longer part of the embedded set (e.g. after a
+    // rename), so the directory is an exact mirror of the pack.
+    let embedded: std::collections::HashSet<&str> = BUILTIN_LUTS
+        .files()
+        .filter_map(|f| f.path().file_name().and_then(|s| s.to_str()))
+        .collect();
+    if let Ok(existing) = read_dir(&dir) {
+        for entry in existing.flatten() {
+            let name = entry.file_name();
+            if let Some(name_str) = name.to_str() {
+                if !embedded.contains(name_str) && name_str != ".stamp" {
+                    let _ = std::fs::remove_file(entry.path());
+                }
+            }
+        }
+    }
+
+    let mut written = 0usize;
+    for file in BUILTIN_LUTS.files() {
+        let Some(name) = file.path().file_name().and_then(|s| s.to_str()) else {
+            continue;
+        };
+        if let Err(e) = std::fs::write(dir.join(name), file.contents()) {
+            log::warn!("failed to extract built-in LUT {name}: {e}");
+            continue;
+        }
+        written += 1;
+    }
+
+    if let Err(e) = std::fs::write(&marker, &stamp) {
+        log::warn!("failed to write built-in LUT stamp: {e}");
+    }
+    log::info!("extracted {written} built-in LUTs to {:?}", dir);
+    Some(dir)
 }
 
 pub fn get_luts_dir(app_data_dir: &Path) -> anyhow::Result<PathBuf> {
@@ -75,11 +179,44 @@ pub fn get_luts_dir(app_data_dir: &Path) -> anyhow::Result<PathBuf> {
     Ok(luts_dir)
 }
 
+/// Optional `<luts dir>/manifest.json` declaring which files are
+/// scene-referred. Without it the historical "built-in implies
+/// scene-referred" guess applies (correct for the V-Log spektrafilm set).
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LutDirManifest {
+    #[serde(default)]
+    scene_referred: Vec<String>,
+    /// file name -> display name (falls back to the file stem when absent).
+    #[serde(default)]
+    display_names: std::collections::HashMap<String, String>,
+}
+
+impl LutDirManifest {
+    fn load(dir: &Path) -> Option<Self> {
+        let text = std::fs::read_to_string(dir.join("manifest.json")).ok()?;
+        match serde_json::from_str(&text) {
+            Ok(manifest) => Some(manifest),
+            Err(e) => {
+                log::warn!("ignoring invalid LUT manifest in {dir:?}: {e}");
+                None
+            }
+        }
+    }
+
+    fn is_scene_referred(&self, file_name: &str, file_stem: &str) -> bool {
+        self.scene_referred.iter().any(|listed| {
+            listed.eq_ignore_ascii_case(file_name) || listed.eq_ignore_ascii_case(file_stem)
+        })
+    }
+}
+
 pub fn list_luts_in_dir(dir: &Path, is_built_in: bool) -> anyhow::Result<Vec<LutEntry>> {
     let mut entries: Vec<LutEntry> = Vec::new();
     if !dir.exists() {
         return Ok(entries);
     }
+    let manifest = LutDirManifest::load(dir);
     for entry in read_dir(dir)? {
         let path = entry?.path();
         let extension = path
@@ -100,10 +237,33 @@ pub fn list_luts_in_dir(dir: &Path, is_built_in: bool) -> anyhow::Result<Vec<Lut
                 .unwrap_or("LUT")
                 .to_string();
 
+            let is_scene_referred = match &manifest {
+                Some(manifest) => manifest.is_scene_referred(
+                    path.file_name()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or_default(),
+                    &name,
+                ),
+                // Historical fallback, only correct for the V-Log built-in set.
+                None => is_built_in,
+            };
+
+            let file_name = path
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or_default()
+                .to_string();
+            let display_name = manifest
+                .as_ref()
+                .and_then(|m| m.display_names.get(&file_name).cloned())
+                .unwrap_or_else(|| name.clone());
+
             entries.push(LutEntry {
                 name,
                 path: strip_verbatim(&path).to_string_lossy().into_owned(),
                 is_built_in,
+                is_scene_referred,
+                display_name,
             });
         }
     }
@@ -484,6 +644,49 @@ pub fn get_or_load_lut(state: &State<AppState>, path: &str) -> Result<Arc<Lut>, 
     Ok(arc_lut)
 }
 
+use std::sync::OnceLock;
+
+/// Cached built-in LUT domain map (file name -> is scene-referred), populated
+/// by the first `list_luts` call. Used by `get_all_adjustments_from_json` to
+/// correct stale `lutIsSceneReferred` values stored before the manifest existed
+/// (the old "built-in implies scene-referred" guess wrote `true` for the sRGB
+/// camera-style pack, which renders through the wrong shader slot).
+static SCENE_REFERRED_LUTS: OnceLock<std::collections::HashSet<String>> = OnceLock::new();
+
+fn scene_referred_cache() -> &'static std::collections::HashSet<String> {
+    SCENE_REFERRED_LUTS.get_or_init(std::collections::HashSet::new)
+}
+
+/// Returns `Some(is_scene_referred)` if the path is a known built-in LUT,
+/// `None` for user-imported LUTs (their stored flag is trusted as-is).
+pub fn lut_domain_hint(path: &str) -> Option<bool> {
+    let file_name = path.rsplit(['/', '\\']).next()?;
+    if scene_referred_cache().contains(file_name) {
+        Some(true)
+    } else {
+        // If the cache is populated and this is a built-in path but not in the
+        // scene list, it is display-referred.
+        let populated = !scene_referred_cache().is_empty()
+            || SCENE_REFERRED_LUTS.get().is_some_and(|s| !s.is_empty());
+        if populated { Some(false) } else { None }
+    }
+}
+
+fn cache_scene_referred_luts(entries: &[LutEntry]) {
+    let scene: std::collections::HashSet<String> = entries
+        .iter()
+        .filter(|e| e.is_scene_referred)
+        .map(|e| {
+            e.path
+                .rsplit(['/', '\\'])
+                .next()
+                .unwrap_or(&e.path)
+                .to_string()
+        })
+        .collect();
+    let _ = SCENE_REFERRED_LUTS.set(scene);
+}
+
 #[tauri::command]
 pub fn list_luts(app_handle: AppHandle) -> Result<Vec<LutEntry>, String> {
     let mut all_luts = Vec::new();
@@ -491,6 +694,7 @@ pub fn list_luts(app_handle: AppHandle) -> Result<Vec<LutEntry>, String> {
     if let Some(resource_path) = film_luts_dir(&app_handle)
         && let Ok(built_in) = list_luts_in_dir(&resource_path, true)
     {
+        cache_scene_referred_luts(&built_in);
         all_luts.extend(built_in);
     }
 
@@ -680,7 +884,7 @@ pub async fn generate_lut_previews(
                 let mut swatch_lut_json = serde_json::json!({
                     "lutPath": "preview",
                     "lutIntensity": 100,
-                    "lutIsSceneReferred": request.is_built_in,
+                    "lutIsSceneReferred": request.is_scene_referred,
                     "sectionVisibility": { "effects": true }
                 });
                 mark_baseline_exposure(&mut swatch_lut_json);
@@ -721,4 +925,39 @@ pub fn load_and_parse_lut(path: String, state: State<AppState>) -> Result<LutPar
     cache.insert(path, Arc::new(lut));
 
     Ok(LutParseResult { size: lut_size })
+}
+
+#[cfg(test)]
+mod builtin_pack_tests {
+    //! Whatever ships in `resources/film_luts` must be listable and parseable
+    //! by the production parser (plain 3D cubes, DOMAIN 0..1, no 1D shaper).
+    //!
+    //! The CamRAW pack is a local, non-redistributable test asset (gitignored),
+    //! so this test only asserts what is actually present.
+
+    use super::*;
+
+    #[test]
+    fn builtin_pack_parses() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/film_luts");
+        let entries = list_luts_in_dir(&dir, true).expect("resource dir must list");
+
+        let mut grids: std::collections::BTreeMap<u32, usize> = Default::default();
+        for entry in &entries {
+            let lut = parse_lut_file(&entry.path).unwrap_or_else(|e| panic!("{}: {e}", entry.name));
+            assert!(
+                matches!(lut.size, 17 | 25 | 33 | 65),
+                "{}: unexpected grid {}",
+                entry.name,
+                lut.size
+            );
+            *grids.entry(lut.size).or_default() += 1;
+        }
+
+        println!("{} LUTs, grids {:?}", entries.len(), grids);
+        assert!(
+            entries.len() >= 6,
+            "the bundled spektrafilm set must be present"
+        );
+    }
 }

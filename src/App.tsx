@@ -32,6 +32,7 @@ import CropPanel from './components/panel/right/CropPanel';
 import MasksPanel from './components/panel/right/MasksPanel';
 import AIPanel from './components/panel/right/AIPanel';
 import PresetsPanel from './components/panel/right/PresetsPanel';
+import LutPanel from './components/panel/right/LutPanel';
 import TetheringPanel from './components/panel/right/TetheringPanel';
 
 import EditorView from './components/views/EditorView';
@@ -373,7 +374,7 @@ function App() {
     compactEditorPanelMinHeight,
     Math.min(compactEditorPanelHeightOverride ?? compactEditorPanelDefaultHeight, compactEditorPanelMaxHeight),
   );
-  const compactEditorPanelCollapsedHeight = 96;
+  const compactEditorPanelCollapsedHeight = 108;
 
   const { handleCopyAdjustments, handlePasteAdjustments, handleResetAdjustments, handleZoomChange } =
     useEditorActions();
@@ -763,7 +764,7 @@ function App() {
   );
 
   const renderAppPanel = useCallback(
-    (panelId: Panel) => {
+    (panelId: Panel, opts?: { compact?: boolean }) => {
       switch (panelId) {
         case Panel.FolderTree:
           return (
@@ -798,7 +799,7 @@ function App() {
             />
           );
         case Panel.Adjustments:
-          return <Controls />;
+          return <Controls compact={opts?.compact} />;
         case Panel.Metadata:
           return <MetadataPanel />;
         case Panel.Crop:
@@ -807,8 +808,10 @@ function App() {
           return <MasksPanel />;
         case Panel.Ai:
           return <AIPanel />;
+        case Panel.Lut:
+          return <LutPanel />;
         case Panel.Presets:
-          return <PresetsPanel onNavigateToCommunity={() => setUI({ activeView: 'community' })} />;
+          return <PresetsPanel />;
         case Panel.Tethering:
           return <TetheringPanel onLibraryRefresh={handleLibraryRefresh} onImageSelect={handleImageSelect} />;
         default:
@@ -918,7 +921,7 @@ function App() {
   // dialog, so the in-app gate must never render a second consent dialog
   // (AppGallery review feedback). Desktop and Android keep the gate.
   if (!appSettings || !isOhosKnown || (isOhos && ohosDeviceType === null)) {
-    return <div className="h-screen w-screen bg-bg-primary" />;
+    return <div className="h-dvh w-dvw bg-bg-primary" />;
   }
 
   if (!isOhos && appSettings.agreementAcceptedVersion !== AGREEMENT_VERSION) {
@@ -937,7 +940,7 @@ function App() {
       <ImageLoaderManager cachedEditStateRef={cachedEditStateRef} />
       <div
         className={clsx(
-          'flex flex-col h-screen font-sans text-text-primary overflow-hidden select-none',
+          'flex flex-col h-dvh font-sans text-text-primary overflow-hidden select-none',
           useMacWindowShell && 'macos-window-shell',
           isWgpuActive ? 'bg-transparent' : 'bg-bg-primary',
         )}

@@ -96,7 +96,6 @@ interface MainLibraryProps {
   theme: string;
   thumbnailAspectRatio: ThumbnailAspectRatio;
   thumbnailSize: ThumbnailSize;
-  onNavigateToCommunity(): void;
 }
 
 interface DisplayModeSwitchProps {
@@ -615,15 +614,6 @@ export default function MainLibrary(props: MainLibraryProps) {
                     data-tooltip={t('library.tooltips.select')}
                   >
                     <CheckCheck className="w-6 h-6" />
-                  </Button>
-                )}
-                {!props.isTouchUi && (
-                  <Button
-                    className="h-12 w-12 bg-transparent text-text-primary shadow-none p-0 flex items-center justify-center"
-                    onClick={props.onNavigateToCommunity}
-                    data-tooltip={t('library.tooltips.communityPresets')}
-                  >
-                    <Users className="w-5 h-5" />
                   </Button>
                 )}
                 <Button

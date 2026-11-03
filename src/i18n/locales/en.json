@@ -811,8 +811,7 @@
         "sortAll": "Sort All Alphabetically"
       },
       "status": {
-        "empty": "No presets saved yet. Create your own, import from a file, or explore community presets.",
-        "getCommunity": "Get Community Presets",
+        "empty": "No presets saved yet. Create your own or import one from a file.",
         "loading": "Loading Presets..."
       },
       "supports": {
@@ -822,7 +821,6 @@
       },
       "title": "Presets",
       "tooltips": {
-        "explore": "Explore Community Presets",
         "export": "Export all presets to .rrpreset file",
         "import": "Import presets from .rrpreset file",
         "saveNew": "Save as new preset"
@@ -1079,22 +1077,6 @@
       "unprocessed_one": "{{count}} image needs AI processing",
       "unprocessed_other": "{{count}} images need AI processing",
       "waiting": "Preparing AI processing…"
-    },
-    "community": {
-      "actionSave": "Save",
-      "actionSaved": "Saved",
-      "actionSaving": "Saving...",
-      "fetchingPresets": "Fetching presets from GitHub...",
-      "footerHeading": "Want to get your preset featured?",
-      "footerLinkText": "Create an issue on GitHub",
-      "headerDesc": "Discover presets created by the community.",
-      "headerTitle": "Community Presets",
-      "presetBy": "by {{creator}}",
-      "searchPlaceholder": "Search presets...",
-      "sortBy": "Sort by:",
-      "sortMethods": {
-        "name": "Name (A-Z)"
-      }
     },
     "culling": {
       "addTagPlaceholder": "Add tag...",
@@ -1359,7 +1341,6 @@
       "small": "Small"
     },
     "tooltips": {
-      "communityPresets": "Community Presets",
       "goHome": "Go to Home",
       "importFromAlbum": "Import from Album",
       "importImages": "Import Images",

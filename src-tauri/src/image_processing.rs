@@ -2538,21 +2538,27 @@ fn get_global_adjustments_from_json(
     let rgb_to_lms = white_balance::rgb_to_lms();
 
     let (has_lut, lut_intensity, lut_is_scene_referred) = if is_visible("lut") {
+        let lut_path = js_adjustments["lutPath"].as_str();
+        let stored_scene = if js_adjustments["lutIsSceneReferred"]
+            .as_bool()
+            .unwrap_or(false)
+        {
+            1
+        } else {
+            0
+        };
+        // Correct stale flags: before per-LUT domain metadata existed, the
+        // frontend wrote `lutIsSceneReferred = isBuiltIn`, which is wrong for
+        // the sRGB camera-style pack (it renders through the V-Log slot). If
+        // the backend knows this LUT's actual domain, trust the manifest.
+        let corrected_scene = lut_path
+            .and_then(crate::lut_processing::lut_domain_hint)
+            .map(|scene| if scene { 1 } else { 0 })
+            .unwrap_or(stored_scene);
         (
-            if js_adjustments["lutPath"].is_string() {
-                1
-            } else {
-                0
-            },
+            if lut_path.is_some() { 1 } else { 0 },
             js_adjustments["lutIntensity"].as_f64().unwrap_or(100.0) as f32 / 100.0,
-            if js_adjustments["lutIsSceneReferred"]
-                .as_bool()
-                .unwrap_or(false)
-            {
-                1
-            } else {
-                0
-            },
+            corrected_scene,
         )
     } else {
         (0, 1.0, 0)

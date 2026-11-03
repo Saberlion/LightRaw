@@ -19,7 +19,6 @@ import {
   getRelightLightColor,
 } from '../../utils/adjustments';
 import Dropdown from '../ui/Dropdown';
-import LUTControl from '../ui/LUTControl';
 import ColorField, { normalizeHexColor, useParsedTextField } from '../ui/ColorField';
 import { ColorSwatch } from './Color';
 import { AppSettings } from '../ui/AppProperties';
@@ -37,8 +36,6 @@ interface EffectsPanelProps {
   adjustments: Adjustments;
   isForMask?: boolean;
   setAdjustments(adjustments: Partial<Adjustments> | ((prev: Adjustments) => Adjustments)): void;
-  handleLutSelect(path: string, isSceneReferred: boolean): void;
-  onLutHover?: (path: string | null) => void;
   appSettings: AppSettings | null;
   onDragStateChange?: (isDragging: boolean) => void;
 }
@@ -185,8 +182,6 @@ function EffectsPanel({
   adjustments,
   setAdjustments,
   isForMask = false,
-  handleLutSelect,
-  onLutHover,
   appSettings,
   onDragStateChange,
 }: EffectsPanelProps) {
@@ -252,22 +247,6 @@ function EffectsPanel({
   const handleAdjustmentChange = (key: string, value: boolean | number | string) => {
     const numericValue = typeof value === 'boolean' ? value : parseInt(String(value), 10);
     setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, [key]: numericValue }));
-  };
-
-  const handleLutIntensityChange = (intensity: number) => {
-    setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, lutIntensity: intensity }));
-  };
-
-  const handleLutClear = () => {
-    setAdjustments((prev: Partial<Adjustments>) => ({
-      ...prev,
-      lutPath: null,
-      lutName: null,
-      lutData: null,
-      lutSize: 0,
-      lutIntensity: 100,
-      lutIsSceneReferred: false,
-    }));
   };
 
   const handleLensBlurToggle = (enabled: boolean) => {
@@ -938,21 +917,6 @@ function EffectsPanel({
                   )}
                 </SpatialEffect>
               </div>
-            </AdjustmentSubSection>
-          )}
-
-          {!hiddenTools.includes('lut') && (
-            <AdjustmentSubSection id="lut" order={toolOrder.indexOf('lut')} title={t('adjustments.effects.lut')}>
-              <LUTControl
-                lutPath={adjustments.lutPath || null}
-                lutName={adjustments.lutName || null}
-                lutIntensity={adjustments.lutIntensity || 100}
-                onLutSelect={handleLutSelect}
-                onLutHover={onLutHover}
-                onIntensityChange={handleLutIntensityChange}
-                onClear={handleLutClear}
-                onDragStateChange={onDragStateChange}
-              />
             </AdjustmentSubSection>
           )}
 

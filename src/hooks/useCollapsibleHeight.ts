@@ -22,6 +22,13 @@ export function useCollapsibleHeight(isOpen: boolean) {
 
     updateMaxHeight();
 
+    // ArkWeb hit-testing ignores the overflow clip: collapsed content still
+    // swallows pointer events and stays in the accessibility tree with its
+    // full laid-out bounds, creating invisible "dead zones" that eat taps meant
+    // for whatever is rendered on top. `inert` removes the subtree from
+    // hit-testing, focus and the a11y tree in one go.
+    wrapper.inert = !isOpen;
+
     const resizeObserver = new ResizeObserver(updateMaxHeight);
     resizeObserver.observe(content);
 

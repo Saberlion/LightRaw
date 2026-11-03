@@ -809,7 +809,6 @@
       },
       "status": {
         "empty": "保存されたプリセットはまだありません。作成、インポート、またはコミュニティのプリセットを探してみましょう。",
-        "getCommunity": "コミュニティプリセットを入手",
         "loading": "プリセットを読み込み中..."
       },
       "supports": {
@@ -819,7 +818,6 @@
       },
       "title": "プリセット",
       "tooltips": {
-        "explore": "コミュニティのプリセットを検索",
         "export": "すべてのプリセットを .rrpreset ファイルとして書き出し",
         "import": ".rrpreset ファイルからプリセットをインポート",
         "saveNew": "新規プリセットとして保存"
@@ -1075,22 +1073,6 @@
       "title": "AI処理",
       "unprocessed_other": "{{count}}枚の画像にAI処理が必要です",
       "waiting": "AI処理を準備中…"
-    },
-    "community": {
-      "actionSave": "保存",
-      "actionSaved": "保存済み",
-      "actionSaving": "保存中...",
-      "fetchingPresets": "GitHubからプリセットを取得中...",
-      "footerHeading": "あなたのプリセットを掲載しませんか？",
-      "footerLinkText": "GitHubでIssueを作成してください",
-      "headerDesc": "コミュニティによって作成されたプリセットをご覧ください。",
-      "headerTitle": "コミュニティプリセット",
-      "presetBy": "作成者: {{creator}}",
-      "searchPlaceholder": "プリセットを検索...",
-      "sortBy": "並べ替え基準:",
-      "sortMethods": {
-        "name": "名前 (A-Z)"
-      }
     },
     "culling": {
       "addTagPlaceholder": "タグを追加...",
@@ -1353,7 +1335,6 @@
       "small": "小"
     },
     "tooltips": {
-      "communityPresets": "コミュニティプリセット",
       "goHome": "ホームへ移動",
       "importFromAlbum": "アルバムから読み込む",
       "importImages": "画像をインポート",
