@@ -2322,6 +2322,7 @@
       "selectImageFile": "選擇影像檔案"
     },
     "lut": {
+      "all": "全部",
       "clearLut": "清除 LUT",
       "customLuts": "自訂 LUT",
       "empty": "暫無 LUT — 請匯入一些",

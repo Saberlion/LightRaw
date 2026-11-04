@@ -2322,6 +2322,7 @@
       "selectImageFile": "이미지 파일 선택"
     },
     "lut": {
+      "all": "전체",
       "clearLut": "LUT 지우기",
       "customLuts": "사용자 LUT",
       "empty": "아직 LUT가 없습니다 — 가져오기를 수행하세요",

@@ -2322,6 +2322,7 @@
       "selectImageFile": "画像ファイルを選択"
     },
     "lut": {
+      "all": "すべて",
       "clearLut": "LUTをクリア",
       "customLuts": "カスタム LUT",
       "empty": "LUTはまだありません — インポートしてください",

@@ -2416,6 +2416,7 @@
       "selectImageFile": "Wybierz plik obrazu"
     },
     "lut": {
+      "all": "Wszystkie",
       "clearLut": "Wyczyść LUT",
       "customLuts": "Własne LUT-y",
       "empty": "Brak LUT — zaimportuj jakieś",

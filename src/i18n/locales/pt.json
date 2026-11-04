@@ -2372,6 +2372,7 @@
       "selectImageFile": "Selecione um arquivo de imagem"
     },
     "lut": {
+      "all": "Tudo",
       "clearLut": "Limpar LUT",
       "customLuts": "LUTs personalizadas",
       "empty": "Sem LUTs ainda — importe alguns",

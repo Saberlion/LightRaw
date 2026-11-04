@@ -2322,6 +2322,7 @@
       "selectImageFile": "选择图像文件"
     },
     "lut": {
+      "all": "全部",
       "clearLut": "清除 LUT",
       "customLuts": "自定义 LUT",
       "empty": "暂无 LUT — 请导入一些",

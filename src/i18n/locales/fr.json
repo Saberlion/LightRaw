@@ -2373,6 +2373,7 @@
       "selectImageFile": "Sélectionner un fichier image"
     },
     "lut": {
+      "all": "Tout",
       "clearLut": "Effacer LUT",
       "customLuts": "LUTs personnalisées",
       "empty": "Pas encore de LUT — importez-en",

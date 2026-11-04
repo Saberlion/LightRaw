@@ -2416,6 +2416,7 @@
       "selectImageFile": "Выберите графический файл"
     },
     "lut": {
+      "all": "Все",
       "clearLut": "Удалить LUT",
       "customLuts": "Свои LUT",
       "empty": "Пока нет LUT — импортируйте их",

@@ -62,7 +62,8 @@ const PREVIEW_SIZE = 112;
 const SUPPORTED_EXTENSIONS = ['cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff'];
 
 export default function LUTControl({
-  lutPath,  lutName,
+  lutPath,
+  lutName,
   lutIntensity,
   onLutSelect,
   onLutHover,
@@ -74,9 +75,17 @@ export default function LUTControl({
   const { showContextMenu } = useContextMenu();
   const selectedImagePath = useEditorStore((state) => state.selectedImage?.path ?? null);
   const isImageReady = useEditorStore((state) => state.selectedImage?.isReady ?? false);
+  const exifMake = useEditorStore((state) => state.selectedImage?.exif?.Make ?? null);
+  const isOhos = useSettingsStore((state) => state.isOhos);
+  // Custom LUT import rides tauri-plugin-dialog (desktop) or the OHOS FileKit
+  // bridge; the OHOS path is unverified, so the import entry points are not
+  // rendered there for now (temporarily — see docs/HARMONYOS_PORTING.md).
+  const canImportLuts = !isOhos;
 
   const [isExpanded, setIsExpanded] = useState(false);
-  const [activeBrand, setActiveBrand] = useState<string | null>(null);
+  // No "All" tab anymore — a concrete brand is always active. It defaults to
+  // the selected image's camera make when we ship LUTs for it, else Fuji.
+  const [activeBrand, setActiveBrand] = useState<string>('Fuji');
   const [entries, setEntries] = useState<LutEntry[]>([]);
   const [previews, setPreviews] = useState<Record<string, string | null>>({});
   const [isLoadingPreviews, setIsLoadingPreviews] = useState(false);
@@ -169,11 +178,14 @@ export default function LUTControl({
   }, [isExpanded, selectedImagePath, isImageReady, entries]);
 
   const handleImport = async () => {
+    if (!canImportLuts) return;
     try {
-      const { osPlatform, isOhos } = useSettingsStore.getState();
+      const { osPlatform } = useSettingsStore.getState();
       const isAndroid = osPlatform === 'android';
 
       let sourcePaths: string[] = [];
+      // Unreachable while custom LUT import is hidden on OHOS; kept so the
+      // FileKit bridge lights up again the moment canImportLuts allows it.
       if (isOhos) {
         // tauri-plugin-dialog is unavailable on OHOS; the FileKit picker
         // bridge filters by extension picker-side.
@@ -256,15 +268,12 @@ export default function LUTControl({
     if (!lutPath || entries.length === 0 || repairedPathRef.current === lutPath) return;
     if (entries.some((e) => e.path === lutPath)) return;
 
-    const stem = (p: string) =>
-      (p.split(/[\\/]/).pop() || '').replace(/\.(cube|3dl|png|jpe?g|tiff)$/i, '');
+    const stem = (p: string) => (p.split(/[\\/]/).pop() || '').replace(/\.(cube|3dl|png|jpe?g|tiff)$/i, '');
     const storedStem = stem(lutPath);
     const candidates = entries.filter((e) => {
       const entryStem = e.name;
       return (
-        entryStem === storedStem ||
-        entryStem === storedStem.replace(/^CamRAW /, '') ||
-        e.displayName === storedStem
+        entryStem === storedStem || entryStem === storedStem.replace(/^CamRAW /, '') || e.displayName === storedStem
       );
     });
 
@@ -299,8 +308,28 @@ export default function LUTControl({
       .map(([brand, count]) => ({ brand, count }));
   }, [builtInLuts]);
 
+  // Match the EXIF Make (e.g. "FUJIFILM", "NIKON CORPORATION") against the
+  // shipped LUT brand prefixes to find the tab consistent with the camera.
+  const cameraBrand = useMemo(() => {
+    if (!exifMake) return null;
+    const make = exifMake.toLowerCase();
+    return CAMERA_BRANDS.find((brand) => make.includes(brand.toLowerCase())) ?? null;
+  }, [exifMake]);
+
+  const defaultBrand = useMemo(() => {
+    const brands = new Set(availableBrands.map(({ brand }) => brand));
+    if (cameraBrand && brands.has(cameraBrand)) return cameraBrand;
+    return brands.has('Fuji') ? 'Fuji' : (availableBrands[0]?.brand ?? 'Fuji');
+  }, [cameraBrand, availableBrands]);
+
+  // Default the active tab to the camera's brand (else Fuji); re-syncs when
+  // the user switches to an image from another camera.
+  useEffect(() => {
+    setActiveBrand(defaultBrand);
+  }, [defaultBrand]);
+
   const visibleBuiltInLuts = useMemo(
-    () => (activeBrand ? builtInLuts.filter((e) => getLutBrand(e.name) === activeBrand) : builtInLuts),
+    () => builtInLuts.filter((e) => getLutBrand(e.name) === activeBrand),
     [builtInLuts, activeBrand],
   );
 
@@ -402,22 +431,14 @@ export default function LUTControl({
               {builtInLuts.length > 0 && (
                 <div>
                   {availableBrands.length > 1 && (
-                    <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-2 mb-1" style={{ scrollbarWidth: 'none' }}>
-                      <button
-                        onClick={() => setActiveBrand(null)}
-                        className={clsx(
-                          'shrink-0 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
-                          activeBrand === null
-                            ? 'bg-accent text-button-text'
-                            : 'bg-surface text-text-secondary hover:text-text-primary',
-                        )}
-                      >
-                        {t('ui.lut.all', 'All')} ({builtInLuts.length})
-                      </button>
+                    <div
+                      className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-2 mb-1"
+                      style={{ scrollbarWidth: 'none' }}
+                    >
                       {availableBrands.map(({ brand, count }) => (
                         <button
                           key={brand}
-                          onClick={() => setActiveBrand(activeBrand === brand ? null : brand)}
+                          onClick={() => setActiveBrand(brand)}
                           className={clsx(
                             'shrink-0 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
                             activeBrand === brand
@@ -434,43 +455,53 @@ export default function LUTControl({
                 </div>
               )}
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-text-secondary select-none">{t('ui.lut.customLuts')}</span>
-                  {customLuts.length > 0 && (
+              {/* Custom LUT import is unavailable on OHOS for now: the FileKit
+                  bridge path is unverified, so every import entry point is
+                  simply not rendered there (docs/HARMONYOS_PORTING.md). With no
+                  custom LUTs to show either, the whole section hides. */}
+              {(customLuts.length > 0 || canImportLuts) && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-text-secondary select-none">
+                      {t('ui.lut.customLuts')}
+                    </span>
+                    {customLuts.length > 0 && canImportLuts && (
+                      <button
+                        onClick={handleImport}
+                        className="text-xs text-text-secondary hover:text-accent flex items-center gap-1 transition-colors"
+                        data-tooltip={t('ui.lut.import')}
+                      >
+                        <Upload size={12} />
+                        {t('ui.lut.import')}
+                      </button>
+                    )}
+                  </div>
+
+                  {customLuts.length === 0 ? (
                     <button
                       onClick={handleImport}
-                      className="text-xs text-text-secondary hover:text-accent flex items-center gap-1 transition-colors"
-                      data-tooltip={t('ui.lut.import')}
+                      className="w-full flex items-center justify-center gap-1.5 py-4 rounded-md bg-bg-tertiary hover:bg-surface border-2 border-dashed border-text-secondary/20 hover:border-text-secondary/40 text-sm text-text-primary transition-colors cursor-pointer"
                     >
-                      <Upload size={12} />
+                      <Upload size={16} />
                       {t('ui.lut.import')}
                     </button>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {customLuts.map(renderSwatch)}
+
+                      {canImportLuts && (
+                        <button
+                          onClick={handleImport}
+                          className="aspect-square rounded-md bg-bg-tertiary border-2 border-dashed border-text-secondary/25 hover:border-accent flex items-center justify-center text-text-secondary hover:text-text-primary transition-all duration-150 cursor-pointer"
+                          data-tooltip={t('ui.lut.import')}
+                        >
+                          <Upload size={18} />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
-
-                {customLuts.length === 0 ? (
-                  <button
-                    onClick={handleImport}
-                    className="w-full flex items-center justify-center gap-1.5 py-4 rounded-md bg-bg-tertiary hover:bg-surface border-2 border-dashed border-text-secondary/20 hover:border-text-secondary/40 text-sm text-text-primary transition-colors cursor-pointer"
-                  >
-                    <Upload size={16} />
-                    {t('ui.lut.import')}
-                  </button>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2">
-                    {customLuts.map(renderSwatch)}
-
-                    <button
-                      onClick={handleImport}
-                      className="aspect-square rounded-md bg-bg-tertiary border-2 border-dashed border-text-secondary/25 hover:border-accent flex items-center justify-center text-text-secondary hover:text-text-primary transition-all duration-150 cursor-pointer"
-                      data-tooltip={t('ui.lut.import')}
-                    >
-                      <Upload size={18} />
-                    </button>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </motion.div>
         )}

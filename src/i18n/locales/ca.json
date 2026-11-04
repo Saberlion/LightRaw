@@ -2372,6 +2372,7 @@
       "selectImageFile": "Seleccionar un fitxer d'imatge"
     },
     "lut": {
+      "all": "Tots",
       "clearLut": "Esborrar LUT",
       "customLuts": "LUTs personalitzades",
       "empty": "Cap LUT encara — importeu-ne algun",

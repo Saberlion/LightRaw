@@ -2320,6 +2320,7 @@
       "selectImageFile": "Selecteer een afbeeldingsbestand"
     },
     "lut": {
+      "all": "Alle",
       "clearLut": "LUT wissen",
       "customLuts": "Aangepaste LUT's",
       "empty": "Nog geen LUT's — importeer er enkele",
