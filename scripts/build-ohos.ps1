@@ -20,12 +20,16 @@
 #   powershell ... -File scripts\build-ohos.ps1 -Target x86_64            # DevEco emulator
 #   powershell ... -File scripts\build-ohos.ps1 -SkipBuild                # re-inject ORT only
 #   powershell ... -File scripts\build-ohos.ps1 -Release                  # release profile (AppGallery submission)
+#   powershell ... -File scripts\build-ohos.ps1 -Release -ModelsDir D:\models  # bundle models from a custom dir
 #   powershell ... -File scripts\build-ohos.ps1 -ExtraArgs @('--','--features','tethering')  # passthrough
 param(
   [int]$TimeoutSec = 1800,
   [string[]]$ExtraArgs = @(),
   [string]$Target = 'aarch64',   # aarch64 (devices) | x86_64 (DevEco emulator) | armv7
   [switch]$Release,              # release profile; default is debug (-d). ORT injection is always target-ABI-only and foreign ABI dirs are purged.
+                                  # -Release ALSO bundles the high-frequency AI model set into resources/rawfile/models/
+                                  # (see $releaseModels below; debug builds ship none and load models via download/sideload).
+  [string]$ModelsDir = '',        # local dir with model files to bundle (release only). Default: src-tauri\libs\ohos\models (gitignored, machine-local)
   [switch]$SkipBuild,            # skip the cargo stage; only inject ORT + report (HAP must already exist)
   [switch]$SkipOrtBuild,         # do not build ONNX Runtime from source (use an existing libs/ohos/<abi>/libonnxruntime.so)
   [switch]$RebuildOrt            # force a clean ONNX Runtime source build
@@ -301,6 +305,68 @@ try {
         $zip, $cannSrc, "libs/$targetAbi/$cannLib",
         [IO.Compression.CompressionLevel]::Optimal) | Out-Null
       Write-Host "CANN lib injected into HAP libs/$targetAbi/: $cannLib"
+    }
+  }
+
+  # ---------- 3.6 bundled AI models (release only; debug ships none) ----------
+  # Dual-path model loading (ai_processing.rs ModelSource): the app reads
+  # models straight from the HAP's resources/rawfile/models/ zip entries at
+  # runtime (central-directory lookup, commit_from_memory) - no extraction,
+  # no copy into the app-data models dir. Anything not bundled here simply
+  # downloads on first use, so a partial bundle degrades gracefully.
+  # Debug builds deliberately bundle NOTHING: every model then loads via the
+  # download/sideload path (app-data models dir), which keeps dev iteration
+  # fast and dev HAPs small.
+  # Entries are STORED (NoCompression): onnx weights barely deflate anyway,
+  # and uncompressed entries keep a future mmap/getRawFd zero-copy load open.
+  # AGC note: a later re-pack may deflate these entries; the runtime reader
+  # handles both. The HAP code-signing digest covers the entries, so bundle
+  # integrity rides on the package signature plus the pinned sha256 checks
+  # in download_and_verify_model.
+  #
+  # Machine-local provisioning dir (gitignored, same channel as ORT/CANN):
+  #   src-tauri\libs\ohos\models\<filename>   (default; override with -ModelsDir)
+  # High-frequency set = the one-click mask family (Subject/Sky/Face/Depth,
+  # ~445 MB raw). Heavy or low-frequency models (BiRefNet, ESAM3 text
+  # encoder, CLIP, denoise, LaMa, normal) stay on the download path.
+  $releaseModels = @(
+    'sam_vit_b_01ec64_encoder.onnx',         # 100.3 MB  Subject masking (SAM)
+    'sam_vit_b_01ec64_decoder.onnx',         #   8.8 MB
+    'efficientsam3_ev_m_image_encoder.onnx', #  85.4 MB  Sky/Text/Face masking (EfficientSAM3)
+    'efficientsam3_ev_m_decoder.onnx',       # 129.9 MB
+    'efficientsam3_sky_prompt.bin',          #  16.4 KB
+    'efficientsam3_face_prompt.bin',         #  16.4 KB
+    'mediapipe_face_landmarks.onnx',         #   4.9 MB  Face masking helpers
+    'mediapipe_selfie_multiclass.onnx',      #  16.5 MB
+    'depth_anything_v2_vits.onnx'            #  99.4 MB  Depth masking
+  )
+  $modelsDir = if ($ModelsDir) { $ModelsDir } else { "$repo\src-tauri\libs\ohos\models" }
+  if ($Release) {
+    $bundled = 0
+    foreach ($model in $releaseModels) {
+      $modelSrc = Join-Path $modelsDir $model
+      if (Test-Path $modelSrc) {
+        $old = $zip.GetEntry("resources/rawfile/models/$model")
+        if ($old) { $old.Delete() }
+        [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+          $zip, $modelSrc, "resources/rawfile/models/$model",
+          [IO.Compression.CompressionLevel]::NoCompression) | Out-Null
+        $bundled++
+        Write-Host "model bundled into HAP rawfile: $model"
+      } else {
+        Write-Host "!! WARNING: release model missing (will download at runtime): $modelSrc" -ForegroundColor Yellow
+      }
+    }
+    Write-Host "bundled $bundled/$($releaseModels.Count) high-frequency models into resources/rawfile/models/ (~445 MB raw)"
+  } else {
+    # Deterministic guarantee for dev HAPs: purge any stale injected models
+    # (only relevant when reusing a HAP from a previous release run via -SkipBuild).
+    $stale = @($zip.Entries | Where-Object { $_.FullName -like 'resources/rawfile/models/*' })
+    if ($stale) {
+      $stale | ForEach-Object { $_.Delete() }
+      Write-Host "debug build: purged $($stale.Count) stale rawfile model entries (models load via download/sideload)"
+    } else {
+      Write-Host "debug build: no models bundled (download/sideload path)"
     }
   }
 } finally { $zip.Dispose() }

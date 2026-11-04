@@ -2085,3 +2085,128 @@ pub mod om {
         }
     }
 }
+
+// Bundled AI models inside the app's own HAP package (dual-path model loading).
+//
+// Release packaging (scripts/build-ohos.ps1 -Release) injects a curated
+// high-frequency model set into resources/rawfile/models/ of the HAP zip;
+// debug builds deliberately ship none. At runtime this module reads those
+// entries straight out of the installed HAP (own-bundle sandbox path, zip
+// central directory + entry decompression) - no extraction step, no copy
+// into the app-data models dir. ai_processing.rs treats a bundled model as
+// one load source alongside the classic download path; a model missing from
+// the bundle simply downloads on first use.
+//
+// The injected entries are STORED (uncompressed) by the build script: onnx
+// weights barely deflate anyway, and uncompressed entries keep a future
+// mmap-based zero-copy load (memfd / getRawFd offsets) possible. Deflated
+// entries (e.g. after an AGC re-pack) still read correctly, just through a
+// heap buffer.
+#[cfg(target_env = "ohos")]
+pub mod rawfile_models {
+    use std::collections::HashSet;
+    use std::fs::File;
+    use std::io::Read;
+    use std::path::{Path, PathBuf};
+    use std::sync::{Mutex, OnceLock};
+
+    use zip::ZipArchive;
+
+    const MODELS_PREFIX: &str = "resources/rawfile/models/";
+    /// Bundle sandbox mount of the app's own installed package(s). The
+    /// tauri fork's path helpers already redirect app data to el2/base
+    /// (crate::app_paths); el1/bundle is the read-only code side.
+    const BUNDLE_ROOT: &str = "/data/storage/el1/bundle";
+
+    struct Bundle {
+        archive: Mutex<ZipArchive<File>>,
+        names: HashSet<String>,
+    }
+
+    static BUNDLE: OnceLock<Option<Bundle>> = OnceLock::new();
+
+    /// Shallow walk (bounded depth) for *.hap files under the bundle mount.
+    fn find_haps() -> Vec<PathBuf> {
+        let mut haps = Vec::new();
+        let mut stack = vec![(PathBuf::from(BUNDLE_ROOT), 0u8)];
+        while let Some((dir, depth)) = stack.pop() {
+            let Ok(entries) = std::fs::read_dir(&dir) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let Ok(file_type) = entry.file_type() else {
+                    continue;
+                };
+                if file_type.is_dir() {
+                    if depth < 3 {
+                        stack.push((entry.path(), depth + 1));
+                    }
+                } else if entry.path().extension().is_some_and(|ext| ext == "hap") {
+                    haps.push(entry.path());
+                }
+            }
+        }
+        haps
+    }
+
+    fn load_bundle() -> Option<Bundle> {
+        for hap in find_haps() {
+            let Ok(file) = File::open(&hap) else {
+                continue;
+            };
+            // The HAP zip carries a signing block; the zip crate locates the
+            // EOCD the same way it does for signed APKs, so this just works.
+            let Ok(archive) = ZipArchive::new(file) else {
+                log::warn!(
+                    "HAP {} is not a readable zip - no bundled models",
+                    hap.display()
+                );
+                continue;
+            };
+            let names: HashSet<String> = archive
+                .file_names()
+                .filter(|name| name.starts_with(MODELS_PREFIX) && name.len() > MODELS_PREFIX.len())
+                .map(|name| name[MODELS_PREFIX.len()..].to_string())
+                .collect();
+            if names.is_empty() {
+                continue;
+            }
+            log::info!(
+                "HAP rawfile model bundle found: {} ({} models)",
+                hap.display(),
+                names.len()
+            );
+            return Some(Bundle {
+                archive: Mutex::new(archive),
+                names,
+            });
+        }
+        None
+    }
+
+    fn bundle() -> Option<&'static Bundle> {
+        BUNDLE.get_or_init(load_bundle).as_ref()
+    }
+
+    /// Whether a model file rides in the HAP rawfile bundle (cheap central
+    /// directory probe; result is cached for the process lifetime).
+    pub fn has(filename: &str) -> bool {
+        bundle().is_some_and(|b| b.names.contains(filename))
+    }
+
+    /// Read a bundled model's bytes. Returns None when the model is not
+    /// bundled (debug builds: always) or on any zip/IO error - callers treat
+    /// that as "not bundled" and fall back to the download path.
+    pub fn read(filename: &str) -> Option<Vec<u8>> {
+        let bundle = bundle()?;
+        if !bundle.names.contains(filename) {
+            return None;
+        }
+        let entry_path = format!("{MODELS_PREFIX}{filename}");
+        let mut archive = bundle.archive.lock().ok()?;
+        let mut entry = archive.by_name(&entry_path).ok()?;
+        let mut bytes = Vec::with_capacity(entry.size() as usize);
+        entry.read_to_end(&mut bytes).ok()?;
+        Some(bytes)
+    }
+}

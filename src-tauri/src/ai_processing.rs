@@ -261,6 +261,74 @@ const NORMAL_ASSET: ModelAsset = ModelAsset {
     name: "Normal Model",
 };
 
+// ---------------------------------------------------------------------------
+// Dual-path model loading (OpenHarmony packaging)
+//
+// Release HAPs carry a curated high-frequency model set inside the package
+// (resources/rawfile/models/, injected by scripts/build-ohos.ps1 -Release);
+// debug builds ship none. Bundled models load straight from the HAP via
+// commit_from_memory - nothing is extracted or copied to app data. Anything
+// not bundled follows the classic path: download into the app-data models
+// dir (sha256-verified, then commit_from_file). A file already present in
+// the models dir always wins over the bundle, keeping the download dir an
+// override / hot-update channel.
+// ---------------------------------------------------------------------------
+
+/// Where a model's bytes come from when a session is built.
+enum ModelSource {
+    /// Bytes read from the HAP rawfile bundle (OHOS release builds only).
+    Bundled { filename: String, bytes: Vec<u8> },
+    /// File under the app-data models dir (download/sideload channel).
+    File(PathBuf),
+}
+
+impl ModelSource {
+    fn filename(&self) -> &str {
+        match self {
+            ModelSource::Bundled { filename, .. } => filename,
+            ModelSource::File(path) => path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("?"),
+        }
+    }
+
+    fn resolve(filename: &str, models_dir: &Path) -> ModelSource {
+        let path = models_dir.join(filename);
+        if path.exists() || !has_bundled_model(filename) {
+            ModelSource::File(path)
+        } else {
+            match read_bundled_model(filename) {
+                Some(bytes) => ModelSource::Bundled {
+                    filename: filename.to_string(),
+                    bytes,
+                },
+                None => ModelSource::File(path),
+            }
+        }
+    }
+}
+
+#[cfg(target_env = "ohos")]
+fn has_bundled_model(filename: &str) -> bool {
+    crate::ohos_integration::rawfile_models::has(filename)
+}
+
+#[cfg(not(target_env = "ohos"))]
+fn has_bundled_model(_filename: &str) -> bool {
+    false
+}
+
+#[cfg(target_env = "ohos")]
+fn read_bundled_model(filename: &str) -> Option<Vec<u8>> {
+    crate::ohos_integration::rawfile_models::read(filename)
+}
+
+#[cfg(not(target_env = "ohos"))]
+fn read_bundled_model(_filename: &str) -> Option<Vec<u8>> {
+    None
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum AiMaskModel {
     Subject,
@@ -341,7 +409,7 @@ impl AiModels {
             return Ok(Arc::clone(session));
         }
         let session = Arc::new(Mutex::new(build_session(
-            &self.models_dir.join(filename),
+            &ModelSource::resolve(filename, &self.models_dir),
             SessionKind::OneShot,
             self.use_gpu && use_gpu,
             None,
@@ -416,7 +484,15 @@ impl AiModels {
         if let Some(prompt) = slot.as_ref() {
             return Ok(Arc::clone(prompt));
         }
-        let bytes = fs::read(self.models_dir.join(filename))?;
+        let bytes = fs::read(self.models_dir.join(filename))
+            .ok()
+            .or_else(|| read_bundled_model(filename))
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "prompt file {} not found in models dir or HAP bundle",
+                    filename
+                )
+            })?;
         let values: Vec<f32> = bytes
             .as_chunks::<4>()
             .0
@@ -588,7 +664,7 @@ fn denoise_crop_as_slice() -> ort::Result<(Model, Vec<Output>)> {
 }
 
 fn create_session(
-    model_path: &Path,
+    source: &ModelSource,
     kind: SessionKind,
     gpu_provider: Option<ExecutionProviderDispatch>,
     gpu_patch: Option<GpuModelPatch>,
@@ -610,18 +686,24 @@ fn create_session(
     match gpu_patch {
         Some(patch) => {
             let (model, outputs) = patch()?;
-            let mut session = builder.edit_from_file(model_path)?;
+            let mut session = match source {
+                ModelSource::File(path) => builder.edit_from_file(path)?,
+                ModelSource::Bundled { bytes, .. } => builder.edit_from_memory(bytes)?,
+            };
             session.apply_model(&model)?;
             let mut session = session.into_session()?;
             session.outputs = outputs;
             Ok(session)
         }
-        None => Ok(builder.commit_from_file(model_path)?),
+        None => match source {
+            ModelSource::File(path) => Ok(builder.commit_from_file(path)?),
+            ModelSource::Bundled { bytes, .. } => Ok(builder.commit_from_memory(bytes)?),
+        },
     }
 }
 
 fn build_session(
-    model_path: &Path,
+    source: &ModelSource,
     kind: SessionKind,
     use_gpu: bool,
     gpu_patch: Option<GpuModelPatch>,
@@ -630,7 +712,7 @@ fn build_session(
         && GPU_STATUS.load(Ordering::Acquire) < GPU_FAILED
         && let Some(gpu_provider) = gpu_execution_provider()
     {
-        match create_session(model_path, kind, Some(gpu_provider), gpu_patch) {
+        match create_session(source, kind, Some(gpu_provider), gpu_patch) {
             Ok(session) => {
                 let _ = GPU_STATUS.compare_exchange(
                     GPU_IDLE,
@@ -641,13 +723,13 @@ fn build_session(
                 return Ok(session);
             }
             Err(e) => log::warn!(
-                "GPU acceleration unavailable for {}, falling back to CPU: {}",
-                model_path.display(),
+                "GPU acceleration unavailable for {:?}, falling back to CPU: {}",
+                source.filename(),
                 e
             ),
         }
     }
-    create_session(model_path, kind, None, None)
+    create_session(source, kind, None, None)
 }
 
 pub fn gpu_acceleration_enabled(app_handle: &tauri::AppHandle) -> bool {
@@ -1190,6 +1272,35 @@ async fn download_and_verify_model(
     };
 
     if !is_valid {
+        // Release HAPs bundle the high-frequency models in rawfile; a bundled
+        // copy only counts when it matches the pinned sha256. This branch is
+        // only taken when there is no local file at all: a file that exists
+        // but fails verification is replaced by the re-download below, and
+        // ModelSource::resolve prefers an existing file over the bundle. On
+        // a bundled mismatch - or when nothing is bundled (debug builds) -
+        // fall through to the download path.
+        if !dest_path.exists()
+            && let Some(bytes) = read_bundled_model(asset.filename)
+        {
+            let mut hasher = Sha256::new();
+            hasher.update(&bytes);
+            let bundled_hash = hex::encode(hasher.finalize());
+            let bundled_valid = match asset.sha256 {
+                Some(expected_hash) => bundled_hash == expected_hash,
+                None => true,
+            };
+            if bundled_valid {
+                log::info!(
+                    "Using bundled model {} (HAP rawfile bundle)",
+                    asset.filename
+                );
+                return Ok(());
+            }
+            log::warn!(
+                "Bundled model {} failed sha256 verification, downloading instead",
+                asset.filename
+            );
+        }
         if dest_path.exists() {
             println!("Model {} has incorrect hash. Re-downloading.", asset.name);
             fs::remove_file(&dest_path)?;
@@ -1367,9 +1478,9 @@ pub async fn get_or_init_denoise_model(
     download_and_verify_model(app_handle, &models_dir, &DENOISE_ASSET).await?;
 
     let _ = ort::init().with_name("AI-Denoise").commit();
-    let model_path = models_dir.join(DENOISE_FILENAME);
+    let source = ModelSource::resolve(DENOISE_FILENAME, &models_dir);
     let session = build_session(
-        &model_path,
+        &source,
         SessionKind::Persistent,
         gpu_acceleration_enabled(app_handle),
         Some(denoise_crop_as_slice),
@@ -1406,18 +1517,30 @@ pub async fn get_or_init_clip_models(
 
     download_and_verify_model(app_handle, &models_dir, &CLIP_MODEL_ASSET).await?;
     download_and_verify_model(app_handle, &models_dir, &CLIP_TOKENIZER_ASSET).await?;
-    let clip_tokenizer_path = models_dir.join(CLIP_TOKENIZER_FILENAME);
 
     let _ = ort::init().with_name("AI-Tagging").commit();
-    let clip_model_path = models_dir.join(CLIP_MODEL_FILENAME);
+    let source = ModelSource::resolve(CLIP_MODEL_FILENAME, &models_dir);
     let model = Mutex::new(build_session(
-        &clip_model_path,
+        &source,
         SessionKind::Persistent,
         gpu_allowed_on_platform() && gpu_acceleration_enabled(app_handle),
         None,
     )?);
-    let tokenizer =
-        Tokenizer::from_file(clip_tokenizer_path).map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    // The tokenizer json is tiny; prefer the app-data file, fall back to the
+    // HAP bundle, and only then error out (the ensure step above guarantees
+    // one of the two exists).
+    let tokenizer_bytes = fs::read(models_dir.join(CLIP_TOKENIZER_FILENAME))
+        .ok()
+        .or_else(|| read_bundled_model(CLIP_TOKENIZER_FILENAME));
+    let tokenizer = match tokenizer_bytes {
+        Some(bytes) => Tokenizer::from_bytes(&bytes).map_err(|e| anyhow::anyhow!(e.to_string()))?,
+        None => {
+            return Err(anyhow::anyhow!(
+                "CLIP tokenizer {} not found in models dir or HAP bundle",
+                CLIP_TOKENIZER_FILENAME
+            ));
+        }
+    };
 
     crate::register_exit_handler();
 
@@ -1451,8 +1574,8 @@ pub async fn get_or_init_lama_model(
     download_and_verify_model(app_handle, &models_dir, &LAMA_ASSET).await?;
 
     let _ = ort::init().with_name("AI-Inpainting").commit();
-    let model_path = models_dir.join(LAMA_FILENAME);
-    let session = build_session(&model_path, SessionKind::OneShot, false, None)?;
+    let source = ModelSource::resolve(LAMA_FILENAME, &models_dir);
+    let session = build_session(&source, SessionKind::OneShot, false, None)?;
     let lama_model = Arc::new(Mutex::new(session));
 
     crate::register_exit_handler();
@@ -1487,9 +1610,9 @@ pub async fn get_or_init_normal_model(
     download_and_verify_model(app_handle, &models_dir, &NORMAL_ASSET).await?;
 
     let _ = ort::init().with_name("AI-Normal").commit();
-    let model_path = models_dir.join(NORMAL_FILENAME);
+    let source = ModelSource::resolve(NORMAL_FILENAME, &models_dir);
     let session = build_session(
-        &model_path,
+        &source,
         SessionKind::OneShot,
         gpu_allowed_on_platform() && gpu_acceleration_enabled(app_handle),
         None,

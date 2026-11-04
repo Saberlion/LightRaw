@@ -144,6 +144,11 @@ napi-derive-ohos = "1.2"
 # lens_correction.rs). Bundle-resource resolution into the HAP is unverified
 # on OHOS, embedding is the proven mobile route and lands in the HAP via the lib.
 include_dir = "0.7.4"
+# zip: read bundled AI models straight from the app's own HAP package
+# (resources/rawfile/models/ - scripts/build-ohos.ps1 -Release injects a
+# curated high-frequency set; debug builds ship none). Pure-Rust deflate
+# backend only, so the aarch64-ohos cross build stays green.
+zip = { version = "2.4", default-features = false, features = ["deflate"] }
 
 # mimalloc is not yet validated on OHOS; it falls back to the system allocator there.
 # no_thp: MADV_HUGEPAGE causes multi-second compaction stalls on fragmented Linux systems.
