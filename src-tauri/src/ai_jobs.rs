@@ -643,6 +643,10 @@ pub fn start_worker(app_handle: AppHandle) {
         queue.journal_path = Some(journal_path);
         queue.pending.extend(journal.pending);
         queue.status.paused = journal.paused && !queue.pending.is_empty();
+        // A previous run may have died mid-denoise; its pending markers live in
+        // the denoise cache, not in this journal, and would block regeneration
+        // (D-28). Nothing can be generating while the queue is being restored.
+        crate::ai_denoise::reset_pending();
     }
 
     std::thread::spawn(move || {
@@ -1205,6 +1209,9 @@ pub async fn discard_ai_jobs(app_handle: AppHandle) {
     queue.status.completed = 0;
     queue.status.paused = false;
     queue.persist();
+    // Dropping the queued denoise jobs must also drop their pending markers,
+    // otherwise the interrupted job keeps blocking regeneration (D-28).
+    crate::ai_denoise::reset_pending();
     emit_pending_change(&app_handle, &[], &removed, false);
     emit_status(&app_handle, &mut queue);
 }

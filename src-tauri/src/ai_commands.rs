@@ -158,11 +158,44 @@ pub fn generate_foreground_mask(
     transform: MaskTransform,
     ai_source: Option<String>,
 ) -> Result<AiForegroundMaskParameters, String> {
-    let mask = run_birefnet_model(
-        warped_image,
-        &*models.birefnet().map_err(|e| e.to_string())?,
-    )
+    // The BiRefNet/CANN path dies the whole process on very large inputs on
+    // device (D-27: 7008x4672 → SIGSEGV inside the session). The model resizes
+    // internally anyway, so run it on a bounded copy and scale the mask back.
+    const MAX_EDGE: u32 = 1152;
+    let (full_w, full_h) = warped_image.dimensions();
+    let work: std::borrow::Cow<'_, DynamicImage> = if full_w.max(full_h) > MAX_EDGE {
+        let scale = MAX_EDGE as f32 / full_w.max(full_h) as f32;
+        let w = ((full_w as f32 * scale).round() as u32).max(1);
+        let h = ((full_h as f32 * scale).round() as u32).max(1);
+        log::info!(
+            "[ai-fg] downscaling {}x{} -> {}x{} for inference",
+            full_w,
+            full_h,
+            w,
+            h
+        );
+        std::borrow::Cow::Owned(warped_image.resize_exact(
+            w,
+            h,
+            image::imageops::FilterType::Triangle,
+        ))
+    } else {
+        std::borrow::Cow::Borrowed(warped_image)
+    };
+
+    let session = models.birefnet().map_err(|e| e.to_string())?;
+    // A Rust panic inside the ORT/CANN wrapper must not take the app down.
+    let mask = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        run_birefnet_model(&work, &*session)
+    }))
+    .map_err(|_| "AI foreground mask aborted (panic inside inference)".to_string())?
     .map_err(|e| e.to_string())?;
+
+    let mask = if mask.dimensions() != (full_w, full_h) {
+        image::imageops::resize(&mask, full_w, full_h, image::imageops::FilterType::Triangle)
+    } else {
+        mask
+    };
     if mask.iter().all(|&v| v < 128) {
         return Err(NO_FOREGROUND_FOUND.to_string());
     }
@@ -559,8 +592,12 @@ pub async fn generate_ai_foreground_mask(
     app_handle: tauri::AppHandle,
 ) -> Result<Value, String> {
     let guard = task_id.map(|id| AiTaskGuard::new(&state.active_ai_tasks, id));
+    // Fail fast when the ORT dylib is missing (BUILD-18): no panic, no model download.
+    crate::ai_processing::ensure_ort_available()?;
+
     check_cancelled(&guard)?;
 
+    log::info!("[ai-fg] start: init foreground models");
     let models = get_or_init_ai_models(
         &app_handle,
         &state.ai_state,
@@ -569,9 +606,15 @@ pub async fn generate_ai_foreground_mask(
     )
     .await
     .map_err(|e| e.to_string())?;
+    log::info!("[ai-fg] models ready: warping image");
     check_cancelled(&guard)?;
 
     let warped_image = get_cached_full_warped_image(&state, &js_adjustments)?;
+    log::info!(
+        "[ai-fg] warped: {}x{}",
+        warped_image.width(),
+        warped_image.height()
+    );
     check_cancelled(&guard)?;
 
     let transform = MaskTransform {
@@ -581,12 +624,14 @@ pub async fn generate_ai_foreground_mask(
         orientation_steps,
     };
     let ai_source = loaded_source_id(&state);
+    log::info!("[ai-fg] running inference");
     let params = mask_command_result(
         generate_foreground_mask(&models, &warped_image, transform, ai_source.clone())
             .and_then(to_json),
         transform,
         ai_source,
     )?;
+    log::info!("[ai-fg] inference done");
     check_cancelled(&guard)?;
     Ok(params)
 }
@@ -605,6 +650,9 @@ pub async fn generate_ai_sky_mask(
     app_handle: tauri::AppHandle,
 ) -> Result<Value, String> {
     let guard = task_id.map(|id| AiTaskGuard::new(&state.active_ai_tasks, id));
+    // Fail fast when the ORT dylib is missing (BUILD-18): no panic, no model download.
+    crate::ai_processing::ensure_ort_available()?;
+
     check_cancelled(&guard)?;
 
     let models = get_or_init_ai_models(
@@ -659,6 +707,9 @@ pub async fn generate_ai_text_mask(
     app_handle: tauri::AppHandle,
 ) -> Result<Value, String> {
     let guard = task_id.map(|id| AiTaskGuard::new(&state.active_ai_tasks, id));
+    // Fail fast when the ORT dylib is missing (BUILD-18): no panic, no model download.
+    crate::ai_processing::ensure_ort_available()?;
+
     check_cancelled(&guard)?;
 
     let models = get_or_init_ai_models(
@@ -714,6 +765,9 @@ pub async fn generate_ai_face_mask(
     app_handle: tauri::AppHandle,
 ) -> Result<Value, String> {
     let guard = task_id.map(|id| AiTaskGuard::new(&state.active_ai_tasks, id));
+    // Fail fast when the ORT dylib is missing (BUILD-18): no panic, no model download.
+    crate::ai_processing::ensure_ort_available()?;
+
     check_cancelled(&guard)?;
 
     let models = get_or_init_ai_models(
@@ -773,6 +827,9 @@ pub async fn generate_ai_depth_mask(
     app_handle: tauri::AppHandle,
 ) -> Result<AiDepthMaskParameters, String> {
     let guard = task_id.map(|id| AiTaskGuard::new(&state.active_ai_tasks, id));
+    // Fail fast when the ORT dylib is missing (BUILD-18): no panic, no model download.
+    crate::ai_processing::ensure_ort_available()?;
+
     check_cancelled(&guard)?;
 
     let models = get_or_init_ai_models(
@@ -832,6 +889,9 @@ pub async fn generate_ai_subject_mask(
     app_handle: tauri::AppHandle,
 ) -> Result<AiSubjectMaskParameters, String> {
     let guard = task_id.map(|id| AiTaskGuard::new(&state.active_ai_tasks, id));
+    // Fail fast when the ORT dylib is missing (BUILD-18): no panic, no model download.
+    crate::ai_processing::ensure_ort_available()?;
+
     check_cancelled(&guard)?;
 
     let models = get_or_init_ai_models(

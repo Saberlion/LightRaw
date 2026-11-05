@@ -451,7 +451,7 @@ export default function LUTControl({
                       ))}
                     </div>
                   )}
-                  <div className="grid grid-cols-3 gap-2">{visibleBuiltInLuts.map(renderSwatch)}</div>
+                  <div className="grid grid-cols-2 gap-2">{visibleBuiltInLuts.map(renderSwatch)}</div>
                 </div>
               )}
 
@@ -486,7 +486,7 @@ export default function LUTControl({
                       {t('ui.lut.import')}
                     </button>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {customLuts.map(renderSwatch)}
 
                       {canImportLuts && (

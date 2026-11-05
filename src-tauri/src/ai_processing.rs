@@ -1331,12 +1331,48 @@ async fn download_and_verify_model(
     Ok(())
 }
 
+/// Make sure the ONNX Runtime dylib can be loaded. The OHOS build links `ort`
+/// with `load-dynamic`, so a package shipped without `libonnxruntime.so` used to
+/// panic inside `ort::init()` (ort lib.rs:111) and then hang while the model
+/// download retried (BUILD-18). Call this at every AI entry point so the command
+/// fails fast with a readable message instead.
+pub fn ensure_ort_available() -> Result<(), String> {
+    static INIT: std::sync::OnceLock<Result<(), String>> = std::sync::OnceLock::new();
+    INIT.get_or_init(|| {
+        // `ort::init()` panics (ort lib.rs:111) when the dylib is missing, so a
+        // plain `?` is not enough — catch the panic and turn it into a normal
+        // error the AI commands can surface (BUILD-18).
+        let init = std::panic::catch_unwind(|| ort::init().with_name("RapidRAW-AI").commit());
+        match init {
+            Ok(Ok(_)) => {
+                log::info!("[ai] ONNX Runtime initialised");
+                Ok(())
+            }
+            Ok(Err(error)) => {
+                let message = format!(
+                    "ONNX Runtime (libonnxruntime.so) is unavailable on this device — AI features are disabled: {error}"
+                );
+                log::error!("[ai] {message}");
+                Err(message)
+            }
+            Err(_) => {
+                let message = "ONNX Runtime (libonnxruntime.so) is missing from this build — AI features are disabled".to_string();
+                log::error!("[ai] {message}");
+                Err(message)
+            }
+        }
+    })
+    .clone()
+}
+
 pub async fn get_or_init_ai_models(
     app_handle: &tauri::AppHandle,
     ai_state_mutex: &Mutex<Option<AiState>>,
     ai_init_lock: &TokioMutex<()>,
     model: AiMaskModel,
 ) -> Result<Arc<AiModels>> {
+    // Fail fast when the ORT dylib is missing, before any model download.
+    ensure_ort_available().map_err(anyhow::Error::msg)?;
     let is_downloaded = |models: &AiModels| models.downloaded.lock().unwrap().contains(&model);
 
     if let Some(models) = cached_ai_state(ai_state_mutex, |state| state.models.clone())
@@ -1350,7 +1386,7 @@ pub async fn get_or_init_ai_models(
     let models = match cached_ai_state(ai_state_mutex, |state| state.models.clone()) {
         Some(models) => models,
         None => {
-            let _ = ort::init().with_name("AI").commit();
+            ensure_ort_available().map_err(anyhow::Error::msg)?;
             crate::register_exit_handler();
 
             let models = Arc::new(AiModels {
@@ -1477,7 +1513,7 @@ pub async fn get_or_init_denoise_model(
 
     download_and_verify_model(app_handle, &models_dir, &DENOISE_ASSET).await?;
 
-    let _ = ort::init().with_name("AI-Denoise").commit();
+    ensure_ort_available().map_err(anyhow::Error::msg)?;
     let source = ModelSource::resolve(DENOISE_FILENAME, &models_dir);
     let session = build_session(
         &source,
@@ -1518,7 +1554,7 @@ pub async fn get_or_init_clip_models(
     download_and_verify_model(app_handle, &models_dir, &CLIP_MODEL_ASSET).await?;
     download_and_verify_model(app_handle, &models_dir, &CLIP_TOKENIZER_ASSET).await?;
 
-    let _ = ort::init().with_name("AI-Tagging").commit();
+    ensure_ort_available().map_err(anyhow::Error::msg)?;
     let source = ModelSource::resolve(CLIP_MODEL_FILENAME, &models_dir);
     let model = Mutex::new(build_session(
         &source,
@@ -1573,7 +1609,7 @@ pub async fn get_or_init_lama_model(
     let models_dir = get_models_dir(app_handle)?;
     download_and_verify_model(app_handle, &models_dir, &LAMA_ASSET).await?;
 
-    let _ = ort::init().with_name("AI-Inpainting").commit();
+    ensure_ort_available().map_err(anyhow::Error::msg)?;
     let source = ModelSource::resolve(LAMA_FILENAME, &models_dir);
     let session = build_session(&source, SessionKind::OneShot, false, None)?;
     let lama_model = Arc::new(Mutex::new(session));
@@ -1609,7 +1645,7 @@ pub async fn get_or_init_normal_model(
     let models_dir = get_models_dir(app_handle)?;
     download_and_verify_model(app_handle, &models_dir, &NORMAL_ASSET).await?;
 
-    let _ = ort::init().with_name("AI-Normal").commit();
+    ensure_ort_available().map_err(anyhow::Error::msg)?;
     let source = ModelSource::resolve(NORMAL_FILENAME, &models_dir);
     let session = build_session(
         &source,
@@ -1721,7 +1757,20 @@ fn run_tiled_denoise(
         on_progress(i as f32 / total as f32);
 
         let crop = extract_tile_mirror(img, x0, y0, params.cs);
+        let tile_start = std::time::Instant::now();
         let tile = infer(x0, y0, &crop)?;
+        // Per-tile diagnostics: the OHOS builds can stall inside a single ORT/CANN
+        // run (D-28/D-27); the last logged tile pinpoints the failing call.
+        if i % 8 == 0 || tile_start.elapsed() > std::time::Duration::from_secs(5) {
+            log::info!(
+                "[denoise-tile] {}/{} at ({},{}) took {:?}",
+                i + 1,
+                total,
+                x0,
+                y0,
+                tile_start.elapsed()
+            );
+        }
 
         for ty in 0..valid {
             let gy = y0 + (params.margin + ty) as i32;

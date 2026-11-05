@@ -1,4 +1,4 @@
-import { RustAbility } from '@ohos-rs/ability'
+﻿import { RustAbility } from '@ohos-rs/ability'
 import Want from '@ohos.app.ability.Want'
 import { AbilityConstant, Configuration, ConfigurationConstant, common } from '@kit.AbilityKit';
 import { BusinessError, commonEventManager } from '@kit.BasicServicesKit';
@@ -14,7 +14,7 @@ import { privacyManager } from '@kit.AppGalleryKit';
 
 export default class EntryAbility extends RustAbility {
   // change to dynamic library name
-  public moduleName: string = "rapidraw_lib"
+  public moduleName: string = "lightraw"
   // Load our own pages/Index instead of the crate's MainPage: the custom
   // page adds the page-level onBackPress bridge (docs 6.5). The webview is
   // still created by DefaultXComponent inside that page.
@@ -58,6 +58,21 @@ export default class EntryAbility extends RustAbility {
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     console.info('[RapidRAW] onNewWant: forwarding open-with request');
     this.captureOpenWant(want);
+  }
+
+  // Back must not destroy the ability: the webview owns the navigation chain
+  // (close modal -> close panel -> editor->library -> library->home). Consume the
+  // gesture here and forward it to the Rust bridge, which re-emits
+  // `ohos-back-pressed` for useAndroidBackHandler (D-25).
+  onBackPressed(): boolean {
+    const notify: ESObject =
+      this.rapidrawModule?.notifyOhosBackPressed ?? this.rapidrawModule?.default?.notifyOhosBackPressed;
+    console.info(`[RapidRAW] ability onBackPressed fired, notify=` + typeof notify);
+    if (typeof notify === 'function') {
+      notify();
+      return true;
+    }
+    return false;
   }
 
   async onWindowStageCreate(windowStage: window.WindowStage): Promise<void> {
@@ -112,12 +127,12 @@ export default class EntryAbility extends RustAbility {
   // Machine-local post-init patch — see docs/HARMONYOS_PORTING.md 6.4.
   private async registerRapidrawWindowController(win: window.Window): Promise<void> {
     try {
-      const libName: string = 'librapidraw_lib.so';
+      const libName: string = 'liblightraw.so';
       const mod: ESObject = await import(libName);
       const register: ESObject =
         mod.registerOhosWindowController ?? mod.default?.registerOhosWindowController;
       if (typeof register !== 'function') {
-        console.error('[RapidRAW] registerOhosWindowController not exported by librapidraw_lib.so');
+        console.error('[RapidRAW] registerOhosWindowController not exported by liblightraw.so');
         return;
       }
       const resolvePickFolder: ESObject =
@@ -136,16 +151,16 @@ export default class EntryAbility extends RustAbility {
         mod.resolveOhosRevokeGrants ?? mod.default?.resolveOhosRevokeGrants;
       if (typeof resolvePickFolder !== 'function' || typeof resolvePickFiles !== 'function' ||
         typeof resolveSaveToGallery !== 'function' || typeof resolveSaveFileAs !== 'function') {
-        console.error('[RapidRAW] bridge resolve exports missing from librapidraw_lib.so');
+        console.error('[RapidRAW] bridge resolve exports missing from liblightraw.so');
       }
       if (typeof resolvePrivacy !== 'function') {
-        console.error('[RapidRAW] resolveOhosPrivacy missing from librapidraw_lib.so');
+        console.error('[RapidRAW] resolveOhosPrivacy missing from liblightraw.so');
       }
       if (typeof resolveOpenUrl !== 'function') {
-        console.error('[RapidRAW] resolveOhosOpenUrl missing from librapidraw_lib.so');
+        console.error('[RapidRAW] resolveOhosOpenUrl missing from liblightraw.so');
       }
       if (typeof resolveRevokeGrants !== 'function') {
-        console.error('[RapidRAW] resolveOhosRevokeGrants missing from librapidraw_lib.so');
+        console.error('[RapidRAW] resolveOhosRevokeGrants missing from liblightraw.so');
       }
       register((op: string) => {
         try {
@@ -278,7 +293,7 @@ export default class EntryAbility extends RustAbility {
     const notify: ESObject =
       this.rapidrawModule?.notifyOhosDeviceType ?? this.rapidrawModule?.default?.notifyOhosDeviceType;
     if (typeof notify !== 'function') {
-      console.error('[RapidRAW] notifyOhosDeviceType not exported by librapidraw_lib.so');
+      console.error('[RapidRAW] notifyOhosDeviceType not exported by liblightraw.so');
       return;
     }
     notify(deviceInfo.deviceType);
@@ -1226,3 +1241,4 @@ export default class EntryAbility extends RustAbility {
     }
   }
 }
+

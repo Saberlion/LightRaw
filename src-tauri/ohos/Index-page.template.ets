@@ -1,4 +1,4 @@
-import { DefaultXComponent } from '@ohos-rs/ability';
+﻿import { DefaultXComponent } from '@ohos-rs/ability';
 
 // Custom @Entry page (machine-local patch — docs/HARMONYOS_PORTING.md §6.5):
 // the crate's own MainPage (0.4.0-beta.0) has no back-gesture handling, and
@@ -16,7 +16,7 @@ struct Index {
   async aboutToAppear(): Promise<void> {
     // Must be a variable: a literal module specifier fails ArkTS resolution
     // (docs 6.5).
-    const libName: string = 'librapidraw_lib.so';
+    const libName: string = 'liblightraw.so';
     try {
       this.nativeModule = await import(libName);
     } catch (e) {
@@ -27,10 +27,12 @@ struct Index {
   onBackPress(): boolean {
     const notify: ESObject =
       this.nativeModule?.notifyOhosBackPressed ?? this.nativeModule?.default?.notifyOhosBackPressed;
+    console.info(`[RapidRAW] onBackPress fired, notify=${typeof notify}`);
     if (typeof notify === 'function') {
       notify();
       return true;
     }
+    console.error('[RapidRAW] onBackPress: notifyOhosBackPressed not available - letting the system handle it');
     return false;
   }
 
@@ -42,3 +44,4 @@ struct Index {
     }.height('100%')
   }
 }
+

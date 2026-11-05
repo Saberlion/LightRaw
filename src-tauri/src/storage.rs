@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use walkdir::WalkDir;
 
 use crate::app_settings::{
@@ -215,11 +215,16 @@ struct StorageDirs {
 }
 
 fn storage_dirs(app_handle: &AppHandle) -> Result<StorageDirs, String> {
-    let path = app_handle.path();
+    // OHOS: `AppHandle::path()` resolves with desktop XDG semantics on the
+    // tauri feat/open-harmony fork (FUSE user storage, EPERM/absent on real
+    // devices), so every size reads 0 and `clear_ai_models` silently targets a
+    // directory that does not exist (D-24, TEST_REPORT_2026-11-04). Always go
+    // through the port's path helpers, which redirect to /data/storage/el2/base
+    // on OHOS and delegate to the stock resolver everywhere else.
     Ok(StorageDirs {
-        cache: path.app_cache_dir().map_err(|e| e.to_string())?,
-        data: path.app_data_dir().map_err(|e| e.to_string())?,
-        logs: path.app_log_dir().map_err(|e| e.to_string())?,
+        cache: crate::app_paths::app_cache_dir(app_handle).map_err(|e| e.to_string())?,
+        data: crate::app_paths::app_data_dir(app_handle).map_err(|e| e.to_string())?,
+        logs: crate::app_paths::app_log_dir(app_handle).map_err(|e| e.to_string())?,
     })
 }
 

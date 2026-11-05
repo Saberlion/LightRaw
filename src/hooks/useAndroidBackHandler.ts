@@ -106,6 +106,13 @@ export function useAndroidBackHandler() {
         return;
       }
 
+      // Editor → library. Without this the OHOS back gesture fell through to
+      // the ability default and terminated the app (D-25, TEST_REPORT_2026-11-04).
+      if (ui.activeView === 'editor') {
+        ui.setUI({ activeView: 'library', slideDirection: 1 });
+        return;
+      }
+
       window.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true }),
       );

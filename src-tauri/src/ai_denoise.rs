@@ -6,7 +6,7 @@ use half::slice::HalfFloatSliceExt;
 use image::{DynamicImage, GenericImageView, Rgb32FImage, imageops};
 use rayon::prelude::*;
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
@@ -36,7 +36,23 @@ struct DenoiseCache {
     dir: Option<PathBuf>,
     entries: Vec<Arc<DenoisedBase>>,
     pending: HashSet<String>,
+    /// When each pending key was registered, so a task that died with the app
+    /// (or a stuck CANN/ORT session) cannot block regeneration forever (D-28).
+    pending_since: HashMap<String, std::time::Instant>,
     epoch: u64,
+}
+
+/// A pending entry older than this is treated as stale and re-queued.
+const PENDING_STALE_AFTER: std::time::Duration = std::time::Duration::from_secs(300);
+
+/// Drop every pending marker. Called when the AI job queue is restored at
+/// startup and when the user discards jobs: in both cases nothing can still be
+/// generating, so the markers would only block future runs (D-28).
+pub fn reset_pending() {
+    let mut c = cache();
+    c.pending.clear();
+    c.pending_since.clear();
+    log::info!("[ai_denoise] pending markers cleared");
 }
 
 static CACHE: LazyLock<Mutex<DenoiseCache>> = LazyLock::new(Default::default);
@@ -44,6 +60,37 @@ static DISK_CACHE_LIMIT_BYTES: AtomicU64 = AtomicU64::new(u64::MAX);
 
 fn cache() -> std::sync::MutexGuard<'static, DenoiseCache> {
     CACHE.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Register `key` as pending. Returns false when a *live* pending marker already
+/// exists; a marker older than [`PENDING_STALE_AFTER`] is dropped and replaced, so
+/// a task that died with a previous app run cannot block regeneration (D-28).
+fn try_mark_pending(key: &str) -> bool {
+    let mut c = cache();
+    if let Some(since) = c.pending_since.get(key) {
+        if since.elapsed() < PENDING_STALE_AFTER {
+            return false;
+        }
+        log::warn!(
+            "[ai_denoise] clearing stale pending marker after {:?} ({})",
+            since.elapsed(),
+            key
+        );
+        c.pending.remove(key);
+        c.pending_since.remove(key);
+    }
+    if !c.pending.insert(key.to_string()) {
+        return false;
+    }
+    c.pending_since
+        .insert(key.to_string(), std::time::Instant::now());
+    true
+}
+
+fn clear_pending(key: &str) {
+    let mut c = cache();
+    c.pending.remove(key);
+    c.pending_since.remove(key);
 }
 
 pub fn initialize_cache_dir(cache_dir: PathBuf) {
@@ -417,7 +464,29 @@ fn run_denoiser(
     session: Option<&Session>,
     on_progress: &(dyn Fn(f32) + Sync),
 ) -> Result<Rgb32FImage, String> {
-    let source = base.to_rgb32f();
+    // Denoise is a low-frequency, coarse operation, but it is tiled at full
+    // resolution: a 33 MP RAW needs 204 tiles × ~5-9 s on device (~30 min), which
+    // is why generation kept hitting the timeout and never produced a cache entry
+    // (D-28). Cap the working resolution; `apply_ai_denoise` already resizes the
+    // cached entry when its dimensions differ from the base image.
+    const MAX_EDGE: u32 = 2560;
+    let (full_w, full_h) = base.dimensions();
+    let work: std::borrow::Cow<'_, DynamicImage> = if full_w.max(full_h) > MAX_EDGE {
+        let scale = MAX_EDGE as f32 / full_w.max(full_h) as f32;
+        let w = ((full_w as f32 * scale).round() as u32).max(1);
+        let h = ((full_h as f32 * scale).round() as u32).max(1);
+        log::info!(
+            "[ai_denoise] downscaling {}x{} -> {}x{} before denoise",
+            full_w,
+            full_h,
+            w,
+            h
+        );
+        std::borrow::Cow::Owned(base.resize_exact(w, h, image::imageops::FilterType::Triangle))
+    } else {
+        std::borrow::Cow::Borrowed(base)
+    };
+    let source = work.to_rgb32f();
     let mut output = match session {
         Some(session) => crate::ai_processing::run_ai_denoise(&source, session, on_progress)
             .map_err(|e| e.to_string())?
@@ -496,7 +565,18 @@ async fn generate(
     fingerprint: u64,
 ) -> Result<(), String> {
     let state = app_handle.state::<AppState>();
-    let session = load_session(app_handle, method).await?;
+    let session = match tokio::time::timeout(
+        std::time::Duration::from_secs(120),
+        load_session(app_handle, method),
+    )
+    .await
+    {
+        Ok(result) => result?,
+        Err(_) => {
+            log::error!("[ai_denoise] load_session timed out (async path)");
+            return Err("AI denoise session init timed out".to_string());
+        }
+    };
 
     let progress_handle = app_handle.clone();
     let loaded_path = loaded_image.path.clone();
@@ -548,18 +628,29 @@ pub fn ensure_generated(
     adjustments: &serde_json::Value,
 ) {
     if !is_enabled(adjustments) {
+        log::info!(
+            "[ai_denoise] ensure_generated skipped: tool inactive (aiDenoiseEnabled={:?}, activeTools={:?})",
+            adjustments.get("aiDenoiseEnabled"),
+            adjustments.get("activeTools")
+        );
         return;
     }
 
     let source = source_string(&loaded_image.path);
     let method = DenoiseMethod::from_adjustments(adjustments);
     let key = entry_key(&source, method);
-    if cache().pending.contains(&key)
-        || is_ready(&key, &source, base_fingerprints(&loaded_image.image))
-        || !cache().pending.insert(key.clone())
-    {
+    if is_ready(&key, &source, base_fingerprints(&loaded_image.image)) {
+        log::info!("[ai_denoise] ensure_generated skipped: cached ({})", key);
         return;
     }
+    if !try_mark_pending(&key) {
+        log::info!(
+            "[ai_denoise] ensure_generated skipped: already pending ({})",
+            key
+        );
+        return;
+    }
+    log::info!("[ai_denoise] generation queued ({})", key);
 
     let app_handle = app_handle.clone();
     let loaded_image = loaded_image.clone();
@@ -571,6 +662,7 @@ pub fn ensure_generated(
     );
 
     tauri::async_runtime::spawn(async move {
+        log::info!("[ai_denoise] generation started for {}", path);
         let result = generate(
             &app_handle,
             loaded_image,
@@ -580,10 +672,11 @@ pub fn ensure_generated(
             fingerprint,
         )
         .await;
-        cache().pending.remove(&key);
+        clear_pending(&key);
         crate::ai_jobs::release_deferred(&path);
         match result {
             Ok(()) => {
+                log::info!("[ai_denoise] generation finished for {}", path);
                 let _ = app_handle.emit("ai-denoise-ready", &path);
             }
             Err(error) => {
@@ -619,38 +712,68 @@ pub fn generate_for_base(
 ) -> Result<bool, String> {
     let source = source_string(path);
     let key = entry_key(&source, method);
-    if !cache().pending.insert(key.clone()) {
-        return Ok(false);
-    }
-
     let fingerprints = base_fingerprints(base);
     if is_ready(&key, &source, fingerprints) {
-        cache().pending.remove(&key);
         return Ok(true);
+    }
+    if !try_mark_pending(&key) {
+        log::info!(
+            "[ai_denoise] generate_for_base skipped: already pending ({})",
+            key
+        );
+        return Ok(false);
     }
 
     let _ = app_handle.emit(
         "ai-denoise-progress",
         serde_json::json!({ "path": path, "progress": 0.0 }),
     );
-    let result =
-        tauri::async_runtime::block_on(load_session(app_handle, method)).and_then(|session| {
-            denoise_into_cache(
-                base,
-                session.as_ref(),
-                key.clone(),
-                source,
-                fingerprints[0],
-                &|progress| {
-                    let _ = app_handle.emit(
-                        "ai-denoise-progress",
-                        serde_json::json!({ "path": path, "progress": progress }),
-                    );
-                },
-            )
-        });
+    // The whole generation (session init *and* the CANN tile loop) can hang on
+    // device; a hang used to keep the pending marker forever and permanently
+    // block regeneration (D-28). Run it on a dedicated thread and bound the
+    // wait, clearing the marker on the timeout path.
+    const GENERATE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(900);
+    let (tx, rx) = std::sync::mpsc::channel();
+    let thread_app = app_handle.clone();
+    let thread_base = base.clone();
+    let thread_path = path.to_string();
+    let thread_key = key.clone();
+    let thread_source = source.clone();
+    let thread_fingerprint = fingerprints[0];
+    std::thread::spawn(move || {
+        let result =
+            tauri::async_runtime::block_on(load_session(&thread_app, method)).and_then(|session| {
+                denoise_into_cache(
+                    &thread_base,
+                    session.as_ref(),
+                    thread_key,
+                    thread_source,
+                    thread_fingerprint,
+                    &|progress| {
+                        let _ = thread_app.emit(
+                            "ai-denoise-progress",
+                            serde_json::json!({ "path": thread_path, "progress": progress }),
+                        );
+                    },
+                )
+            });
+        let _ = tx.send(result);
+    });
 
-    cache().pending.remove(&key);
+    let result = match rx.recv_timeout(GENERATE_TIMEOUT) {
+        Ok(result) => result,
+        Err(_) => {
+            log::error!(
+                "[ai_denoise] generation timed out after {:?} ({})",
+                GENERATE_TIMEOUT,
+                key
+            );
+            clear_pending(&key);
+            return Err("AI denoise generation timed out".to_string());
+        }
+    };
+
+    clear_pending(&key);
     match &result {
         Ok(()) => {
             let _ = app_handle.emit("ai-denoise-ready", path);
