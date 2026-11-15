@@ -1,10 +1,22 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
-import { Images, FolderHeart, SwatchBook, Settings, Plus } from 'lucide-react';
+import {
+  Images,
+  FolderHeart,
+  SwatchBook,
+  Settings,
+  Plus,
+  Trash2,
+  Copy,
+  ClipboardPaste,
+  FileInput,
+  X,
+} from 'lucide-react';
 
 import { useUIStore } from '../store/useUIStore';
 import { useLibraryStore } from '../store/useLibraryStore';
+import { useEditorStore } from '../store/useEditorStore';
 import { AlbumItem, Album } from '../types/library';
 import { PhoneTab } from '../types/ui';
 import PresetsPanel from './panel/right/PresetsPanel';
@@ -26,6 +38,35 @@ const PhoneTabButton = ({ Icon, isActive, label, onClick }: PhoneTabButtonProps)
     )}
     aria-current={isActive ? 'page' : undefined}
     onClick={onClick}
+  >
+    <Icon size={22} className="shrink-0" />
+    <span className="text-[11px] leading-none font-medium max-w-full truncate px-1">{label}</span>
+  </button>
+);
+
+interface PhoneBatchButtonProps {
+  Icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  onClick(): void;
+  disabled?: boolean;
+  destructive?: boolean;
+}
+
+// Same icon-over-label anatomy as PhoneTabButton so the batch bar reads as the
+// same container with different content (CamRAW pattern: the tab bar itself
+// is replaced by the batch actions during multi-select).
+const PhoneBatchButton = ({ Icon, label, onClick, disabled = false, destructive = false }: PhoneBatchButtonProps) => (
+  <button
+    className={clsx(
+      'flex-1 min-w-0 h-14 flex flex-col items-center justify-center gap-1 rounded-full transition-colors duration-150 select-none',
+      disabled
+        ? 'text-text-secondary opacity-40 cursor-not-allowed'
+        : destructive
+          ? 'text-red-400 active:text-red-500'
+          : 'text-text-secondary active:text-text-primary',
+    )}
+    disabled={disabled}
+    onClick={() => !disabled && onClick()}
   >
     <Icon size={22} className="shrink-0" />
     <span className="text-[11px] leading-none font-medium max-w-full truncate px-1">{label}</span>
@@ -114,6 +155,13 @@ interface PhoneTabShellProps {
   onNewAlbum(): void;
   /** Renders the "me" tab content (SettingsPanel) — keeps App-level wiring here. */
   renderSettings(): React.ReactNode;
+  /** Batch bar actions (gallery tab with an active multi-selection). */
+  onBatchDelete(): void;
+  onBatchExport(): void;
+  onBatchCopy(): void;
+  onBatchPaste(): void;
+  /** Exits the selection (same chain as the library header cancel button). */
+  onClearSelection(): void;
 }
 
 /**
@@ -131,10 +179,24 @@ interface PhoneTabShellProps {
  * state because every tab keeps the gallery mounted (`hidden`), so switching
  * back never reloads the grid.
  */
-export default function PhoneTabShell({ children, onSelectAlbum, onNewAlbum, renderSettings }: PhoneTabShellProps) {
+export default function PhoneTabShell({
+  children,
+  onSelectAlbum,
+  onNewAlbum,
+  renderSettings,
+  onBatchDelete,
+  onBatchExport,
+  onBatchCopy,
+  onBatchPaste,
+  onClearSelection,
+}: PhoneTabShellProps) {
   const { t } = useTranslation();
   const phoneTab = useUIStore((s) => s.phoneTab);
   const setUI = useUIStore((s) => s.setUI);
+  const multiSelectedPaths = useLibraryStore((s) => s.multiSelectedPaths);
+  const totalImages = useLibraryStore((s) => s.imageList.length);
+  // Reactive so the paste action enables as soon as adjustments are copied.
+  const hasCopiedAdjustments = useEditorStore((s) => s.copiedAdjustments !== null);
 
   const setTab = (tab: PhoneTab) => setUI({ phoneTab: tab });
 
@@ -145,6 +207,11 @@ export default function PhoneTabShell({ children, onSelectAlbum, onNewAlbum, ren
       { id: 'presets', label: t('editor.presets.title'), Icon: SwatchBook },
       { id: 'me', label: t('settings.title'), Icon: Settings },
     ];
+
+  // CamRAW pattern: while images are selected on the gallery tab, the very
+  // same pill container becomes the batch action bar — navigation stays one
+  // "cancel" tap away and never competes with the actions for space.
+  const isBatchMode = phoneTab === 'gallery' && multiSelectedPaths.length > 0;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 h-full">
@@ -168,11 +235,37 @@ export default function PhoneTabShell({ children, onSelectAlbum, onNewAlbum, ren
           'shrink-0 mx-2 mb-2 rounded-full bg-surface border border-border-color/20',
           'shadow-[0_4px_20px_rgba(0,0,0,0.18)] flex items-stretch p-1 z-40',
         )}
-        aria-label={t('library.header.title')}
+        aria-label={isBatchMode ? t('library.header.selectItems') : t('library.header.title')}
       >
-        {tabs.map(({ id, label, Icon }) => (
-          <PhoneTabButton key={id} Icon={Icon} label={label} isActive={phoneTab === id} onClick={() => setTab(id)} />
-        ))}
+        {isBatchMode ? (
+          <>
+            <button
+              className="h-14 w-14 shrink-0 flex items-center justify-center rounded-full text-text-secondary active:text-text-primary transition-colors"
+              data-tooltip={t('library.header.cancel')}
+              onClick={onClearSelection}
+            >
+              <X size={22} />
+            </button>
+            <div className="flex-1 min-w-0 flex flex-col items-center justify-center px-1">
+              <span className="text-[11px] leading-none font-semibold text-text-primary tabular-nums truncate">
+                {multiSelectedPaths.length} / {totalImages}
+              </span>
+            </div>
+            <PhoneBatchButton Icon={Trash2} label={t('settings.data.delete')} onClick={onBatchDelete} destructive />
+            <PhoneBatchButton Icon={Copy} label={t('ui.bottomBar.tooltips.copySettings')} onClick={onBatchCopy} />
+            <PhoneBatchButton
+              Icon={ClipboardPaste}
+              label={t('ui.bottomBar.tooltips.pasteSettings')}
+              onClick={onBatchPaste}
+              disabled={!hasCopiedAdjustments}
+            />
+            <PhoneBatchButton Icon={FileInput} label={t('ui.bottomBar.tooltips.export')} onClick={onBatchExport} />
+          </>
+        ) : (
+          tabs.map(({ id, label, Icon }) => (
+            <PhoneTabButton key={id} Icon={Icon} label={label} isActive={phoneTab === id} onClick={() => setTab(id)} />
+          ))
+        )}
       </nav>
     </div>
   );

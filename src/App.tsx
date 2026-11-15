@@ -1127,6 +1127,13 @@ function App() {
                         setUI({ phoneTab: 'gallery' });
                       }}
                       onNewAlbum={() => setUI({ isCreateAlbumModalOpen: true })}
+                      onBatchDelete={handleDeleteSelected}
+                      onBatchExport={() =>
+                        setUI((state) => ({ isLibraryExportPanelVisible: !state.isLibraryExportPanelVisible }))
+                      }
+                      onBatchCopy={handleCopyAdjustments}
+                      onBatchPaste={() => handlePasteAdjustments()}
+                      onClearSelection={handleClearSelection}
                       renderSettings={() => (
                         <div className="w-full h-full flex flex-col p-4 overflow-y-auto custom-scrollbar">
                           <SettingsPanel
@@ -1166,6 +1173,7 @@ function App() {
                         handlePasteAdjustments={handlePasteAdjustments}
                         handleResetAdjustments={handleResetAdjustments}
                         requestThumbnails={requestThumbnails}
+                        hideBottomBar
                       />
                     </PhoneTabShell>
                   ) : (
