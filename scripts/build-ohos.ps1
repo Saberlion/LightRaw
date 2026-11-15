@@ -340,6 +340,13 @@ try {
     'mediapipe_selfie_multiclass.onnx',      #  16.5 MB
     'depth_anything_v2_vits.onnx'            #  99.4 MB  Depth masking
   )
+  # NPU artifacts (the only NPU execution path wired today is NIND denoise).
+  # `.om` is per-SoC (kirinx90/CE lineage, verified on X90/XE90/GEM-W40); other
+  # SoCs fall back to the SoC-agnostic `.ms` (MindSpore Lite NNRT), then ORT CPU.
+  $releaseNpuModels = @(
+    'nind_v2.om',                    #  59.2 MB  CANN/HIAI denoise (ai_denoise_backend=npu)
+    'nind_denoise_utnet_684.ms'      #  NNRT fallback (optional; downloads when absent)
+  )
   $modelsDir = if ($ModelsDir) { $ModelsDir } else { "$repo\src-tauri\libs\ohos\models" }
   if ($Release) {
     $bundled = 0
@@ -358,6 +365,22 @@ try {
       }
     }
     Write-Host "bundled $bundled/$($releaseModels.Count) high-frequency models into resources/rawfile/models/ (~445 MB raw)"
+    $npuBundled = 0
+    foreach ($model in $releaseNpuModels) {
+      $modelSrc = Join-Path $modelsDir $model
+      if (Test-Path $modelSrc) {
+        $old = $zip.GetEntry("resources/rawfile/models/$model")
+        if ($old) { $old.Delete() }
+        [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+          $zip, $modelSrc, "resources/rawfile/models/$model",
+          [IO.Compression.CompressionLevel]::NoCompression) | Out-Null
+        $npuBundled++
+        Write-Host "NPU model bundled into HAP rawfile: $model"
+      } else {
+        Write-Host "!! WARNING: NPU model missing (will use download/sideload): $modelSrc" -ForegroundColor Yellow
+      }
+    }
+    Write-Host "bundled $npuBundled/$($releaseNpuModels.Count) NPU models into resources/rawfile/models/"
   } else {
     # Deterministic guarantee for dev HAPs: purge any stale injected models
     # (only relevant when reusing a HAP from a previous release run via -SkipBuild).

@@ -1946,7 +1946,31 @@ pub fn run() {
                 *state.gpu_crash_flag_path.lock().unwrap() = Some(crash_flag_path.clone());
             }
 
+            // Start the file logger before the GPU backend decisions below: their
+            // warnings (crash fallback, backend reset) are the first thing support
+            // needs when a device renders nothing, and they used to be emitted
+            // before the logger existed and were lost. setup_logging only needs
+            // app_paths' log dir, so it is safe this early.
+            setup_logging(&app_handle);
+
             let mut settings: AppSettings = load_settings(app_handle.clone()).unwrap_or_default();
+
+            // OpenHarmony renders through Vulkan and nothing else: the GLES
+            // translation layer is broken on device (readback stack smash in
+            // libhvgr_v210.so, 2026-10-05; adapter-context deadlock under
+            // concurrent preview/thumbnail workers, GEM-W40, wgpu-hal
+            // gles/device.rs:1594), so there is no user choice to honour —
+            // pin the setting to `vulkan` and ignore anything an older build or
+            // the former crash fallback left behind.
+            #[cfg(target_env = "ohos")]
+            if settings.processing_backend.as_deref() != Some("vulkan") {
+                log::info!(
+                    "OpenHarmony renders through Vulkan only; ignoring GPU backend setting {:?}.",
+                    settings.processing_backend
+                );
+                settings.processing_backend = Some("vulkan".to_string());
+                let _ = crate::save_settings(settings.clone(), app_handle.clone());
+            }
 
             {
                 let state = app.state::<AppState>();
@@ -1954,26 +1978,28 @@ pub fn run() {
                 state.decoded_image_cache.lock().unwrap().set_capacity(cache_size);
             }
             crate::storage::apply_cache_limits(&settings);
-
             if crash_flag_path.exists() {
                 let previous = settings
                     .processing_backend
                     .clone()
                     .unwrap_or_else(|| "auto".to_string());
-                // OHOS: GLES is the unstable backend (readback stack smash in the
-                // translation layer) while Vulkan is the working one, so a crash
-                // under Vulkan falls back to GLES and a crash under GLES goes back
-                // to Vulkan 鈥?never pin the app to the broken path. Other platforms
-                // keep the long-standing OpenGL fallback.
+                // OpenHarmony has no fallback to switch to: Vulkan is the only
+                // backend, so just clear the flag and let this start retry it
+                // (the pipeline-warmup marker already covers a crash inside
+                // shader compilation). Other platforms keep the long-standing
+                // OpenGL fallback.
                 #[cfg(target_env = "ohos")]
-                let fallback = if previous == "gl" { "vulkan" } else { "gl" };
-                #[cfg(not(target_env = "ohos"))]
-                let fallback = "gl";
                 log::warn!(
-                    "GPU driver crash detected on last run (backend={previous}); switching to {fallback}."
+                    "GPU driver crash detected on last run (backend={previous}); retrying Vulkan."
                 );
-                settings.processing_backend = Some(fallback.to_string());
-                let _ = crate::save_settings(settings.clone(), app_handle.clone());
+                #[cfg(not(target_env = "ohos"))]
+                {
+                    log::warn!(
+                        "GPU driver crash detected on last run (backend={previous}); switching to gl."
+                    );
+                    settings.processing_backend = Some("gl".to_string());
+                    let _ = crate::save_settings(settings.clone(), app_handle.clone());
+                }
                 let _ = std::fs::remove_file(&crash_flag_path);
             }
 
@@ -2032,8 +2058,6 @@ pub fn run() {
                     }
                 }
             }
-
-            setup_logging(&app_handle);
 
             if let Some(backend) = &settings.processing_backend
                 && backend != "auto" {

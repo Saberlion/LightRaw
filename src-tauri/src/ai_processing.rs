@@ -329,6 +329,34 @@ fn read_bundled_model(_filename: &str) -> Option<Vec<u8>> {
     None
 }
 
+/// Materialise a model bundled in the HAP rawfile set into the app-data models
+/// dir. The CANN (`.om`) and MindSpore Lite (`.ms`) engines take a filesystem
+/// path, not a memory buffer, so the bundle is extracted once and then reused
+/// exactly like a downloaded/sideloaded model. Returns `None` when the model is
+/// neither on disk nor in the bundle. No-op when the file already exists.
+#[cfg(target_env = "ohos")]
+fn provision_bundled_model(
+    app_handle: &tauri::AppHandle,
+    filename: &str,
+) -> Result<Option<PathBuf>> {
+    let dest = get_models_dir(app_handle)?.join(filename);
+    if dest.exists() {
+        return Ok(Some(dest));
+    }
+    if !has_bundled_model(filename) {
+        return Ok(None);
+    }
+    let bytes = read_bundled_model(filename)
+        .ok_or_else(|| anyhow::anyhow!("bundled model '{filename}' could not be read"))?;
+    persist_downloaded_asset(&dest, &bytes)?;
+    log::info!(
+        "[ai] extracted bundled model '{filename}' ({} bytes) to {}",
+        bytes.len(),
+        dest.display()
+    );
+    Ok(Some(dest))
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum AiMaskModel {
     Subject,
@@ -1175,7 +1203,12 @@ pub fn denoise_om_status(app_handle: &tauri::AppHandle) -> Result<(bool, u64)> {
     let path = get_models_dir(app_handle)?.join(DENOISE_OM_FILENAME);
     match fs::metadata(&path) {
         Ok(meta) => Ok((true, meta.len())),
-        Err(_) => Ok((false, 0)),
+        // A release HAP can carry the .om in its rawfile bundle; report it as
+        // available before the first extraction (Settings copy stays honest).
+        Err(_) => Ok((
+            crate::ohos_integration::rawfile_models::has(DENOISE_OM_FILENAME),
+            crate::ohos_integration::rawfile_models::size(DENOISE_OM_FILENAME).unwrap_or(0),
+        )),
     }
 }
 
@@ -1207,15 +1240,29 @@ fn persist_downloaded_asset(dest: &Path, bytes: &[u8]) -> Result<()> {
         file.sync_all()?;
     }
 
-    fs::rename(&tmp_path, dest).or_else(|rename_error| -> std::io::Result<()> {
-        if dest.exists() {
-            fs::remove_file(dest)?;
-            fs::rename(&tmp_path, dest)?;
-            Ok(())
-        } else {
-            Err(rename_error)
+    if let Err(rename_error) = fs::rename(&tmp_path, dest) {
+        // A stale destination is the common recoverable case on a normal file
+        // system: drop it and retry the rename once. Both steps may themselves
+        // fail (e.g. a read-only parent on OHOS), in which case the copy
+        // fallback below still gets a chance.
+        if dest.exists()
+            && !dest.is_dir()
+            && fs::remove_file(dest).is_ok()
+            && fs::rename(&tmp_path, dest).is_ok()
+        {
+            return Ok(());
         }
-    })?;
+        // Some OHOS file systems (the FUSE app-data mount) deny rename() while
+        // allowing ordinary writes, so retrying cannot help. Fall back to a
+        // plain byte copy and drop the temp file (D-31).
+        log::warn!(
+            "[ai] rename({}) failed ({}); falling back to byte copy",
+            dest.display(),
+            rename_error
+        );
+        fs::copy(&tmp_path, dest)?;
+        let _ = fs::remove_file(&tmp_path);
+    }
     Ok(())
 }
 
@@ -1456,7 +1503,19 @@ pub async fn get_or_init_denoise_model(
             .as_deref()
             .is_some_and(|backend| backend == "npu");
         if npu_selected {
-            let om_path = models_dir.join(DENOISE_OM_FILENAME);
+            // Prefer a side-loaded/downloaded .om; otherwise extract the copy
+            // bundled into a release HAP (build-ohos.ps1 -Release).
+            let om_path = match provision_bundled_model(app_handle, DENOISE_OM_FILENAME) {
+                Ok(Some(path)) => path,
+                Ok(None) => models_dir.join(DENOISE_OM_FILENAME),
+                Err(e) => {
+                    log::warn!(
+                        "NPU mode: bundled {} extraction failed ({e}), trying .ms/ORT fallback.",
+                        DENOISE_OM_FILENAME
+                    );
+                    models_dir.join(DENOISE_OM_FILENAME)
+                }
+            };
             if om_path.exists() {
                 match crate::ohos_integration::om::OmModel::new(&om_path, OM_PERF_MODE_CNN) {
                     Ok(model) if denoise_om_contract_matches(&model) => {
@@ -1901,14 +1960,31 @@ fn denoise_om_contract_matches(model: &crate::ohos_integration::om::OmModel) -> 
             .is_some_and(|o| o.dims == [1, 3, 504, 504] && o.byte_size == expected_bytes)
 }
 
-/// Download/verify the MindSpore Lite denoise model. Any failure (bad hash,
-/// download error, IO error) results in `Ok(None)`, causing the caller to
-/// fall back to the ORT CPU path.
+/// Provision the MindSpore Lite denoise model: prefer a copy bundled in the
+/// HAP rawfile set (release builds), otherwise download/verify it. Either way
+/// the pinned SHA256 is enforced. Any failure (bad hash, download error, IO
+/// error) results in `Ok(None)`, causing the caller to fall back to the ORT CPU
+/// path.
 #[cfg(target_env = "ohos")]
 async fn try_provision_ms_model(
     app_handle: &tauri::AppHandle,
     models_dir: &Path,
 ) -> Result<Option<PathBuf>> {
+    match provision_bundled_model(app_handle, DENOISE_MS_FILENAME) {
+        Ok(Some(path)) => {
+            if verify_sha256(&path, DENOISE_MS_SHA256)? {
+                return Ok(Some(path));
+            }
+            log::warn!(
+                "NPU mode: bundled {} failed sha256 verification, removing and downloading.",
+                path.display()
+            );
+            let _ = fs::remove_file(&path);
+        }
+        Ok(None) => {}
+        Err(e) => log::warn!("NPU mode: bundled .ms extraction failed ({e}), downloading."),
+    }
+
     let asset = ModelAsset {
         filename: DENOISE_MS_FILENAME,
         url: DENOISE_MS_URL,

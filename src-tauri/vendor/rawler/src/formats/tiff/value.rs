@@ -362,7 +362,10 @@ pub struct ValueConvertError(pub(crate) ());
 
 impl From<TryFromIntError> for ValueConvertError {
   fn from(_: TryFromIntError) -> Self {
-    todo!()
+    // Out-of-range EXIF value: report a conversion error so callers can skip
+    // the tag. This used to be `todo!()`, which panicked in release builds too
+    // (seen on a Canon R6 Mark III CR3).
+    ValueConvertError(())
   }
 }
 

@@ -263,19 +263,16 @@ pub fn get_or_init_gpu_context(
         instance_desc.backends = wgpu::Backends::PRIMARY;
     }
 
-    // OpenHarmony: prefer Vulkan, fall back to GLES only when no Vulkan
-    // adapter exists (DevEco emulator). The GLES translation layer is the
-    // unstable one — on real devices it has smashed the stack inside
-    // Queue::submit on the readback path (libhvgr_v210.so, 2026-10-05 faultlog
-    // cppcrash-24077) and it is what `auto` used to select first, which made
-    // the startup pipeline warmup die in the Maleoon driver
-    // (libmaleoon_v300.so, GEM-W40 pad, 2026-10-31). Vulkan needs the ash
-    // fork so it looks for `libvulkan.so` instead of `libvulkan.so.1`
-    // (porting doc 6.9, `[patch.crates-io]`).
-    // An explicit choice still wins: settings.processing_backend sets
-    // WGPU_BACKEND at startup before this runs (lib.rs).
+    // OpenHarmony renders through Vulkan and nothing else. There is no GLES
+    // fallback any more: the translation layer has smashed the stack inside the
+    // readback path (libhvgr_v210.so, 2026-10-05 faultlog cppcrash-24077) and
+    // deadlocks on the adapter-context lock when preview and thumbnail workers
+    // render concurrently (GEM-W40, wgpu-hal gles/device.rs:1594). Vulkan needs
+    // the ash fork so it looks for `libvulkan.so` instead of `libvulkan.so.1`
+    // (porting doc 6.9, `[patch.crates-io]`). The settings backend choice is
+    // ignored on this platform (lib.rs pins it to `vulkan`).
     #[cfg(target_env = "ohos")]
-    if std::env::var("WGPU_BACKEND").is_err() {
+    {
         instance_desc.backends = wgpu::Backends::VULKAN;
     }
 
@@ -328,18 +325,6 @@ pub fn get_or_init_gpu_context(
     };
     #[allow(unused_mut)]
     let mut adapter_result = pollster::block_on(instance.request_adapter(&adapter_options));
-
-    // Emulator escape hatch: no Vulkan stack at all, GLES (host passthrough)
-    // is the only working backend there. The second instance must outlive the
-    // adapter it produced, hence the reassignment instead of a temporary.
-    #[cfg(target_env = "ohos")]
-    if adapter_result.is_err() && std::env::var("WGPU_BACKEND").is_err() {
-        log::warn!("No Vulkan adapter on OpenHarmony; retrying with GLES");
-        let mut gl_desc = wgpu::InstanceDescriptor::new_without_display_handle_from_env();
-        gl_desc.backends = wgpu::Backends::GL;
-        instance = wgpu::Instance::new(gl_desc);
-        adapter_result = pollster::block_on(instance.request_adapter(&adapter_options));
-    }
 
     let adapter = adapter_result.map_err(|e| {
         if let Some(p) = &flag_path {

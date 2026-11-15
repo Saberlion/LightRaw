@@ -186,7 +186,7 @@ pub fn generate_foreground_mask(
     let session = models.birefnet().map_err(|e| e.to_string())?;
     // A Rust panic inside the ORT/CANN wrapper must not take the app down.
     let mask = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        run_birefnet_model(&work, &*session)
+        run_birefnet_model(&work, &session)
     }))
     .map_err(|_| "AI foreground mask aborted (panic inside inference)".to_string())?
     .map_err(|e| e.to_string())?;

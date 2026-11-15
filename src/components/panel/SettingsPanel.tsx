@@ -1894,23 +1894,27 @@ export default function SettingsPanel({
                         />
                       </SettingItem>
 
-                      <SettingItem
-                        label={t('settings.processing.backend')}
-                        description={t('settings.processing.backendDesc')}
-                      >
-                        <Dropdown
-                          onChange={(value: any) => handleProcessingSettingChange('processingBackend', value)}
-                          options={filteredBackendOptions}
-                          value={
-                            filteredBackendOptions.some(
-                              (option) => option.value === processingSettings.processingBackend,
-                            )
-                              ? processingSettings.processingBackend
-                              : 'auto'
-                          }
-                          triggerClassName="bg-bg-primary"
-                        />
-                      </SettingItem>
+                      {/* OpenHarmony renders through Vulkan only, so there is no
+                          backend choice to offer there. */}
+                      {!isOhos && (
+                        <SettingItem
+                          label={t('settings.processing.backend')}
+                          description={t('settings.processing.backendDesc')}
+                        >
+                          <Dropdown
+                            onChange={(value: any) => handleProcessingSettingChange('processingBackend', value)}
+                            options={filteredBackendOptions}
+                            value={
+                              filteredBackendOptions.some(
+                                (option) => option.value === processingSettings.processingBackend,
+                              )
+                                ? processingSettings.processingBackend
+                                : 'auto'
+                            }
+                            triggerClassName="bg-bg-primary"
+                          />
+                        </SettingItem>
+                      )}
 
                       {isOhos && (
                         <SettingItem

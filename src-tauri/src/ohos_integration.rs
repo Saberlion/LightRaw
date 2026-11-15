@@ -2209,4 +2209,17 @@ pub mod rawfile_models {
         entry.read_to_end(&mut bytes).ok()?;
         Some(bytes)
     }
+
+    /// Uncompressed size of a bundled model, for status reporting without
+    /// materialising the bytes.
+    pub fn size(filename: &str) -> Option<u64> {
+        let bundle = bundle()?;
+        if !bundle.names.contains(filename) {
+            return None;
+        }
+        let entry_path = format!("{MODELS_PREFIX}{filename}");
+        let mut archive = bundle.archive.lock().ok()?;
+        let entry = archive.by_name(&entry_path).ok()?;
+        Some(entry.size())
+    }
 }

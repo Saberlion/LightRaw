@@ -90,11 +90,11 @@ The interface ships in 15 languages, including English, Simplified Chinese, Trad
 
 ## 4. 本次更新 / 更新说明（AGC：版本更新说明）
 
-版本绑定：`AppScope/app.json5` → `versionName = "1.0.0"`、`versionCode = 1`（鸿蒙 PC 首发版本）。
+版本绑定：`AppScope/app.json5` → `versionName = "1.6.7"`、`versionCode = 10607`（2026-11-06 起与 `src-tauri/tauri.conf.json` 的 `version` 对齐；编码规则 `major*10000 + minor*100 + patch`，下次升级须单调递增）。
 
 ### 4.1 中文
 
-> **v1.0.0（鸿蒙 PC 首发）**
+> **v1.6.7（鸿蒙 PC 首发）**
 >
 > - 鸿蒙 PC（2in1）首个正式版本，基于 wgpu / Vulkan 的 GPU 加速编辑管线
 > - 支持通过系统文件选择器打开文件夹、导入图片，并将导出结果保存到系统图库 / 相册
@@ -104,7 +104,7 @@ The interface ships in 15 languages, including English, Simplified Chinese, Trad
 
 ### 4.2 English
 
-> **v1.0.0 (first HarmonyOS PC release)**
+> **v1.6.7 (first HarmonyOS PC release)**
 >
 > - First release for HarmonyOS PC (2in1), with a GPU-accelerated editing pipeline built on wgpu / Vulkan
 > - Open folders and import images through the system file picker, and save exports to the system gallery
@@ -112,7 +112,7 @@ The interface ships in 15 languages, including English, Simplified Chinese, Trad
 > - Full non-destructive editing: RAW decoding, lens correction, masks and retouching, presets and batch export
 > - 15 UI languages including Simplified Chinese, and system light/dark theme support
 
-<sub>脚注：包版本号 `versionName` 为 `1.0.0`（app.json5）；跨平台应用自身的版本字符串为 `1.6.4`（`src-tauri/tauri.conf.json` 的 `version`，§6.4 记录的模拟器首亮截图中欢迎页也显示 1.6.4）。两者不一致属已知情况，提审时以包内 `versionName` 为准；若 AGC 要求版本号与展示一致，建议统一后再出包。</sub>
+<sub>脚注（2026-11-06 更新）：包版本号已统一为 `versionName = "1.6.7"` / `versionCode = 10607`（`AppScope/app.json5`），与 `src-tauri/tauri.conf.json` 的 `version = 1.6.7` 一致，此前「1.0.0 与 1.6.4 不一致」的问题不再存在。`versionCode` 取 `major*10000 + minor*100 + patch`，后续每次提审必须严格递增（例如 1.6.8 → 10608、1.7.0 → 10700）。</sub>
 
 ---
 
@@ -195,7 +195,7 @@ The interface ships in 15 languages, including English, Simplified Chinese, Trad
 - [ ] **权限一致性**：包内 7 项权限与隐私声明申报逐项一致；ACL 受限权限在 release Profile 的 `allowed-acls` 覆盖（§6.15 / §6.17）。
 - [ ] **提审包必须 `-Release`**：禁止携带调试信息（dev `.so`、`.debug_*` / symtab、`ets/sourceMaps.map`），§6.17。
 - [ ] **中国大陆合规**：APP 备案 + 电子版权证书（非国区首发可豁免后两项，§6.15）。
-- [ ] **版本号确认**：`versionName 1.0.0 / versionCode 1`；同版本修订重提可用原号，若 AGC 要求新版本号需改 `AppScope/app.json5` 后重出（§6.17）。
+- [ ] **版本号确认**：`versionName 1.6.7 / versionCode 10607`（已与 `tauri.conf.json` 的 `version` 对齐）；同版本修订重提可用原号，新版本须递增 `versionCode` 后再出包（改 `AppScope/app.json5` 后重出，§6.17）。
 - [ ] **上传场景**：选择「测试和正式上架」；上架后 AGC 会对应用重签名（官方流程，不影响升级，§6.15）。
 
 <sub>脚注：§6.15 记录「应用名称须填 "RapidRAW"」已被 §6.17 品牌重塑取代；同理由，权限数 §6.15「8 项」→ §6.17 v3「7 项」。两份记录并存时以 §6.17 / §6.18（更新）为准。</sub>
@@ -210,5 +210,5 @@ The interface ships in 15 languages, including English, Simplified Chinese, Trad
 4. **鸿蒙版本是否会随包分发 NPU（`.om`）模型** —— §6.16 残留项④明确「`.om` 发布形态待定（HAP 内置 / AGC 通道分发 / 设备检测下载）」，故第 5 节只声明「支持设备端 NPU 加速」，未承诺具体供给方式。
 5. **可选云端生成式服务的上线状态与订阅价格** —— README AI 路线图标为「Coming Soon」、`$TBD/month`；`zh-CN.json` 已存在云端登录 / 月用量文案。二者不一致，文案未按「已上线」表述。
 6. **AGC 应用名称与 bundleName 不一致是否需要额外说明** —— 仓库未记录；本文件按 §6.17「bundleName 刻意保留」处理。
-7. **应用商店展示版本号应为 1.0.0 还是 1.6.4** —— 仓库两处记录不一致（见第 4 节脚注），未找到裁决结论。
+7. ~~**应用商店展示版本号应为 1.0.0 还是 1.6.4**~~ —— 已于 2026-11-06 裁决：统一为 **1.6.7**（`versionCode 10607`），包版本与应用版本一致（见第 4 节脚注）。
 8. **鸿蒙版本是否包含相机联机拍摄 / 命令行批量导出** —— README 标注联机拍摄为 macOS & Linux、CLI 为独立导出通道；仓库未见鸿蒙端启用记录，故未列入功能文案。
