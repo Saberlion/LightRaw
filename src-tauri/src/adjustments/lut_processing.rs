@@ -32,7 +32,7 @@ use crate::app::state::AppState;
 use crate::decode::as_shot::as_shot;
 use crate::decode::baseline_exposure::BaselineOptions;
 use crate::export::tasks::ensure_export_not_cancelled;
-use crate::render::adjustment_utils::mark_baseline_exposure;
+use crate::masks::generation::{MaskDefinition, get_cached_or_generate_masks};
 use crate::render::gpu::context::GpuContext;
 use crate::render::gpu::output::process_and_get_dynamic_image;
 use crate::render::gpu::processor::RenderRequest;
@@ -833,6 +833,7 @@ fn render_lut_swatch(
     context: &crate::render::gpu::context::GpuContext,
     state: &State<AppState>,
     source: &crate::render::source::RenderSource,
+    mask_bitmaps: &[image::GrayImage],
     adjustments: AllAdjustments,
     lut_path: &str,
 ) -> Option<String> {
@@ -843,7 +844,7 @@ fn render_lut_swatch(
         source,
         RenderRequest {
             adjustments,
-            mask_bitmaps: &[],
+            mask_bitmaps,
             mask_cache_key: None,
             lut: Some(lut),
             roi: None,
@@ -870,6 +871,7 @@ fn render_lut_swatch(
 pub async fn generate_lut_previews(
     luts: Vec<LutPreviewRequest>,
     size: u32,
+    js_adjustments: serde_json::Value,
     app_handle: AppHandle,
 ) -> Result<Vec<LutPreview>, String> {
     tauri::async_runtime::spawn_blocking(move || {
@@ -883,31 +885,95 @@ pub async fn generate_lut_previews(
             .ok_or("No original image loaded for LUT previews")?;
         let is_raw = loaded_image.is_raw;
 
-        let base_json = serde_json::json!({});
+        // Swatch base = the caller's current adjustments, so the grid shows the
+        // LUT on the user's actual grade (geometry, crop, basic/color tools and
+        // masks included) - the same contract as the hover preview override on
+        // desktop. Touch platforms have no hover and only ever see these
+        // swatches, so they must be representative on their own.
+        let mut base_json = if js_adjustments.is_object() {
+            js_adjustments
+        } else {
+            serde_json::json!({})
+        };
+        // Scrub the LUT state: each swatch re-inserts only the LUT it
+        // previews, and the payload should not carry `lutData` blobs around.
+        if let Some(object) = base_json.as_object_mut() {
+            for key in [
+                "lutPath",
+                "lutName",
+                "lutData",
+                "lutSize",
+                "lutIsSceneReferred",
+            ] {
+                object.remove(key);
+            }
+        }
+        // Sidecars without the flag still render from the raw baseline, but an
+        // explicit opt-out from the editor must survive.
+        crate::render::adjustment_utils::ensure_baseline_exposure(&mut base_json);
+
         let preview = prepare_preview_source(&state, &context, &loaded_image, &base_json, size)?;
         let source = preview.render_source(&base_json);
+        let (scale_for_gpu, unscaled_crop_offset) = (preview.scale, preview.unscaled_crop_offset);
+        let (img_w, img_h) = source.size();
+
+        let mask_definitions: Vec<MaskDefinition> = base_json
+            .get("masks")
+            .and_then(|masks| serde_json::from_value(masks.clone()).ok())
+            .unwrap_or_default();
+        let scaled_crop_offset = (
+            unscaled_crop_offset.0 * scale_for_gpu,
+            unscaled_crop_offset.1 * scale_for_gpu,
+        );
+        let mask_bitmaps = get_cached_or_generate_masks(
+            &state,
+            &loaded_image.path,
+            &mask_definitions,
+            img_w,
+            img_h,
+            scale_for_gpu,
+            scaled_crop_offset,
+            &base_json,
+        )
+        .bitmaps;
 
         let render = resolve_render_options_from_handle(&app_handle, is_raw);
+        // Hover parity: keep the user's intensity slider so a swatch matches
+        // the live override preview; callers without LUT state get the full
+        // look.
+        let lut_intensity = base_json
+            .get("lutIntensity")
+            .and_then(Value::as_f64)
+            .unwrap_or(100.0);
 
         let previews = luts
             .into_iter()
             .map(|request| {
-                let mut swatch_lut_json = serde_json::json!({
-                    "lutPath": "preview",
-                    "lutIntensity": 100,
-                    "lutIsSceneReferred": request.is_scene_referred,
-                    "sectionVisibility": { "effects": true }
-                });
-                mark_baseline_exposure(&mut swatch_lut_json);
-                let swatch_adjustments = get_all_adjustments_from_json(
-                    &swatch_lut_json,
+                let mut swatch_json = base_json.clone();
+                if let Some(object) = swatch_json.as_object_mut() {
+                    object.insert("lutPath".into(), Value::String("preview".into()));
+                    object.insert("lutIntensity".into(), serde_json::json!(lut_intensity));
+                    object.insert(
+                        "lutIsSceneReferred".into(),
+                        serde_json::json!(request.is_scene_referred),
+                    );
+                }
+                let mut swatch_adjustments = get_all_adjustments_from_json(
+                    &swatch_json,
                     is_raw,
                     loaded_image.as_shot,
                     render,
                 );
+                swatch_adjustments.global.show_clipping = 0;
 
-                let thumb =
-                    render_lut_swatch(&context, &state, &source, swatch_adjustments, &request.path);
+                let thumb = render_lut_swatch(
+                    &context,
+                    &state,
+                    &source,
+                    &mask_bitmaps,
+                    swatch_adjustments,
+                    &request.path,
+                );
                 LutPreview {
                     path: request.path,
                     thumb,
@@ -930,41 +996,6 @@ pub fn load_and_parse_lut(path: String, state: State<AppState>) -> Result<LutPar
     cache.insert(path, Arc::new(lut));
 
     Ok(LutParseResult { size: lut_size })
-}
-
-#[cfg(test)]
-mod builtin_pack_tests {
-    //! Whatever ships in `resources/film_luts` must be listable and parseable
-    //! by the production parser (plain 3D cubes, DOMAIN 0..1, no 1D shaper).
-    //!
-    //! The CamRAW pack is a local, non-redistributable test asset (gitignored),
-    //! so this test only asserts what is actually present.
-
-    use super::*;
-
-    #[test]
-    fn builtin_pack_parses() {
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/film_luts");
-        let entries = list_luts_in_dir(&dir, true).expect("resource dir must list");
-
-        let mut grids: std::collections::BTreeMap<u32, usize> = Default::default();
-        for entry in &entries {
-            let lut = parse_lut_file(&entry.path).unwrap_or_else(|e| panic!("{}: {e}", entry.name));
-            assert!(
-                matches!(lut.size, 17 | 25 | 33 | 65),
-                "{}: unexpected grid {}",
-                entry.name,
-                lut.size
-            );
-            *grids.entry(lut.size).or_default() += 1;
-        }
-
-        println!("{} LUTs, grids {:?}", entries.len(), grids);
-        assert!(
-            entries.len() >= 6,
-            "the bundled spektrafilm set must be present"
-        );
-    }
 }
 
 pub fn export_adjustments_as_lut(
@@ -1025,4 +1056,39 @@ pub fn export_adjustments_as_lut(
     let cube_lut = convert_image_to_cube_lut(&processed_lut, lut_size)?;
     ensure_export_not_cancelled(cancellation_token)?;
     Ok(cube_lut)
+}
+
+#[cfg(test)]
+mod builtin_pack_tests {
+    //! Whatever ships in `resources/film_luts` must be listable and parseable
+    //! by the production parser (plain 3D cubes, DOMAIN 0..1, no 1D shaper).
+    //!
+    //! The CamRAW pack is a local, non-redistributable test asset (gitignored),
+    //! so this test only asserts what is actually present.
+
+    use super::*;
+
+    #[test]
+    fn builtin_pack_parses() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/film_luts");
+        let entries = list_luts_in_dir(&dir, true).expect("resource dir must list");
+
+        let mut grids: std::collections::BTreeMap<u32, usize> = Default::default();
+        for entry in &entries {
+            let lut = parse_lut_file(&entry.path).unwrap_or_else(|e| panic!("{}: {e}", entry.name));
+            assert!(
+                matches!(lut.size, 17 | 25 | 33 | 65),
+                "{}: unexpected grid {}",
+                entry.name,
+                lut.size
+            );
+            *grids.entry(lut.size).or_default() += 1;
+        }
+
+        println!("{} LUTs, grids {:?}", entries.len(), grids);
+        assert!(
+            entries.len() >= 6,
+            "the bundled spektrafilm set must be present"
+        );
+    }
 }

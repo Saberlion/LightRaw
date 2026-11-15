@@ -59,6 +59,8 @@ function getLutDisplayName(name: string): string {
   return name;
 }
 const PREVIEW_SIZE = 112;
+/** How long the LUT swatches wait for the grade to settle before regenerating. */
+const SWATCH_REGENERATION_DELAY_MS = 1000;
 const SUPPORTED_EXTENSIONS = ['cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff'];
 
 export default function LUTControl({
@@ -76,6 +78,7 @@ export default function LUTControl({
   const selectedImagePath = useEditorStore((state) => state.selectedImage?.path ?? null);
   const isImageReady = useEditorStore((state) => state.selectedImage?.isReady ?? false);
   const exifMake = useEditorStore((state) => state.selectedImage?.exif?.Make ?? null);
+  const editorAdjustments = useEditorStore((state) => state.adjustments);
   const isOhos = useSettingsStore((state) => state.isOhos);
   // Custom LUT import rides tauri-plugin-dialog (desktop) or the OHOS FileKit
   // bridge; the OHOS path is unverified, so the import entry points are not
@@ -137,11 +140,35 @@ export default function LUTControl({
     refreshList();
   }, [refreshList]);
 
+  // Swatch base = the editor's current adjustments minus the LUT state, so the
+  // grid previews each LUT on the user's actual grade (hover parity; touch
+  // platforms have no hover and only see the swatches).
+  const adjustmentsBase = useMemo(() => {
+    const base: Record<string, unknown> = { ...editorAdjustments };
+    for (const key of ['lutPath', 'lutName', 'lutData', 'lutSize', 'lutIsSceneReferred']) {
+      delete base[key];
+    }
+    return base;
+  }, [editorAdjustments]);
+
+  // Cheap stable fingerprint of the adjustments state (FNV-1a over the
+  // serialized payload) - swatches must regenerate when the grade changes,
+  // but not while every slider tick re-renders the panel.
+  const adjustmentsFingerprint = useMemo(() => {
+    const json = JSON.stringify(adjustmentsBase);
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < json.length; i++) {
+      hash ^= json.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return `${json.length.toString(16)}-${hash.toString(16)}`;
+  }, [adjustmentsBase]);
+
   useEffect(() => {
     if (!isExpanded || !selectedImagePath || !isImageReady || entries.length === 0) {
       return;
     }
-    const cacheKey = `${selectedImagePath}|${entries
+    const cacheKey = `${selectedImagePath}|${adjustmentsFingerprint}|${entries
       .map((entry) => `${entry.path}:${entry.isBuiltIn ? 1 : 0}:${entry.isSceneReferred ? 1 : 0}`)
       .join(',')}`;
     const cached = previewCache.current.get(cacheKey);
@@ -152,30 +179,44 @@ export default function LUTControl({
 
     let isActive = true;
     setIsLoadingPreviews(true);
-    invoke<LutPreview[]>('generate_lut_previews', {
-      luts: entries.map((entry) => ({
-        path: entry.path,
-        isSceneReferred: entry.isSceneReferred,
-      })),
-      size: PREVIEW_SIZE,
-    })
-      .then((results) => {
-        if (!isActive) return;
-        const map: Record<string, string | null> = {};
-        results.forEach((result) => {
-          map[result.path] = result.thumb;
-        });
-        previewCache.current.set(cacheKey, map);
-        setPreviews(map);
+    // Debounced by SWATCH_REGENERATION_DELAY_MS so a burst of adjustment
+    // changes (slider drags) only triggers one swatch batch after the user
+    // settles.
+    const timer = setTimeout(() => {
+      if (!isActive) return;
+      invoke<LutPreview[]>('generate_lut_previews', {
+        luts: entries.map((entry) => ({
+          path: entry.path,
+          isSceneReferred: entry.isSceneReferred,
+        })),
+        size: PREVIEW_SIZE,
+        jsAdjustments: adjustmentsBase,
       })
-      .catch((err) => console.error('Failed to generate LUT previews:', err))
-      .finally(() => {
-        if (isActive) setIsLoadingPreviews(false);
-      });
+        .then((results) => {
+          if (!isActive) return;
+          const map: Record<string, string | null> = {};
+          results.forEach((result) => {
+            map[result.path] = result.thumb;
+          });
+          previewCache.current.set(cacheKey, map);
+          // Keep the cache bounded: evict the oldest entries (insertion order).
+          while (previewCache.current.size > 12) {
+            const oldest = previewCache.current.keys().next().value;
+            if (oldest === undefined || oldest === cacheKey) break;
+            previewCache.current.delete(oldest);
+          }
+          setPreviews(map);
+        })
+        .catch((err) => console.error('Failed to generate LUT previews:', err))
+        .finally(() => {
+          if (isActive) setIsLoadingPreviews(false);
+        });
+    }, SWATCH_REGENERATION_DELAY_MS);
     return () => {
       isActive = false;
+      clearTimeout(timer);
     };
-  }, [isExpanded, selectedImagePath, isImageReady, entries]);
+  }, [isExpanded, selectedImagePath, isImageReady, entries, adjustmentsFingerprint, adjustmentsBase]);
 
   const handleImport = async () => {
     if (!canImportLuts) return;

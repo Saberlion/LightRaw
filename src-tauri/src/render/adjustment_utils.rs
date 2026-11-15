@@ -163,6 +163,16 @@ pub fn mark_baseline_exposure(adjustments: &mut Value) {
     }
 }
 
+/// Like [`mark_baseline_exposure`], but keeps an explicit `false` from the
+/// caller intact (the sidecar/editor can opt out of baseline exposure).
+pub fn ensure_baseline_exposure(adjustments: &mut Value) {
+    if let Some(object) = adjustments.as_object_mut() {
+        object
+            .entry(BASELINE_EXPOSURE_KEY.to_string())
+            .or_insert_with(|| Value::Bool(true));
+    }
+}
+
 pub fn default_adjustments(path: &std::path::Path) -> Value {
     let mut adjustments = json!({});
     mark_baseline_exposure(&mut adjustments);
