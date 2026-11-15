@@ -31,6 +31,18 @@
   }
 }
 
+/* Safe-area insets. On OHOS `useSafeAreaInsets` overrides these at runtime
+   from the native avoid-area bridge (`get_ohos_avoid_area` /
+   `ohos-avoid-area`): ArkWeb's `env(safe-area-inset-*)` proved unreliable
+   there. Every other platform keeps the standard `env()` fallback (0 on
+   desktops), so consumers can rely on the variables unconditionally. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
 @utility slider-input {
   &::-webkit-slider-thumb {
     @apply h-4 w-4 appearance-none rounded-full bg-accent;

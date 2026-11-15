@@ -907,6 +907,7 @@ pub fn run() {
             ohos_integration::exit_app,
             ohos_integration::get_ohos_color_mode,
             ohos_integration::get_ohos_device_type,
+            ohos_integration::get_ohos_avoid_area,
             ohos_integration::get_ohos_ai_npu_status,
             ohos_integration::set_ohos_keep_screen_on,
             ohos_integration::pick_ohos_folder,

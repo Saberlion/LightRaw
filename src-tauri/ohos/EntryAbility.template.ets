@@ -85,13 +85,19 @@ export default class EntryAbility extends RustAbility {
     // shows instead of the window's black surface (docs 6.25).
     this.mainWindow = win;
     this.applyBaseColor(this.context.config?.colorMode);
-    // Safe-area evidence: with layoutFullScreen(false) the window manager
-    // reserves the system bars already; log the remaining avoid rect.
+    // Safe-area: with layoutFullScreen(false) the window manager reserves the
+    // system bars already; the remaining avoid rect (cutout, gesture strip)
+    // rides the native bridge so the webview can pad for it — ArkWeb's
+    // env(safe-area-inset-*) proved unreliable (phone layout G1). The initial
+    // push happens once the native module is registered below; this
+    // subscription covers later changes (rotation, fold, keyboard).
     try {
-      const avoid = win.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-      console.info(`[RapidRAW] system avoid area: ${JSON.stringify(avoid)}`);
+      win.on('avoidAreaChange', () => {
+        this.pushAvoidAreas(win);
+      });
+      console.info('[RapidRAW] avoidAreaChange subscribed');
     } catch (e) {
-      console.error(`[RapidRAW] getWindowAvoidArea failed: ${JSON.stringify(e)}`);
+      console.error(`[RapidRAW] avoidAreaChange subscribe failed: ${JSON.stringify(e)}`);
     }
     // RapidRAW's custom titlebar drives window controls through tauri
     // commands into ohos_integration.rs, which calls back into the JS
@@ -219,6 +225,7 @@ export default class EntryAbility extends RustAbility {
       this.rapidrawModule = mod;
       this.pushColorMode(this.context.config?.colorMode);
       this.pushDeviceType();
+      this.pushAvoidAreas(win);
       if (this.pendingOpenPath !== null) {
         const pendingPath: string = this.pendingOpenPath;
         this.pendingOpenPath = null;
@@ -297,6 +304,40 @@ export default class EntryAbility extends RustAbility {
       return;
     }
     notify(deviceInfo.deviceType);
+  }
+
+  // Native safe-area insets for the webview (phone layout G1): merge the
+  // avoid rects that matter for layout (system/cutout top, gesture strip and
+  // navigation indicator bottom, cutout/gesture sides) and push them through
+  // the Rust bridge. Values are physical px; the webview divides by its CSS
+  // device pixel ratio before using them as --safe-* variables. Individual
+  // avoid types can be missing per form factor / API level, so each probe is
+  // guarded.
+  private safeAvoidArea(win: window.Window, type: window.AvoidAreaType): window.AvoidArea | null {
+    try {
+      return win.getWindowAvoidArea(type);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  private pushAvoidAreas(win: window.Window): void {
+    const notify: ESObject =
+      this.rapidrawModule?.notifyOhosAvoidArea ?? this.rapidrawModule?.default?.notifyOhosAvoidArea;
+    if (typeof notify !== 'function') {
+      return;
+    }
+    const system: window.AvoidArea | null = this.safeAvoidArea(win, window.AvoidAreaType.TYPE_SYSTEM);
+    const cutout: window.AvoidArea | null = this.safeAvoidArea(win, window.AvoidAreaType.TYPE_CUTOUT);
+    const gesture: window.AvoidArea | null = this.safeAvoidArea(win, window.AvoidAreaType.TYPE_SYSTEM_GESTURE);
+    const indicator: window.AvoidArea | null =
+      this.safeAvoidArea(win, window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
+    const top: number = Math.max(system?.topRect.height ?? 0, cutout?.topRect.height ?? 0);
+    const bottom: number =
+      Math.max(system?.bottomRect.height ?? 0, gesture?.bottomRect.height ?? 0, indicator?.bottomRect.height ?? 0);
+    const left: number = Math.max(cutout?.leftRect.width ?? 0, gesture?.leftRect.width ?? 0);
+    const right: number = Math.max(cutout?.rightRect.width ?? 0, gesture?.rightRect.width ?? 0);
+    notify(top, right, bottom, left);
   }
 
   // ---- "open with" / share (docs 6.22) ----

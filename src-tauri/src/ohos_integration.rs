@@ -148,7 +148,7 @@ pub fn exit_app(app_handle: tauri::AppHandle) {
 
 #[cfg(target_env = "ohos")]
 mod system_bridge {
-    use std::sync::atomic::{AtomicU8, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
     use std::sync::{Mutex, OnceLock};
 
     use napi_ohos::bindgen_prelude::Result;
@@ -159,6 +159,13 @@ mod system_bridge {
     // ArkTS `deviceInfo.deviceType`: "phone" | "tablet" | "2in1" | "default" |
     // … (docs 6.14). Drives form-factor-dependent UI and grant strategy.
     static DEVICE_TYPE: OnceLock<String> = OnceLock::new();
+    // Safe-area insets (top, right, bottom, left) in physical px, pushed by
+    // EntryAbility from `window.getWindowAvoidArea` and re-pushed on every
+    // `avoidAreaChange` event (phone layout G1; MULTIDEVICE_ADAPTATION P0#3).
+    // The webview consumes them as `--safe-*` CSS variables — ArkWeb's
+    // `env(safe-area-inset-*)` proved unreliable on this webview.
+    static AVOID_AREA: Mutex<(u32, u32, u32, u32)> = Mutex::new((0, 0, 0, 0));
+    static AVOID_AREA_KNOWN: AtomicBool = AtomicBool::new(false);
 
     pub fn set_app_handle(handle: tauri::AppHandle) {
         let _ = APP_HANDLE.set(handle);
@@ -174,6 +181,14 @@ mod system_bridge {
 
     pub fn device_type() -> Option<String> {
         DEVICE_TYPE.get().cloned()
+    }
+
+    pub fn avoid_area() -> Option<(u32, u32, u32, u32)> {
+        if AVOID_AREA_KNOWN.load(Ordering::Relaxed) {
+            Some(*AVOID_AREA.lock().unwrap())
+        } else {
+            None
+        }
     }
 
     /// Emit a tauri event to the webview (shared with sibling bridge modules).
@@ -264,6 +279,29 @@ mod system_bridge {
         }
         Ok(())
     }
+
+    /// NAPI export (ArkTS name: `notifyOhosAvoidArea`). EntryAbility pushes the
+    /// merged safe-area insets (top/right/bottom/left, physical px) once the
+    /// native module is registered and on every `window.on('avoidAreaChange')`
+    /// event; the frontend queries the initial value (`get_ohos_avoid_area`)
+    /// and follows the `ohos-avoid-area` event. Values are physical px — the
+    /// webview divides by its CSS device pixel ratio before using them.
+    #[napi_derive_ohos::napi]
+    pub fn notify_ohos_avoid_area(top: u32, right: u32, bottom: u32, left: u32) -> Result<()> {
+        let next = (top, right, bottom, left);
+        let mut area = AVOID_AREA.lock().unwrap();
+        let changed = !AVOID_AREA_KNOWN.swap(true, Ordering::Relaxed) || *area != next;
+        *area = next;
+        drop(area);
+        if changed {
+            log::info!("OHOS avoid area: top={top} right={right} bottom={bottom} left={left}");
+            emit(
+                "ohos-avoid-area",
+                serde_json::json!({ "top": top, "right": right, "bottom": bottom, "left": left }),
+            );
+        }
+        Ok(())
+    }
 }
 
 /// Latest OHOS system color mode reported by the ArkTS side, or `None` when
@@ -289,6 +327,38 @@ pub fn get_ohos_device_type() -> Option<String> {
     #[cfg(target_env = "ohos")]
     {
         system_bridge::device_type()
+    }
+    #[cfg(not(target_env = "ohos"))]
+    {
+        None
+    }
+}
+
+/// Safe-area insets (physical px) for the OHOS window: top/right/bottom/left
+/// merged on the ArkTS side from the system, cutout, gesture and
+/// navigation-indicator avoid rects. `None` before the bridge has reported
+/// (and on every other platform). The phone layout consumes these as
+/// `--safe-*` CSS variables (see `useSafeAreaInsets`) because ArkWeb's
+/// `env(safe-area-inset-*)` is unreliable.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OhosAvoidArea {
+    pub top: u32,
+    pub right: u32,
+    pub bottom: u32,
+    pub left: u32,
+}
+
+#[tauri::command]
+pub fn get_ohos_avoid_area() -> Option<OhosAvoidArea> {
+    #[cfg(target_env = "ohos")]
+    {
+        system_bridge::avoid_area().map(|(top, right, bottom, left)| OhosAvoidArea {
+            top,
+            right,
+            bottom,
+            left,
+        })
     }
     #[cfg(not(target_env = "ohos"))]
     {
