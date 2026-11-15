@@ -17,9 +17,11 @@ const Resizer = ({ direction, onMouseDown, onDoubleClick, showHandle = false }: 
       'cursor-col-resize': direction === Orientation.Vertical,
       'cursor-row-resize': direction === Orientation.Horizontal,
       'w-2': direction === Orientation.Vertical && !showHandle,
-      'w-3.5': direction === Orientation.Vertical && showHandle,
+      // Touch-sized hit box (20px, phone plan P1 ⑨: 8 -> 16/20px); the visual
+      // pill below stays 4px thin, only the target grows.
+      'w-5': direction === Orientation.Vertical && showHandle,
       'h-2': direction === Orientation.Horizontal && !showHandle,
-      'h-3.5': direction === Orientation.Horizontal && showHandle,
+      'h-5': direction === Orientation.Horizontal && showHandle,
     })}
     role="separator"
     aria-orientation={direction === Orientation.Vertical ? 'vertical' : 'horizontal'}
