@@ -58,6 +58,10 @@ interface MainLibraryProps {
   isLoading: boolean;
   isTouchUi: boolean;
   isTreeLoading: boolean;
+  /** Phone gallery (CamRAW workbench): render date section headers in the
+   * flat grid while the sort is date_taken. Flows into LibraryGrid via
+   * the {...props} spread. */
+  groupByDate?: boolean;
   libraryViewMode: LibraryViewMode;
   multiSelectedPaths: Array<string>;
   onClearSelection(): void;

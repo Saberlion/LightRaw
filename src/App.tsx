@@ -78,7 +78,7 @@ import { useAndroidBackHandler } from './hooks/useAndroidBackHandler';
 import './i18n';
 
 import { Invokes } from './types/invokes';
-import { ImageFile } from './types/library';
+import { ImageFile, SortDirection } from './types/library';
 import { LibraryViewMode, Theme, ThumbnailSize, ThumbnailAspectRatio } from './types/settings';
 import { Panel, PanelRegion } from './types/ui';
 
@@ -327,6 +327,19 @@ function App() {
   // keeps its existing phone layout for now; landscape crosses 600px into
   // wide mode and drops the shell for the larger canvas.
   const usePhoneTabShell = isOhosPhone && useCompactPanels;
+
+  // The phone gallery renders CamRAW-style date sections, which only read
+  // correctly over a date-sorted list — default the library sort to capture
+  // date (newest first) once when the shell activates and the sort is still
+  // the pristine default. The user can still change it from the view options;
+  // any non-date sort simply drops the headers.
+  useEffect(() => {
+    if (!usePhoneTabShell) return;
+    const { sortCriteria, setSortCriteria } = useLibraryStore.getState();
+    if (sortCriteria.key === 'name' && sortCriteria.order === SortDirection.Ascending) {
+      setSortCriteria({ key: 'date_taken', order: SortDirection.Descending });
+    }
+  }, [usePhoneTabShell]);
 
   // Touch tablets start with the adjustments rail collapsed so the canvas gets
   // the whole width; tapping a rail icon slides the panel out (SidePanelArea).
@@ -1173,6 +1186,7 @@ function App() {
                         handlePasteAdjustments={handlePasteAdjustments}
                         handleResetAdjustments={handleResetAdjustments}
                         requestThumbnails={requestThumbnails}
+                        groupByDate
                         hideBottomBar
                       />
                     </PhoneTabShell>

@@ -41,10 +41,21 @@ export function useSafeAreaInsets() {
       // Physical px from the ArkTS side -> CSS px of this webview.
       const dpr = window.devicePixelRatio || 1;
       const root = document.documentElement.style;
-      root.setProperty('--safe-top', `${Math.ceil(insets.top / dpr)}px`);
-      root.setProperty('--safe-right', `${Math.ceil(insets.right / dpr)}px`);
-      root.setProperty('--safe-bottom', `${Math.ceil(insets.bottom / dpr)}px`);
-      root.setProperty('--safe-left', `${Math.ceil(insets.left / dpr)}px`);
+      const css = {
+        top: Math.ceil(insets.top / dpr),
+        right: Math.ceil(insets.right / dpr),
+        bottom: Math.ceil(insets.bottom / dpr),
+        left: Math.ceil(insets.left / dpr),
+      };
+      // On-device evidence for the avoid-area bridge (app.log/console chains
+      // are the only observability a store-less webview has here).
+      console.info(
+        `[ohos-safe-area] top=${css.top}px right=${css.right}px bottom=${css.bottom}px left=${css.left}px (physical ${insets.top}/${insets.right}/${insets.bottom}/${insets.left} @ dpr ${dpr})`,
+      );
+      root.setProperty('--safe-top', `${css.top}px`);
+      root.setProperty('--safe-right', `${css.right}px`);
+      root.setProperty('--safe-bottom', `${css.bottom}px`);
+      root.setProperty('--safe-left', `${css.left}px`);
     };
 
     invoke<OhosAvoidArea | null>(Invokes.GetOhosAvoidArea)

@@ -31,6 +31,20 @@ import { useCtrlClickMenuGuard } from '../../../hooks/useCtrlClickMenuGuard';
 const LIST_DATE_FORMAT = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 const LIST_TIME_FORMAT = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit' });
 
+// Date-section headers (phone gallery) render "November 15, 2026"-style
+// labels in the active i18n language; formatters are cached per language since
+// every visible header row calls this on each render.
+const DATE_SECTION_FORMATTERS: Record<string, Intl.DateTimeFormat> = {};
+export function formatDateSectionLabel(timestamp: number, locale?: string) {
+  const key = locale || 'default';
+  let formatter = DATE_SECTION_FORMATTERS[key];
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(key, { dateStyle: 'long' });
+    DATE_SECTION_FORMATTERS[key] = formatter;
+  }
+  return formatter.format(new Date(timestamp));
+}
+
 interface ImageLayer {
   id: string;
   url: string;
@@ -951,7 +965,7 @@ export const Row = ({
   onAspectRatioLoaded,
   showFileInfo,
 }: any) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const row = rows[index];
 
   useEffect(() => {
@@ -989,6 +1003,34 @@ export const Row = ({
       (_: string, y: string) => `translateY(${parseFloat(y) + outerPadding}px)`,
     ),
   };
+
+  if (row.type === 'header' && row.isDate) {
+    // Date section (phone gallery, CamRAW workbench pattern): bold date on
+    // the left, image count on the right — no expand toggle, the section
+    // always renders in the current sort order.
+    return (
+      <div
+        style={{
+          ...shiftedStyle,
+          left: 0,
+          width: '100%',
+          paddingLeft: outerPadding === 0 ? 12 : outerPadding,
+          paddingRight: outerPadding === 0 ? 12 : outerPadding,
+          boxSizing: 'border-box',
+        }}
+        className="flex items-end pb-2 pt-2"
+      >
+        <div className="flex items-center gap-2 w-full border-b border-border-color/50 pb-1">
+          <Text variant={TextVariants.label} weight={TextWeights.semibold} className="truncate">
+            {formatDateSectionLabel(row.timestamp, i18n.resolvedLanguage)}
+          </Text>
+          <Text variant={TextVariants.small} color={TextColors.secondary} className="ml-auto">
+            {t('library.items.imagesCount', { count: row.count })}
+          </Text>
+        </div>
+      </div>
+    );
+  }
 
   if (row.type === 'header') {
     let displayPath = row.path;
