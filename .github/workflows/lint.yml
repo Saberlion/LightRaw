@@ -52,6 +52,15 @@ jobs:
         working-directory: src-tauri
         run: cargo fmt -p RapidRAW -- --check
 
+  app-paths:
+    name: OHOS path resolver rule
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: No direct .path().app_*_dir() outside app_paths.rs
+        run: bash scripts/check-app-paths.sh
+
   clippy:
     name: cargo clippy
     runs-on: ubuntu-latest
