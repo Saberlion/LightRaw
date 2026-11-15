@@ -54,10 +54,11 @@ pub fn cancel_thumbnail_generation(
 }
 
 pub fn resolve_thumbnail_cache_dir(app_handle: &AppHandle) -> std::result::Result<PathBuf, String> {
-    let cache_dir = app_handle
-        .path()
-        .app_cache_dir()
-        .map_err(|e| e.to_string())?;
+    // MUST go through app_paths: the tauri resolver keeps desktop XDG
+    // semantics on OHOS, which lands in the FUSE user storage where
+    // create_dir_all fails with EPERM and the whole thumbnail worker would
+    // silently stall (D-TA-03, regressed in the upstream module split).
+    let cache_dir = crate::app_paths::app_cache_dir(app_handle).map_err(|e| e.to_string())?;
     let thumb_cache_dir = cache_dir.join("thumbnails");
     if !thumb_cache_dir.exists() {
         fs::create_dir_all(&thumb_cache_dir).map_err(|e| e.to_string())?;
@@ -759,36 +760,51 @@ pub fn start_thumbnail_workers(app_handle: tauri::AppHandle) {
 
                 let current_settings = load_settings(app_clone.clone()).unwrap_or_default();
 
-                if let Ok(cache_dir) = resolve_thumbnail_cache_dir(&app_clone) {
-                    let prefetch = || {
-                        if manager_clone.rotational_disk.load(Ordering::Relaxed) {
-                            let _io_permit = manager_clone.io_gate.lock().unwrap();
-                            prefetch_source_file(&path_to_process);
-                        }
-                    };
+                match resolve_thumbnail_cache_dir(&app_clone) {
+                    Ok(cache_dir) => {
+                        let prefetch = || {
+                            if manager_clone.rotational_disk.load(Ordering::Relaxed) {
+                                let _io_permit = manager_clone.io_gate.lock().unwrap();
+                                prefetch_source_file(&path_to_process);
+                            }
+                        };
 
-                    let result = generate_single_thumbnail_and_cache(
-                        &path_to_process,
-                        &cache_dir,
-                        gpu_context.as_ref(),
-                        None,
-                        false,
-                        &app_clone,
-                        &current_settings,
-                        Some(&prefetch),
-                    );
-
-                    if let Some((small_path, medium_path, rating, is_edited)) = result {
-                        emit_thumbnail_generated(
-                            &app_clone,
+                        let result = generate_single_thumbnail_and_cache(
                             &path_to_process,
-                            &small_path,
-                            &medium_path,
-                            rating,
-                            is_edited,
+                            &cache_dir,
+                            gpu_context.as_ref(),
+                            None,
+                            false,
+                            &app_clone,
+                            &current_settings,
+                            Some(&prefetch),
                         );
+
+                        if let Some((small_path, medium_path, rating, is_edited)) = result {
+                            emit_thumbnail_generated(
+                                &app_clone,
+                                &path_to_process,
+                                &small_path,
+                                &medium_path,
+                                rating,
+                                is_edited,
+                            );
+                        }
+                        increment_thumbnail_progress(&state, &app_clone);
                     }
-                    increment_thumbnail_progress(&state, &app_clone);
+                    // Never swallow this: an unwritable cache dir previously
+                    // stalled the queue forever (no event, no progress tick)
+                    // while the library header kept its busy indicator
+                    // spinning (D-TA-03). Account for the item, tell the UI.
+                    Err(reason) => {
+                        log::warn!(
+                            "Thumbnail cache unavailable for '{}': {}",
+                            path_to_process,
+                            reason
+                        );
+                        emit_thumbnail_cache_setup_error(&app_clone, &path_to_process, &reason);
+                        increment_thumbnail_progress(&state, &app_clone);
+                    }
                 }
                 manager_clone
                     .processing_now
@@ -933,10 +949,8 @@ pub fn emit_thumbnail_generated(
 
 #[tauri::command]
 pub fn clear_thumbnail_cache(app_handle: AppHandle) -> Result<(), String> {
-    let cache_dir = app_handle
-        .path()
-        .app_cache_dir()
-        .map_err(|e| e.to_string())?;
+    // Same app_paths rule as resolve_thumbnail_cache_dir (D-TA-03).
+    let cache_dir = crate::app_paths::app_cache_dir(&app_handle).map_err(|e| e.to_string())?;
     let thumb_cache_dir = cache_dir.join("thumbnails");
 
     if thumb_cache_dir.exists() {

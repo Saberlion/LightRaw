@@ -1,6 +1,3 @@
-#[cfg(not(any(target_os = "android", target_env = "ohos")))]
-use tauri::Manager;
-
 use crate::app::launch_request::LaunchPayload;
 use crate::app::state::AppState;
 #[cfg(not(any(target_os = "android", target_env = "ohos")))]
@@ -45,14 +42,18 @@ pub fn available_monitor_bounds(window: &tauri::WebviewWindow) -> Vec<MonitorBou
 
 #[cfg(not(any(target_os = "android", target_env = "ohos")))]
 pub fn read_window_state(app_handle: &tauri::AppHandle, file_name: &str) -> Option<WindowState> {
-    let path = app_handle.path().app_config_dir().ok()?.join(file_name);
+    // app_paths delegates to the tauri resolver on desktop; going through it
+    // keeps the whole-tree "no direct .path().app_*_dir()" rule enforceable.
+    let path = crate::app_paths::app_config_dir(app_handle)
+        .ok()?
+        .join(file_name);
     let contents = std::fs::read_to_string(path).ok()?;
     serde_json::from_str(&contents).ok()
 }
 
 #[cfg(not(any(target_os = "android", target_env = "ohos")))]
 pub fn write_window_state(app_handle: &tauri::AppHandle, file_name: &str, state: &WindowState) {
-    if let Ok(config_dir) = app_handle.path().app_config_dir() {
+    if let Ok(config_dir) = crate::app_paths::app_config_dir(app_handle) {
         let _ = std::fs::create_dir_all(&config_dir);
         if let Ok(json) = serde_json::to_string(state) {
             let _ = std::fs::write(config_dir.join(file_name), json);
