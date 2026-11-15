@@ -1028,7 +1028,13 @@ pub fn decode_pristine(
             load_base_image_from_bytes(bytes, path_str, false, settings, cancel_token.clone())
                 .map_err(|e| e.to_string())?;
         crate::decode::as_shot::as_shot_from_bytes(path_str, bytes);
-        Ok((image, sidecar::read_exif_data(path_str, bytes)))
+        // Exif extraction goes through rawler too; keep a panic there from
+        // killing an otherwise successful decode (same class as D-TA-01).
+        let exif = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+            sidecar::read_exif_data(path_str, bytes)
+        }))
+        .unwrap_or_default();
+        Ok((image, exif))
     };
     match read_file_mapped(source_path) {
         Ok(mmap) => decode(&mmap),

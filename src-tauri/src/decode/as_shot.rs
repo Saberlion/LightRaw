@@ -52,7 +52,13 @@ fn cached_or_read(path: &str, read: impl FnOnce(&str) -> Option<AsShot>) -> AsSh
         return *cached;
     }
 
-    let as_shot = read(&source_path).unwrap_or_else(AsShot::reference);
+    // The metadata-only (dummy) rawler read touches decoder internals that can
+    // trip a debug assertion for a few formats (CR2 with cpp==3, see D-TA-01).
+    // As-shot data is a nicety: never let it take down the whole load.
+    let as_shot = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| read(&source_path)))
+        .ok()
+        .flatten()
+        .unwrap_or_else(AsShot::reference);
 
     as_shot_cache().lock().unwrap().insert(source_path, as_shot);
     as_shot

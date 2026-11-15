@@ -163,7 +163,11 @@ impl<'a> Decoder for Cr2Decoder<'a> {
       if let Some(canoncol) = raw.get_entry(TiffCommonTag::Cr2StripeWidths) {
         debug!("Found Cr2StripeWidths tag: {:?}", canoncol.value);
         if canoncol.value.force_usize(0) == 0 {
-          if cpp == 3 {
+          // Dummy (metadata-only) reads never fill the pixel buffer, so
+          // `pixels_mut()` must not be evaluated here: `new_uninit` leaves the
+          // PixArray uninitialized and the debug assertion in pixarray.rs fires
+          // before convert_to_rgb can take its own early `dummy` return.
+          if cpp == 3 && !dummy {
             self.convert_to_rgb(file, camera, &decompressor, width, height, ljpegout.pixels_mut(), dummy)?;
             //width /= 3;
           }
@@ -237,7 +241,7 @@ impl<'a> Decoder for Cr2Decoder<'a> {
               }
             }
           }
-          if cpp == 3 {
+          if cpp == 3 && !dummy {
             self.convert_to_rgb(file, camera, &decompressor, width, height, out.pixels_mut(), dummy)?;
             //width /= 3;
           }
