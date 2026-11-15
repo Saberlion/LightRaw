@@ -1,6 +1,6 @@
 # LightRaw 测试矩阵
 
-> 本文件是 `.opencode/skills/lightraw-test-assets/SKILL.md` 的附件:逐资产的覆盖点与预期结果。
+> 本文件是 `.opencode/skills/lightraw-qa/SKILL.md` 的附件:逐资产的覆盖点与预期结果。
 > 语料权威来源:`test-assets/MANIFEST.md`(哈希、大小、来源)。冲突时以 MANIFEST 为准并回改本文件。
 
 ## 通用步骤(每个资产)
