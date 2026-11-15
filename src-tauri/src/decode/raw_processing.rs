@@ -383,27 +383,100 @@ pub fn develop_raw_image(
                 dim,
             )
         };
-        let image = if fast_demosaic {
-            let (data, dim) = mosaic.bin();
-            check_cancel()?;
-            let crop = crop(dim);
-            develop::finish_rgb(
-                &context,
-                &crop_rows(&data, dim.w, crop),
-                crop.d.w as u32,
-                crop.d.h as u32,
-                &finish,
-            )?
+
+        // The develop pipeline binds whole-resolution buffers (a 12-byte-per-pixel
+        // camera plane plus the raw plane), so anything past the adapter's buffer
+        // budget would only surface as an opaque wgpu validation error. Decide up
+        // front and take the CPU (rawler) path instead - the same bypass used for
+        // images larger than the texture limit.
+        //
+        // The fast path only ever uploads the bin()-folded plane (Bayer folds
+        // by 4 texels, X-Trans by 3), so gate on the folded size there; gating on
+        // the full domain would wrongly divert huge-image thumbnails into a
+        // full-resolution CPU develop.
+        let domain = mosaic.domain();
+        let limits = &context.limits;
+        let max_tex = limits.max_texture_dimension_2d;
+        let (dim_w, dim_h) = (domain.d.w, domain.d.h);
+        let bind_budget = limits
+            .max_buffer_size
+            .min(limits.max_storage_buffer_binding_size);
+        let (gate_w, gate_h) = if fast_demosaic {
+            (dim_w.div_ceil(3), dim_h.div_ceil(3))
         } else {
-            let domain = mosaic.domain();
-            let crop = crop(domain.d);
-            let crop = Rect::new(
-                Point::new(domain.p.x + crop.p.x, domain.p.y + crop.p.y),
-                crop.d,
-            );
-            mosaic.develop(&context, crop, &finish)?
+            (dim_w, dim_h)
         };
-        return Ok(DynamicImage::ImageRgb32F(image));
+        let camera_bytes = gate_w.saturating_mul(gate_h).saturating_mul(12);
+        let raw_bytes = if fast_demosaic {
+            0
+        } else {
+            dim_w.saturating_mul(dim_h).saturating_mul(2)
+        };
+        let budget = usize::try_from(bind_budget).unwrap_or(usize::MAX);
+        let gpu_fits = gate_w as u32 <= max_tex
+            && gate_h as u32 <= max_tex
+            && camera_bytes <= budget
+            && raw_bytes <= budget;
+
+        if !gpu_fits {
+            log::warn!(
+                "GPU develop skipped for {}x{} RAW (fast={}): camera plane {} MiB / raw plane {} MiB vs budget {} MiB \
+                 (max_texture {}, max_buffer {} MiB, max binding {} MiB). Developing on CPU.",
+                dim_w,
+                dim_h,
+                fast_demosaic,
+                camera_bytes >> 20,
+                raw_bytes >> 20,
+                bind_budget >> 20,
+                max_tex,
+                limits.max_buffer_size >> 20,
+                limits.max_storage_buffer_binding_size >> 20
+            );
+        } else {
+            let image = if fast_demosaic {
+                let (data, dim) = mosaic.bin();
+                check_cancel()?;
+                let crop = crop(dim);
+                develop::finish_rgb(
+                    &context,
+                    &crop_rows(&data, dim.w, crop),
+                    crop.d.w as u32,
+                    crop.d.h as u32,
+                    &finish,
+                )?
+            } else {
+                let crop = crop(domain.d);
+                let crop = Rect::new(
+                    Point::new(domain.p.x + crop.p.x, domain.p.y + crop.p.y),
+                    crop.d,
+                );
+                mosaic.develop(&context, crop, &finish)?
+            };
+            return Ok(DynamicImage::ImageRgb32F(image));
+        }
+    }
+
+    // The GPU finish uploads the whole frame as a single f32 RGB buffer (12 B/px).
+    // Past the adapter's buffer budget that only surfaces as a validation error
+    // and the whole develop drops to the embedded preview, so finish on the CPU
+    // instead (D-TA-02).
+    let finish_budget = crate::render::gpu::context::decode_gpu_context()
+        .ok()
+        .map(|context| {
+            context
+                .limits
+                .max_buffer_size
+                .min(context.limits.max_storage_buffer_binding_size)
+        });
+    let raw_pixels = raw_image.dim().w as u64 * raw_image.dim().h as u64;
+    let cpu_finish = finish_budget.is_none_or(|budget| raw_pixels.saturating_mul(12) > budget);
+    if cpu_finish {
+        log::warn!(
+            "GPU finish skipped for {}x{} RAW ({} MiB RGB plane): finishing on the CPU",
+            raw_image.dim().w,
+            raw_image.dim().h,
+            raw_pixels.saturating_mul(12) >> 20
+        );
     }
 
     for level in raw_image.whitelevel.0.iter_mut() {
@@ -465,9 +538,43 @@ pub fn develop_raw_image(
         }
         Intermediate::ThreeColor(pixels) if cfa_balance.is_some() => {
             let wb = cfa_balance.unwrap();
-            let camera = camera_to_srgb.as_ref().unwrap().camera(wb, clamp_limit);
             let crop = default_crop(crop_area, active_area, raw_dim, pixels.dim());
             let mut data = crop_rows(&pixels.data, pixels.width, crop).into_owned();
+
+            if cpu_finish {
+                // CPU finish (D-TA-02). The CameraToSrgb matrix maps
+                // camera-native values straight to sRGB - the as-shot white is
+                // already folded into it. The GPU finish shader un-premultiplies
+                // wb before that same matrix (`p * neutral`), so the GPU branch
+                // feeds white-balanced data; applying wb here as well would
+                // count it twice. Rescale only.
+                data.par_iter_mut().for_each(|p| {
+                    p.iter_mut()
+                        .for_each(|c| *c = (*c * rescale_factor).max(0.0));
+                });
+                check_cancel()?;
+                let mapped = camera_to_srgb
+                    .as_ref()
+                    .unwrap()
+                    .apply(Intermediate::ThreeColor(Color2D::new_with(
+                        data, crop.d.w, crop.d.h,
+                    )));
+                let Intermediate::ThreeColor(mut mapped) = mapped else {
+                    return Err(anyhow!("Unsupported camera conversion output"));
+                };
+                mapped.data.par_iter_mut().for_each(|p| {
+                    p.iter_mut().for_each(|c| *c = c.clamp(0.0, clamp_limit));
+                });
+                let image = DynamicImage::ImageRgb32F(rgb_pixels_to_rgb(
+                    mapped.data,
+                    crop.d.w as u32,
+                    crop.d.h as u32,
+                )?);
+                return Ok(apply_orientation(image, orientation));
+            }
+
+            // GPU finish: the shader un-premultiplies wb before the camera
+            // matrix, so feed it white-balanced data.
             data.par_iter_mut().for_each(|p| {
                 for c in 0..3 {
                     p[c] = (p[c] * rescale_factor).max(0.0) * wb[c];
@@ -477,6 +584,7 @@ pub fn develop_raw_image(
 
             let context =
                 crate::render::gpu::context::decode_gpu_context().map_err(|e| anyhow!(e))?;
+            let camera = camera_to_srgb.as_ref().unwrap().camera(wb, clamp_limit);
             let image = develop::finish_rgb(
                 &context,
                 &data,
@@ -532,11 +640,18 @@ pub fn develop_raw_image(
         }
     };
 
-    develop::enhance(
-        apply_orientation(dynamic_image, orientation),
-        denoise,
-        sharpen,
-    )
+    let image = apply_orientation(dynamic_image, orientation);
+    if cpu_finish {
+        if denoise > 0.0 || sharpen > 0.0 {
+            log::warn!(
+                "Skipping decode-time denoise/sharpen for {}x{} (GPU finish bypassed)",
+                width,
+                height
+            );
+        }
+        return Ok(image);
+    }
+    develop::enhance(image, denoise, sharpen)
 }
 
 fn crop_rows(data: &[[f32; 3]], stride: usize, crop: Rect) -> Cow<'_, [[f32; 3]]> {

@@ -487,6 +487,9 @@ pub(crate) fn scoped<T>(device: &wgpu::Device, run: impl FnOnce() -> Result<T>) 
     let result = run();
     let invalid = pollster::block_on(invalid.pop());
     if let Some(error) = pollster::block_on(out_of_memory.pop()).or(invalid) {
+        // The full Debug dump (validation source, limits, labels) goes to the
+        // log; the returned error stays short so the UI toast stays readable.
+        log::error!("GPU develop error detail: {error:?}");
         return Err(anyhow!("GPU develop failed: {}", error));
     }
     result
