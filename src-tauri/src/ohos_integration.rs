@@ -196,7 +196,7 @@ mod system_bridge {
     fn park_or_emit(handle: &tauri::AppHandle, path: String) {
         use tauri::Manager;
 
-        let state = handle.state::<crate::app_state::AppState>();
+        let state = handle.state::<crate::app::state::AppState>();
         if state.window_setup_complete.load(Ordering::Relaxed) {
             log::info!("OHOS open-with request (warm): {path}");
             emit("open-with-file", serde_json::json!(path));
@@ -314,11 +314,11 @@ pub struct OhosAiNpuStatus {
 pub fn get_ohos_ai_npu_status(app_handle: tauri::AppHandle) -> Result<OhosAiNpuStatus, String> {
     #[cfg(target_env = "ohos")]
     {
-        let (available, size_bytes) = crate::ai_processing::denoise_om_status(&app_handle)
+        let (available, size_bytes) = crate::ai::models::denoise_om_status(&app_handle)
             .map_err(|e| format!("Failed to inspect the CANN denoise model: {e}"))?;
         Ok(OhosAiNpuStatus {
             available,
-            model: crate::ai_processing::DENOISE_OM_FILENAME.to_string(),
+            model: crate::ai::models::DENOISE_OM_FILENAME.to_string(),
             size_bytes,
         })
     }
@@ -1468,6 +1468,7 @@ pub mod ms_lite {
             Ok(result)
         }
 
+        #[allow(dead_code)] // used by denoise_om_contract_matches' IO introspection
         pub fn cs(&self) -> usize {
             self.cs
         }
@@ -1697,6 +1698,7 @@ pub mod om {
     /// the model-construction sites.
     #[derive(Debug, Clone)]
     pub struct IoInfo {
+        #[allow(dead_code)] // informational only; contract checks use dims/byte_size
         pub name: String,
         pub dims: Vec<i32>,
         pub byte_size: usize,
@@ -2107,7 +2109,7 @@ pub mod rawfile_models {
     use std::collections::HashSet;
     use std::fs::File;
     use std::io::Read;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use std::sync::{Mutex, OnceLock};
 
     use zip::ZipArchive;

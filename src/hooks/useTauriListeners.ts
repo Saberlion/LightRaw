@@ -2,14 +2,20 @@ import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { Channel, convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
-import { Status } from '../components/ui/ExportImportProperties';
-import { Invokes, Progress, WaveformData } from '../components/ui/AppProperties';
-import { MaskContainer } from '../utils/adjustments';
+import { Status } from '../types/export';
+import { Invokes } from '../types/invokes';
+import { Progress } from '../types/library';
+import { ImageDefaults, WaveformData } from '../types/editor';
+import { Adjustments, MaskContainer } from '../utils/adjustments';
 import { cleanupOhosImportStaging } from '../utils/ohosImportStaging';
 import { AiJobsStatus, JobKind, JobStatus, useProcessStore } from '../store/useProcessStore';
 import { useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
 import { useLibraryStore } from '../store/useLibraryStore';
+import { adjustmentsFromMetadata, fetchImageDefaults } from '../utils/developDefaults';
+import { globalImageCache } from '../utils/ImageLRUCache';
+
+const THUMBNAIL_REFRESH_LIMIT = 500;
 
 const parseAnalyticsPacket = async (buffer: ArrayBuffer) => {
   const view = new DataView(buffer);
@@ -60,6 +66,7 @@ interface TauriListenerProps {
   handleSelectSubfolder: (path: string, isNewRoot?: boolean, preloadedImages?: any[], expandParents?: boolean) => void;
   refreshImageList: () => void;
   markGenerated: (path: string) => void;
+  prevAdjustmentsRef: React.RefObject<{ path: string; adjustments: Adjustments } | null>;
 }
 
 export function useTauriListeners({
@@ -67,12 +74,35 @@ export function useTauriListeners({
   handleSelectSubfolder,
   refreshImageList,
   markGenerated,
+  prevAdjustmentsRef,
 }: TauriListenerProps) {
   const refs = useRef({ refreshAllFolderTrees, handleSelectSubfolder, refreshImageList, markGenerated });
 
   useEffect(() => {
     refs.current = { refreshAllFolderTrees, handleSelectSubfolder, refreshImageList, markGenerated };
   });
+
+  const refreshOpenUneditedImage = async () => {
+    const { selectedImage } = useEditorStore.getState();
+    if (!selectedImage) return;
+    const path = selectedImage.path;
+    const [metadata, imageDefaults]: [{ adjustments: unknown }, ImageDefaults] = await Promise.all([
+      invoke<{ adjustments: unknown }>(Invokes.LoadMetadata, { path }),
+      fetchImageDefaults(path),
+    ]);
+    if (useEditorStore.getState().selectedImage?.path !== path) return;
+    useEditorStore.getState().setEditor({ imageDefaults });
+    if (!selectedImage.isReady) return;
+    const { selectedImage: current, history, adjustments, setEditor, resetHistory } = useEditorStore.getState();
+    if (current?.path !== path || history.length !== 1 || adjustments !== history[0]) return;
+    const fresh = adjustmentsFromMetadata(metadata.adjustments);
+    if (JSON.stringify(fresh) === JSON.stringify(adjustments)) return;
+    if (prevAdjustmentsRef.current) prevAdjustmentsRef.current = { path, adjustments: fresh };
+    setEditor({ adjustments: fresh });
+    resetHistory(fresh);
+  };
+  const refreshOpenUneditedImageRef = useRef(refreshOpenUneditedImage);
+  refreshOpenUneditedImageRef.current = refreshOpenUneditedImage;
 
   const thumbnailBuffer = useRef<Record<string, string>>({});
   const mediumThumbnailBuffer = useRef<Record<string, string>>({});
@@ -229,6 +259,30 @@ export function useTauriListeners({
           scheduleFlush();
         }
       }),
+      listen('develop-defaults-changed', () => {
+        if (!isEffectActive) return;
+        const { imageList, libraryActivePath } = useLibraryStore.getState();
+        const focusPath = useEditorStore.getState().selectedImage?.path ?? libraryActivePath;
+        const focusIndex = Math.max(
+          0,
+          imageList.findIndex((image) => image.path === focusPath),
+        );
+        const start = Math.max(0, focusIndex - THUMBNAIL_REFRESH_LIMIT / 2);
+        const paths = imageList
+          .slice(start, start + THUMBNAIL_REFRESH_LIMIT)
+          .map((image, offset) => ({ path: image.path, distance: Math.abs(start + offset - focusIndex) }))
+          .sort((a, b) => b.distance - a.distance)
+          .map(({ path }) => path);
+        globalImageCache.clear();
+        if (paths.length > 0) {
+          invoke('update_thumbnail_queue', { paths }).catch((err) =>
+            console.error('Failed to refresh thumbnails after default adjustments changed:', err),
+          );
+        }
+        refreshOpenUneditedImageRef
+          .current()
+          .catch((err) => console.error('Failed to apply new default adjustments to the open image:', err));
+      }),
       listen('image-metadata-loaded', (event: any) => {
         if (!isEffectActive) return;
         const { path, rating, flag, is_edited, tags, needs_ai } = event.payload;
@@ -369,6 +423,37 @@ export function useTauriListeners({
           };
         });
       }),
+      listen<{ path: string; progress: number }>('ai-upscale-progress', (event) => {
+        if (!isEffectActive) return;
+        const { path, progress } = event.payload;
+        useEditorStore
+          .getState()
+          .setEditor((state) => ({ aiUpscaleProgress: { ...state.aiUpscaleProgress, [path]: progress } }));
+      }),
+      listen<string>('ai-upscale-ready', (event) => {
+        if (!isEffectActive) return;
+        useEditorStore.getState().setEditor((state) => {
+          const { [event.payload]: _, ...aiUpscaleProgress } = state.aiUpscaleProgress;
+          return {
+            aiUpscaleProgress,
+            ...(state.selectedImage?.path === event.payload ? { adjustments: { ...state.adjustments } } : {}),
+          };
+        });
+      }),
+      listen<{ path: string; error: string }>('ai-upscale-error', (event) => {
+        if (!isEffectActive) return;
+        const { path, error } = event.payload;
+        toast.error(`RapidRes failed: ${error}`);
+        useEditorStore.getState().setEditor((state) => {
+          const { [path]: _, ...aiUpscaleProgress } = state.aiUpscaleProgress;
+          return {
+            aiUpscaleProgress,
+            ...(state.selectedImage?.path === path
+              ? { adjustments: { ...state.adjustments, aiUpscaleEnabled: false } }
+              : {}),
+          };
+        });
+      }),
       listen<AiJobsStatus>('ai-jobs-status', (event) => {
         if (!isEffectActive) return;
         const { aiJobs, setProcess } = useProcessStore.getState();
@@ -428,14 +513,19 @@ export function useTauriListeners({
           }));
         },
       ),
+      listen('viewer-closed', () => {
+        if (isEffectActive) {
+          useUIStore.getState().setUI({ isViewerOpen: false });
+        }
+      }),
       listen('wgpu-frame-ready', (event: any) => {
         const editorState = useEditorStore.getState();
         if (
           isEffectActive &&
-          !editorState.hasRenderedFirstFrame &&
+          editorState.wgpuPhase === 'hidden' &&
           event.payload?.path === editorState.selectedImage?.path
         ) {
-          editorState.setEditor({ hasRenderedFirstFrame: true });
+          editorState.setEditor({ wgpuPhase: 'arming' });
         }
       }),
       listen('panorama-progress', (event: any) => {

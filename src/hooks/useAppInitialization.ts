@@ -17,17 +17,10 @@ import {
   resolveLanguageTag,
   type SupportedLanguage,
 } from '../i18n';
-import {
-  FilterCriteria,
-  Invokes,
-  LibraryViewMode,
-  RawStatus,
-  EditedStatus,
-  FlagStatus,
-  Theme,
-  ThumbnailSize,
-  ThumbnailAspectRatio,
-} from '../components/ui/AppProperties';
+import { setLocalUiScale } from '../utils/displayScale';
+import { FilterCriteria, RawStatus, EditedStatus, FlagStatus, type FolderNode } from '../types/library';
+import { Invokes } from '../types/invokes';
+import { LibraryViewMode, Theme, ThumbnailSize, ThumbnailAspectRatio } from '../types/settings';
 import { useTranslation } from 'react-i18next';
 
 interface UseAppInitializationProps {
@@ -114,6 +107,8 @@ export const useAppInitialization = ({
       panelLayout: state.panelLayout,
       activePanels: state.activePanels,
       panelSwitcherPlacement: state.panelSwitcherPlacement,
+      filmstripColumns: state.filmstripColumns,
+      filmstripShowFileInfo: state.filmstripShowFileInfo,
     })),
   );
 
@@ -270,6 +265,7 @@ export const useAppInitialization = ({
         const reconciledWorkspace = reconcileWorkspace(settings?.workspace, isTetheringSupported);
         settings.workspace = reconciledWorkspace;
 
+        setLocalUiScale(settings.uiScale);
         setAppSettings(settings);
         i18n.changeLanguage(settings.language);
 
@@ -306,6 +302,8 @@ export const useAppInitialization = ({
           panelLayout: reconciledWorkspace.panelLayout,
           activePanels: reconciledWorkspace.activePanels,
           panelSwitcherPlacement: reconciledWorkspace.panelSwitcherPlacement,
+          filmstripColumns: reconciledWorkspace.filmstripColumns,
+          filmstripShowFileInfo: reconciledWorkspace.filmstripShowFileInfo,
         });
 
         if (settings?.isWaveformVisible !== undefined) setEditor({ isWaveformVisible: settings.isWaveformVisible });
@@ -318,7 +316,7 @@ export const useAppInitialization = ({
 
         if (settings?.pinnedFolders && settings.pinnedFolders.length > 0) {
           try {
-            const trees = await invoke(Invokes.GetPinnedFolderTrees, {
+            const trees = await invoke<FolderNode[]>(Invokes.GetPinnedFolderTrees, {
               paths: settings.pinnedFolders,
               expandedFolders: settings.lastFolderState?.expandedFolders || [],
               showImageCounts: settings.enableFolderImageCounts || settings.folderTreeSort?.key === 'imageCount',
@@ -573,7 +571,6 @@ export const useAppInitialization = ({
           setLibrary({ isTreeLoading: false });
         });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appSettings?.enableFolderImageCounts, appSettings?.folderTreeSort?.key]);
 
   useEffect(() => {

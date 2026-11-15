@@ -6,7 +6,8 @@ import clsx from 'clsx';
 import Button from './ui/Button';
 import Text from './ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../types/typography';
-import { AppSettings, Invokes } from './ui/AppProperties';
+import { Invokes } from '../types/invokes';
+import { AppSettings } from '../types/settings';
 
 /**
  * Bump to force a fresh consent prompt for all users (e.g. after a material

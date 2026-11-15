@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-shell';
-import { Invokes } from '../components/ui/AppProperties';
+import { Invokes } from '../types/invokes';
 import { useSettingsStore } from '../store/useSettingsStore';
 
 /**

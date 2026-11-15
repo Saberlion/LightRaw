@@ -56,6 +56,57 @@
         "reds": "Rot",
         "yellows": "Gelb"
       },
+      "mixerPickerTooltip": "Farbmischer-Pipette: Auf das Foto klicken und nach oben oder unten ziehen",
+      "monochrome": {
+        "badge": "S/W",
+        "balance": "Abgleich",
+        "blackWhite": "Schwarzweiß",
+        "film": "Film",
+        "filmDescriptions": {
+          "balanced": "Gleichmäßige Empfindlichkeit für alle Farben, mit helleren Rottönen und Haut",
+          "extendedRed": "Rotempfindlicher Film mit leuchtender Haut und dunkleren Himmeln",
+          "infrared": "Leuchtendes Laub und fast schwarze Himmel",
+          "neutral": "Entspricht der wahrgenommenen Helligkeit jeder Farbe",
+          "orthochromatic": "Rotblind, mit dunklen Rottönen und hellen Himmeln",
+          "orthoPanchromatic": "Etwas dunklere Rottöne mit klaren Grüntönen",
+          "panchromatic": "Klassische Filmwiedergabe mit helleren blauen Himmeln"
+        },
+        "films": {
+          "balanced": "Ausgewogen",
+          "extendedRed": "Erweitertes Rot",
+          "infrared": "Infrarot",
+          "neutral": "Neutral",
+          "orthochromatic": "Orthochromatisch",
+          "orthoPanchromatic": "Ortho-Pan",
+          "panchromatic": "Panchromatisch"
+        },
+        "filter": "Filter",
+        "filters": {
+          "blue": "Blau",
+          "green": "Grün",
+          "none": "Kein",
+          "orange": "Orange",
+          "red": "Rot",
+          "yellow": "Gelb"
+        },
+        "highlights": "Lichter",
+        "hue": "Farbton",
+        "mix": "S/W-Mischer",
+        "mixPickerTooltip": "S/W-Mischer-Pipette: Auf das Foto klicken und nach oben oder unten ziehen",
+        "saturation": "Sättigung",
+        "shadows": "Tiefen",
+        "strength": "Stärke",
+        "toning": "Tonung",
+        "tonings": {
+          "cyanotype": "Cyanotypie",
+          "gold": "Gold",
+          "none": "Keine",
+          "platinum": "Platin",
+          "selenium": "Selen",
+          "sepia": "Sepia",
+          "split": "Teiltonung"
+        }
+      },
       "presence": "Präsenz",
       "saturation": "Sättigung",
       "temperature": "Temperatur",
@@ -98,6 +149,8 @@
     "details": {
       "aiDenoise": "KI-Entrauschen",
       "aiDenoiseDetail": "Details",
+      "aiUpscale": "RapidRes 2x",
+      "aiUpscaleDetail": "Details",
       "blueYellow": "Blau/Gelb",
       "centre": "Zentriert",
       "chromaticAberration": "Chromatische Aberration",
@@ -119,6 +172,7 @@
       "sharpening": "Schärfen",
       "sharpness": "Schärfe",
       "structure": "Struktur",
+      "superResolution": "RapidRes",
       "threshold": "Schwellenwert"
     },
     "effects": {
@@ -143,6 +197,24 @@
       "lightFlares": "Blendenflecke",
       "lut": "LUT",
       "midpoint": "Mittelpunkt",
+      "motionBlur": "Bewegungsunschärfe",
+      "motionBlurAngle": "Winkel",
+      "motionBlurDepth": "Tiefe",
+      "motionBlurHighlights": "Lichter",
+      "motionBlurLayer": "Bewegung",
+      "motionBlurLayers": {
+        "auto": "Automatisch",
+        "panning": "Mitziehen",
+        "subject": "Bewegtes Motiv",
+        "uniform": "Gleichmäßig"
+      },
+      "motionBlurType": "Typ",
+      "motionBlurTypes": {
+        "linear": "Linear",
+        "smooth": "Weich",
+        "spin": "Drehung",
+        "zoom": "Zoom"
+      },
       "relight": "Neu beleuchten",
       "relightAddLight": "Licht hinzufügen",
       "relightAmbient": "Umgebungslicht",
@@ -227,13 +299,16 @@
       "autoLensCorrection": "Autom. Objektivkorrektur",
       "autoStraighten": "Automatisch ausrichten",
       "cancel": "Abbrechen",
+      "closeViewer": "Zweites Fenster schließen",
       "colorLabel": "Farbmarkierung",
       "confirmReset": "Zurücksetzen bestätigen",
+      "convertBlackWhite": "In Schwarzweiß umwandeln",
       "convertNegative": "Negativ umwandeln",
       "copyAdjustments": "Einstellungen kopieren",
       "cullImage": "Autom. aussortieren",
       "denoise": "Entrauschen",
       "editImage": "Bild bearbeiten",
+      "editIn": "Bearbeiten in",
       "exportImage": "Bild exportieren",
       "flag": "Markierung",
       "flagPick": "Ausgewählt",
@@ -242,16 +317,22 @@
       "mergeHdr": "Zu HDR zusammenfügen",
       "noLabel": "Keine Markierung",
       "noRating": "Keine Bewertung",
+      "openViewer": "In zweitem Fenster öffnen",
       "pasteAdjustments": "Einstellungen einfügen",
       "productivity": "Produktivität",
       "rating": "Bewertung",
       "ratingLabel_one": "{{count}} Stern",
       "ratingLabel_other": "{{count}} Sterne",
       "redo": "Wiederholen",
+      "removeBlackWhite": "Schwarzweiß entfernen",
       "removeDenoise": "Entrauschen entfernen",
       "removeNegativeConversion": "Negativumwandlung entfernen",
+      "removeSuperResolution": "RapidRes entfernen",
       "resetAdjustments": "Einstellungen zurücksetzen",
+      "resetToDefaults": "Auf Standard zurücksetzen",
+      "resetToNeutral": "Auf neutral zurücksetzen",
       "stitchPanorama": "Panorama zusammenfügen",
+      "superResolution": "RapidRes (2x)",
       "tagging": "Tagging",
       "undo": "Rückgängig",
       "unflagged": "Nicht markiert"
@@ -331,11 +412,16 @@
       "resetAdjustments_one": "Einstellungen zurücksetzen",
       "resetAdjustments_other": "Einstellungen bei {{count}} Bildern zurücksetzen",
       "showExplorer": "Im Explorer anzeigen",
+      "superResolution_one": "RapidRes (2x)",
+      "superResolution_other": "RapidRes (2x)",
       "virtualCopy": "Virtuelle Kopie"
     },
     "toasts": {
       "couldNotShowExplorer": "Datei konnte nicht im Explorer angezeigt werden: {{err}}",
       "couldNotShowFolder": "Ordner konnte nicht angezeigt werden: {{err}}",
+      "editInFailed": "{{app}} fehlgeschlagen: {{err}}",
+      "editInNoOutput": "{{app}} wurde ohne Speichern geschlossen.",
+      "editInWaiting": "Warte auf {{app}}. Speichere die Datei dort, um sie zurückzuholen, oder schließe diese Meldung, um das Warten zu beenden.",
       "failedAddToAlbum": "Fehler beim Hinzufügen zum Album: {{err}}",
       "failedApplyAuto": "Fehler bei der autom. Anpassung: {{err}}",
       "failedChangeIcon": "Fehler beim Ändern des Symbols: {{err}}",
@@ -406,6 +492,15 @@
         "feather": "Weiche Kante",
         "size": "Pinselgröße"
       },
+      "cloneHeal": {
+        "cloneTooltip": "Kopiert die Quelle exakt, inklusive Helligkeit und Farbe",
+        "dragSource": "Ziehen, um die Quelle zu verschieben",
+        "healTooltip": "Kopiert die Struktur der Quelle und passt sie an Helligkeit und Farbe der Umgebung an",
+        "hintActive": "Ziehe den Quellumriss, um festzulegen, woher die Pixel kommen. Jeder neue Strich wird zu einem eigenen Bereich. Halte Shift gedrückt, um diesen zu erweitern.",
+        "hintEmpty": "Male über einen Fleck, ein Kabel oder eine Störung. Eine passende Quelle wird automatisch gefunden.",
+        "mode": "Modus",
+        "newSource": "Andere Quelle suchen"
+      },
       "comingSoon": "Demnächst",
       "connection": {
         "backendLabel": "KI-Backend:",
@@ -462,8 +557,8 @@
         "quickErase_one": "Schnelles Löschen {{count}}",
         "quickErase_other": "Schnelles Löschen {{count}}",
         "retouch": "Retusche {{count}}",
-        "retouch_one": "Retuschieren {{count}}",
-        "retouch_other": "Retuschieren {{count}}"
+        "retouch_one": "Retusche {{count}}",
+        "retouch_other": "Retusche {{count}}"
       },
       "resetInpaintingTooltip": "Reparieren zurücksetzen",
       "settings": {
@@ -486,7 +581,8 @@
         "selectionPropertiesTitle": "Auswahleigenschaften",
         "useBasicInpaint": "Einfaches Reparieren verwenden"
       },
-      "touchUpTitle": "Ausbessern"
+      "touchUpTitle": "Ausbessern",
+      "upscaling": "RapidRes läuft..."
     },
     "compare": {
       "horizontal": "Oben / unten teilen",
@@ -624,11 +720,13 @@
       "cancel": "Abbrechen",
       "drawingActive": "Zeichnen aktiv",
       "hint": "Zeichnen Sie entlang der Kanten in Ihrem Foto, die vertikal oder horizontal sein sollten.",
+      "horizontalLine": "Horizontale Hilfslinie {{index}}",
       "linesStatus": "Aktive Hilfslinien",
       "toast": {
         "angleRejected": "Linienwinkel ist zu weit von horizontal oder vertikal entfernt",
         "maxLines": "Maximal 2 vertikale und 2 horizontale Linien erlaubt"
-      }
+      },
+      "verticalLine": "Vertikale Hilfslinie {{index}}"
     },
     "layout": {
       "split": "Teilen"
@@ -730,8 +828,7 @@
       "toggleAnalyticsTooltip": "Analyseanzeige umschalten",
       "tooltips": {
         "addToCurrent": "{{name}} zur aktuellen Maske hinzufügen oder neu erstellen (Rechtsklick)",
-        "createNew": "Neue {{name}}-Maske erstellen",
-        "selectNewSourcePoint": "{{modifier}} + Klicken, um einen neuen Quellpunkt auszuwählen"
+        "createNew": "Neue {{name}}-Maske erstellen"
       }
     },
     "metadata": {
@@ -744,6 +841,7 @@
         "focalLength": "Brennweite",
         "iso": "ISO",
         "lens": "Objektiv",
+        "model": "Modell",
         "shutterSpeed": "Verschlusszeit",
         "title": "Kamera-Details"
       },
@@ -788,6 +886,8 @@
     },
     "presets": {
       "amount": "Stärke",
+      "defaultForAllCameras": "Standard für alle Kameras",
+      "defaultForCamera": "Standard für {{camera}}",
       "dialog": {
         "allPresetFiles": "Alle Vorgabendateien",
         "exportAllTitle": "Alle Vorgaben exportieren",
@@ -808,7 +908,11 @@
         "newPreset": "Neue Vorgabe",
         "overwrite": "Überschreiben",
         "renameFolder": "Ordner umbenennen",
-        "sortAll": "Alle alphabetisch sortieren"
+        "setDefaultAllCameras": "Als Standard für alle Kameras festlegen",
+        "setDefaultForCamera": "Als Standard für {{camera}} festlegen",
+        "sortAll": "Alle alphabetisch sortieren",
+        "unsetDefaultAllCameras": "Nicht mehr als Standard für alle Kameras verwenden",
+        "unsetDefaultForCamera": "Nicht mehr als Standard für {{camera}} verwenden"
       },
       "status": {
         "empty": "Noch keine Vorgaben gespeichert. Eigene erstellen oder aus einer Datei importieren.",
@@ -832,17 +936,25 @@
         "tool": "Werkzeug"
       }
     },
+    "speedEdit": {
+      "copied": "<0>{{label}}</0> <1>{{value}}</1> kopiert",
+      "pasted": "<0>{{label}}</0> <1>{{value}}</1> eingefügt"
+    },
     "switcher": {
       "tooltips": {
         "adjust": "Anpassen",
         "crop": "Zuschnitt",
         "export": "Exportieren",
+        "filmstrip": "Filmstreifen",
         "info": "Info",
         "inpaint": "Reparieren",
         "masks": "Masken",
         "presets": "Vorgaben",
         "tethering": "Tethering"
       }
+    },
+    "toasts": {
+      "embeddedPreview": "LightRaw konnte diese RAW-Datei nicht dekodieren, daher siehst und bearbeitest du die eingebettete JPEG-Vorschau der Kamera. Rechne mit geringerer Qualität und weniger Bearbeitungsspielraum als bei einem echten RAW."
     },
     "toolbar": {
       "history": "Verlauf",
@@ -861,11 +973,18 @@
         "undo": "Rückgängig (Strg+Z) oder Verlauf (Rechtsklick)"
       },
       "vc": "VK"
+    },
+    "viewer": {
+      "openFailed": "Das zweite Fenster konnte nicht geöffnet werden: {{error}}",
+      "windowTitle": "LightRaw-Betrachter"
     }
   },
   "export": {
     "advanced": {
       "exportMasks": "Masken als separate Dateien exportieren",
+      "exportOriginal": "Original zusätzlich exportieren",
+      "originalCrop": "Zuschnitt anwenden",
+      "originalKeepExposure": "Belichtung beibehalten",
       "preserveFolders": "Ordnerstruktur beibehalten",
       "preserveTimestamps": "Dateizeitstempel aus EXIF-Aufnahmedatum setzen",
       "title": "Exporteinstellungen"
@@ -1002,23 +1121,30 @@
     },
     "export": {
       "album": "Album",
+      "createAlbum": "Anlegen",
       "destination": "Immich",
+      "newAlbum": "Neues Album…",
+      "newAlbumFailed": "Album konnte nicht angelegt werden: {{error}}",
+      "newAlbumName": "Albumname",
       "noAlbum": "Kein Album",
       "sourceAlbum": "Album, aus dem das Bild geöffnet wurde",
       "withOriginal": "Original mit hochladen",
       "withOriginalDesc": "Für Bilder aus einem lokalen Ordner: Das Original wird mit seinen Bearbeitungen hochgeladen und der Export oben darauf gestapelt. Bilder aus Immich werden immer auf ihr Original gestapelt."
     },
     "section": {
+      "albums": "Alben",
       "empty": "Keine Alben auf dem Server.",
       "error": "Immich ist nicht erreichbar.",
       "loading": "Alben werden geladen…",
       "refresh": "Alben aktualisieren",
       "timeline": "Zeitleiste",
-      "title": "Immich"
+      "title": "Immich",
+      "unassigned": "Ohne Album",
+      "unassignedHint": "Bilder hierher ziehen, um sie ohne Album hochzuladen."
     },
     "settings": {
       "apiKey": "API-Schlüssel",
-      "apiKeyDesc": "In Immich unter Kontoeinstellungen → API-Schlüssel anlegen, mit diesen Berechtigungen: album.read, albumAsset.create, albumAsset.delete, asset.read, asset.view, asset.download, asset.upload, asset.update, asset.delete, stack.read, stack.create und user.read.",
+      "apiKeyDesc": "In Immich unter Kontoeinstellungen → API-Schlüssel anlegen, mit diesen Berechtigungen: album.read, album.create, albumAsset.create, albumAsset.delete, asset.read, asset.view, asset.download, asset.upload, asset.update, asset.delete, stack.read, stack.create und user.read.",
       "connected": "Verbunden als {{user}} (Immich {{version}})",
       "description": "Zeigt die Fotos deines Immich-Servers in der Bibliothek, damit du sie direkt bearbeiten kannst. Originale werden beim Öffnen heruntergeladen, und deine Bearbeitungen werden in Immich gespeichert – so sehen sie auf jedem Rechner gleich aus.",
       "keyInFile": "In einer Datei gespeichert, die nur du lesen kannst: Es ist kein Schlüsselbund erreichbar. Unter KDE in den Einstellungen der KDE-Brieftasche die Secret-Service-Schnittstelle einschalten und erneut speichern.",
@@ -1039,9 +1165,14 @@
       "backOnline": "Immich ist wieder erreichbar, alle Bearbeitungen sind dort gespeichert.",
       "downloadFailed": "Download aus Immich fehlgeschlagen: {{error}}",
       "editsConflict": "{{fileName}} wurde auch auf einem anderen Rechner bearbeitet. Deine Bearbeitung bleibt, die andere Fassung liegt als virtuelle Kopie daneben.",
+      "editsStayLocal": "{{fileName}} gehört jemand anderem, deshalb nimmt Immich keine Bearbeitungen dafür an. Deine Bearbeitung bleibt auf diesem Computer.",
       "offline": "Immich ist nicht erreichbar. Deine Bearbeitungen bleiben hier und werden gesendet, sobald es wieder da ist.",
+      "transferFailed": "Nicht zu Immich hinzugefügt: {{number}} ({{error}})",
+      "transferred": "Zu Immich hinzugefügt: {{number}}",
+      "transferring": "Wird zu Immich hinzugefügt… {{current}}/{{total}}",
       "trashFailed": "Verschieben in den Immich-Papierkorb fehlgeschlagen: {{error}}",
-      "uploaded": "Zu Immich hochgeladen: {{number}}"
+      "uploaded": "Zu Immich hochgeladen: {{number}}",
+      "uploadKeptCopy": "{{fileName}} ist schon mit anderer Bearbeitung in Immich. Diese bleibt, deine Bearbeitung liegt als virtuelle Kopie daneben."
     }
   },
   "library": {
@@ -1057,7 +1188,8 @@
         "normalMap": "Oberflächen werden analysiert",
         "skyMask": "Himmelsmaske wird erstellt",
         "subjectMask": "Motivmaske wird erstellt",
-        "textMask": "Textmaske wird erstellt"
+        "textMask": "Textmaske wird erstellt",
+        "upscale": "RapidRes-Hochskalierung"
       },
       "more": "+{{moreCount}} weitere",
       "pause": "KI-Verarbeitung pausieren",
@@ -1335,10 +1467,7 @@
       "originalRatio": "Original-Verhältnis"
     },
     "thumbnailSize": {
-      "large": "Groß",
-      "list": "Liste",
-      "medium": "Mittel",
-      "small": "Klein"
+      "list": "Liste"
     },
     "tooltips": {
       "goHome": "Zur Startseite",
@@ -1347,7 +1476,7 @@
       "select": "Auswählen"
     },
     "viewMode": {
-      "culling": "Auswahlansicht",
+      "culling": "Aussortieransicht",
       "grid": "Rasteransicht",
       "list": "Listenansicht"
     }
@@ -1366,6 +1495,7 @@
       "linear": "Linear",
       "liquify": "Verflüssigen",
       "luminance": "Luminanz",
+      "matchBrush": "Abgleich-Pinsel",
       "others": "Andere",
       "quickErase": "Schnelles Löschen",
       "quickEraser": "Schnell-Radierer",
@@ -1430,6 +1560,8 @@
       "descReplace": "Überschreibt alle ausgewählten Einstellungen und setzt den Rest auf Standardwerte zurück.",
       "groups": {
         "aiDenoise": "KI-Entrauschen",
+        "aiUpscale": "RapidRes",
+        "blackWhite": "Schwarzweiß",
         "chromaticAberration": "Chromatische Aberration",
         "clarityDehaze": "Klarheit & Dunst entfernen",
         "colorCalibration": "Farbkalibrierung",
@@ -1447,6 +1579,7 @@
         "lensCorrection": "Objektivkorrektur",
         "lut": "LUT",
         "masks": "Masken",
+        "motionBlur": "Bewegungsunschärfe",
         "negativeConversion": "Negativumwandlung",
         "noiseReduction": "Rauschreduzierung",
         "presence": "Präsenz",
@@ -1618,7 +1751,6 @@
       "selectManufacturer": "Hersteller auswählen",
       "title": "Objektivkorrektur",
       "vignetting": "Vignettierung",
-      "waitingAutoDetect": "Warten auf Auto-Erkennung...",
       "zoomInTooltip": "Vergrößern",
       "zoomOutTooltip": "Verkleinern"
     },
@@ -1748,6 +1880,27 @@
       "pressKey": "Taste drücken... (Esc zum Löschen)",
       "resetDefaults": "Alles auf Standard zurücksetzen",
       "speed": "Geschwindigkeit",
+      "speedEdit": {
+        "adjustments": "Anpassungen",
+        "gestures": {
+          "doubleClick": "Doppelklick zum Zurücksetzen",
+          "drag": "Auf der Leinwand ziehen zum Anpassen",
+          "fine": "Umschalt für fein"
+        },
+        "keys": {
+          "copy": "Kopieren",
+          "hold": "Tippen / Halten",
+          "nextAdjustment": "Nächster Regler",
+          "nextImage": "Nächstes Bild",
+          "paste": "Einfügen",
+          "previousAdjustment": "Vorh. Regler",
+          "previousImage": "Vorh. Bild",
+          "reset": "Zurücksetzen",
+          "stepDown": "−1 Schritt",
+          "stepUp": "+1 Schritt"
+        },
+        "title": "Schnellbearbeitung"
+      },
       "title": "Maussteuerung",
       "zoom": "Zoom-Geschwindigkeitsfaktor",
       "zoomClick": "Foto auf 100% zoomen",
@@ -1780,6 +1933,7 @@
         "aiDenoiseMessage": "Möchtest du den KI-Entrauschen-Cache wirklich leeren?\n\nBilder mit aktiviertem KI-Entrauschen müssen erneut entrauscht werden, was pro Bild mehrere Minuten dauern kann.",
         "aiMapsMessage": "Möchtest du die Tiefen- und Normal-Maps wirklich leeren?\n\nBilder mit Objektivunschärfe, Nebel oder Neubeleuchtung erstellen ihre Maps beim nächsten Öffnen neu.",
         "aiMessage": "Sind Sie sicher, dass Sie alle KI-generierten Tags von allen Bildern in allen aktiven Stammordnern entfernen möchten?\n\nBenutzerdefinierte Tags sind nicht betroffen. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "aiUpscaleMessage": "Möchtest du den RapidRes-Cache wirklich leeren?\n\nBilder mit aktiviertem RapidRes müssen erneut hochskaliert werden.",
         "allMessage": "Sind Sie sicher, dass Sie alle KI-generierten und benutzerdefinierten Tags von allen Bildern in allen aktiven Stammordnern entfernen möchten?\n\nDiese Aktion kann nicht rückgängig gemacht werden.",
         "cacheMessage": "Sind Sie sicher, dass Sie den Miniaturbild-Cache löschen möchten?\n\nAlle Miniaturbilder müssen neu generiert werden, was bei großen Ordnern dauern kann.",
         "confirmAiTitle": "KI-Tags löschen bestätigen",
@@ -1811,6 +1965,7 @@
         "aiSuccess": "{{count}} Dateien aktualisiert. KI-Tags entfernt.",
         "aiSuccess_one": "{{count}} Datei aktualisiert. KI-Tags entfernt.",
         "aiSuccess_other": "{{count}} Dateien aktualisiert. KI-Tags entfernt.",
+        "aiUpscaleSuccess": "RapidRes-Cache erfolgreich geleert.",
         "allSuccess": "{{count}} Dateien aktualisiert. Alle nicht-farbigen Tags entfernt.",
         "allSuccess_one": "{{count}} Datei aktualisiert. Alle nicht-farbigen Tags entfernt.",
         "allSuccess_other": "{{count}} Dateien aktualisiert. Alle nicht-farbigen Tags entfernt.",
@@ -1833,6 +1988,8 @@
         "aiDenoiseDesc": "Zwischengespeicherte Entrauschungsergebnisse.",
         "aiMaps": "Tiefen- & Normal-Maps",
         "aiMapsDesc": "Werden von Objektivunschärfe, Nebel und Neubeleuchtung genutzt.",
+        "aiUpscale": "RapidRes",
+        "aiUpscaleDesc": "Zwischengespeicherte 2x-Hochskalierungen von RapidRes.",
         "immich": "Immich",
         "immichDesc": "Heruntergeladene Originale. Die am längsten nicht genutzten werden entfernt, sobald das Limit erreicht ist. Deine Bearbeitungen bleiben erhalten.",
         "logs": "Protokolle",
@@ -1865,6 +2022,8 @@
       "folderImageCountsDesc": "Zeigt die Anzahl der Bilder in Ordnern an, wenn Sie mit der Maus über die Ordnerstruktur fahren.",
       "font": "Schriftart",
       "fontDesc": "Ändern Sie die Schriftart der Anwendung.",
+      "hideCollapsedPanels": "Eingeklappte Panels ausblenden",
+      "hideCollapsedPanelsDesc": "Eingeklappte Seitenpanels werden vollständig ausgeblendet, statt einen schmalen Streifen zu hinterlassen. Öffnen Sie sie über die untere Leiste oder mit ihren Tastenkürzeln wieder.",
       "nativeTitlebar": "Native Titelleiste",
       "nativeTitlebarDesc": "Verwenden Sie die Standard-Fenstertitelleiste Ihres Systems anstelle der benutzerdefinierten von LightRaw.",
       "neutralGreyCanvas": "Neutralgraue Arbeitsfläche",
@@ -1877,6 +2036,11 @@
       "title": "Allgemeine Einstellungen",
       "toolFocusMode": "Werkzeug-Fokusmodus",
       "toolFocusModeDesc": "Klappt automatisch die anderen Werkzeuge eines Panels ein, wenn Sie eines aufklappen.",
+      "uiScale": "Oberflächenskalierung",
+      "uiScaleCompact": "Kompakt",
+      "uiScaleDefault": "Standard",
+      "uiScaleDesc": "Die Oberfläche unabhängig von der Anzeigeskalierung des Systems verkleinern oder vergrößern. Kompakte Größen passen besser auf kleine Laptop-Bildschirme.",
+      "uiScaleLarge": "Groß",
       "xmpSync": "XMP-Metadaten-Sync",
       "xmpSyncDesc": "Synchronisieren Sie Bewertungen, Farbmarkierungen und Tags in Standard-XMP-Filialdateien für Kompatibilität mit anderen Foto-Editoren."
     },
@@ -1918,6 +2082,7 @@
         "toggle_adjustments": "Anpassungen-Panel ein-/ausblenden",
         "toggle_ai": "KI-Panel ein-/ausblenden",
         "toggle_analytics": "Analyseanzeige ein-/ausblenden",
+        "toggle_black_white": "Schwarzweiß umschalten",
         "toggle_bottom_panel": "Filmstreifen ein-/ausblenden",
         "toggle_crop": "Zuschnitt / Gerade ausrichten umschalten",
         "toggle_crop_panel": "Zuschneiden-Panel ein-/ausblenden",
@@ -1932,6 +2097,7 @@
         "toggle_presets": "Vorgaben-Panel ein-/ausblenden",
         "toggle_reject": "Ablehnungsmarkierung umschalten",
         "toggle_right_panel": "Rechtes Panel ein-/ausblenden",
+        "toggle_viewer_window": "Zweites Fenster umschalten",
         "undo": "Bearbeitung rückgängig machen",
         "unflag": "Markierung entfernen",
         "zoom_100": "Auf 100% zoomen",
@@ -2046,7 +2212,47 @@
         "metal": "Metal",
         "vulkan": "Vulkan"
       },
+      "defaultAdjustments": {
+        "addCamera": "Kamera hinzufügen…",
+        "applyToNonRaw": "Auch auf JPEG, TIFF, PNG und andere Nicht-RAW-Dateien anwenden",
+        "applyToNonRawDesc": "Wenn deaktiviert, verwenden nur RAW-Dateien diese Standardwerte. Kamera-JPEGs sind meist schon bearbeitet und objektivkorrigiert, eine erneute Anwendung kann zu viel des Guten sein.",
+        "autoLensCorrection": "Automatische Objektivkorrektur",
+        "autoLensCorrectionDesc": "Korrigiert Verzeichnung, chromatische Aberration und Vignettierung anhand des aus den Metadaten jedes Bildes erkannten Objektivprofils.",
+        "cameraDefaults": "Kameraspezifische Standardwerte",
+        "cameraDefaultsDesc": "Geben Sie Bildern bestimmter Kameras ein eigenes Preset. Nicht aufgeführte Kameras verwenden das Standard-Preset oben, die Objektivkorrektur gilt für alle Kameras.",
+        "cameraPresetMissing": "Das gewählte Preset wurde gelöscht, daher verwenden Bilder dieser Kamera wieder das Preset für alle Kameras.",
+        "description": "Legt fest, womit unbearbeitete Bilder starten und wohin „Anpassungen zurücksetzen“ zurückkehrt; bearbeitete Bilder behalten ihre Einstellungen. Mit Standardwerten werden RAW-Miniaturen berechnet statt die eingebettete Kameravorschau zu nutzen und laden anfangs langsamer.",
+        "lensCorrection": "Objektivkorrektur",
+        "noCamerasFound": "Keine weiteren Kameras gefunden. Öffnen Sie einen Ordner mit Bildern einer Kamera oder klicken Sie beim Bearbeiten eines ihrer Bilder mit rechts auf ein Preset.",
+        "noPreset": "Keins (neutral)",
+        "preset": "Standard-Preset",
+        "presetDesc": "Gilt für jedes unbearbeitete Bild. Masken, Zuschnitte und Transformationen werden ausgelassen, da sie nur zum Bild passen, auf dem sie erstellt wurden.",
+        "presetMissing": "Das gewählte Preset wurde gelöscht, daher verwenden unbearbeitete Bilder wieder neutrale Werte.",
+        "removeCamera": "Kamera entfernen",
+        "sameAsAllCameras": "Wie alle Kameras",
+        "scope": "Anwenden auf",
+        "sliderReset": "Regler zurücksetzen",
+        "sliderResetDefaults": "Standardanpassungen",
+        "sliderResetDesc": "Worauf ein einzelner Regler beim Zurücksetzen zurückkehrt, etwa per Doppelklick oder in der Schnellbearbeitung. Maskenregler werden immer auf ihren neutralen Wert zurückgesetzt.",
+        "sliderResetNeutral": "Neutraler Wert",
+        "title": "Standardanpassungen"
+      },
       "dynamicDesc": "Der Editor rendert die Vorschau passend zur tatsächlichen Pixeldichte Ihres Displays. Dies sorgt für 1:1 Pixelgenauigkeit und maximale Klarheit beim Zoomen.",
+      "editIn": {
+        "add": "Programm hinzufügen",
+        "args": "Argumente ({file} = Bildpfad)",
+        "browse": "Durchsuchen",
+        "description": "Programme für das Menü „Bearbeiten in“.",
+        "executable": "Programme",
+        "modes": {
+          "original": "Originaldatei senden",
+          "rendered": "Bearbeitetes TIFF senden"
+        },
+        "name": "Name",
+        "path": "Programmpfad",
+        "remove": "Entfernen",
+        "title": "Bearbeiten in"
+      },
       "enableLivePreviews": "Live-Vorschauen aktivieren",
       "highDpi": "High-DPI Rendering",
       "highDpiDesc": "Rendern Sie Vorschauen in der nativen {{dpr}}x Auflösung Ihres Bildschirms. Erzeugt die schärfste Vorschau, verbraucht aber mehr Speicher.",
@@ -2076,7 +2282,7 @@
         "baselineExposure": "Basisbelichtung",
         "baselineExposureAmount": "Basiswert",
         "baselineExposureAmountDesc": "Belichtung, die zu RAW-Dateien addiert wird. darktable verwendet +0,7 LW.",
-        "baselineExposureDesc": "Hellt alle RAW-Dateien um einen festen Wert auf, wie die szenenbezogene Voreinstellung von darktable, zuzüglich des DNG-Tags BaselineExposure, falls vorhanden. Bilder, die vor Einführung dieser Option bearbeitet wurden, sind nicht betroffen.",
+        "baselineExposureDesc": "Hellt RAW-Dateien um einen festen Wert auf, zuzüglich des DNG-Tags BaselineExposure, falls vorhanden.",
         "colorNr": "Basis-Farbrauschreduzierung",
         "colorNrDesc": "Wendet früh in der Pipeline einen Filter an, um Farbrauschen zu entfernen. Höherer Wert = Stärkere Reduzierung.",
         "defaultNonRawTonemapper": "Standard-Tonemapper (Nicht-RAW)",
@@ -2089,7 +2295,7 @@
         "enablePreprocessingNonRaws": "Für Nicht-RAWs aktivieren",
         "enableTonemapperOverride": "Tonemapper-Override aktivieren",
         "highlightPreservation": "Ausgleich der Lichterschutz-Modi",
-        "highlightPreservationDesc": "Stellt die Belichtung wieder her, die die Kamera in Modi zum Schutz der Lichter zurückgehalten hat, ausgelesen aus der RAW-Datei (Fujifilm DR200/DR400, Canon Tonwert Priorität und Automatische Belichtungsoptimierung, Nikon Active D-Lighting, Olympus Gradation, Pentax Dynamikbereichserweiterung). Bilder, die vor Einführung dieser Option bearbeitet wurden, sind nicht betroffen.",
+        "highlightPreservationDesc": "Gleicht die Belichtung aus, die Lichterschutz-Modi der Kamera zurückhalten, z. B. Fujifilm DR200/DR400 oder Nikon Active D-Lighting.",
         "highlightRecovery": "RAW-Lichterwiederherstellung",
         "highlightRecoveryDesc": "Steuert, wie viele Details aus beschnittenen Lichtern wiederhergestellt werden. Höhere Werte stellen mehr her, können aber rosa Artefakte einführen.",
         "linearOptions": {
@@ -2125,15 +2331,14 @@
       "smallThumbnailRes": "Raster-Miniaturbild-Auflösung",
       "smallThumbnailResDesc": "Auflösung der Miniaturbilder, die im Bibliotheksraster angezeigt werden.",
       "staticDesc": "Der Editor rendert das Bild in einer festen Auflösung. Dieser Modus ist am schnellsten und am besten für schwächere Hardware geeignet.",
-      "staticPreviewRes": "Statische Vorschauauflösung",
-      "staticPreviewResDesc": "Legt die Auflösung für statische Vorschauen wie Zuschnitt und Perspektive fest. Beeinflusst nicht die Hauptvorschau.",
       "threads": "Threads",
       "thumbnailRes": "Miniaturbild-Auflösung",
       "thumbnailResDesc": "Bestimmt die Auflösung der generierten Bibliothek-Miniaturbilder. Höhere Werte erzeugen schärfere Bilder.",
       "title": "Verarbeitungs-Engine",
       "wgpu": "WGPU Direkt-Rendering",
       "wgpuDescAndroid": "Umgeht die Browser-Kodierung für sofort reagierende Live-Vorschauen. (Auf Android deaktiviert: Native WGPU-Erstellung wird neben dem mobilen Webview nicht unterstützt.)",
-      "wgpuDescLinux": "Umgeht die Browser-Kodierung für sofort reagierende Live-Vorschauen. (Auf Linux deaktiviert: Tauri nutzt GTK, was mit WGPU kollidiert.)",
+      "wgpuDescLinuxExperimental": "Experimentell unter Linux und möglicherweise instabil.",
+      "wgpuDescLinuxX11": "Unter X11 nicht verfügbar.",
       "wgpuDescRecommended": "Umgeht die Browser-Kodierung für sofort reagierende Live-Vorschauen. Sehr empfehlenswert für die Leistung.",
       "wgpuLabel": "Direktes WGPU-Rendern aktivieren",
       "workerThreads": "Miniaturbild-Worker-Threads",
@@ -2182,6 +2387,7 @@
         "nind": "Für die Bereitstellung von KI-Modellen für die Rauschreduzierung.",
         "rawler": "Für die hervorragende Rust-Crate zur RAW-Bildverarbeitung.",
         "sam2": "Für das grundlegende Modell der KI-Motiverkennung.",
+        "span": "Für das KI-Basismodell von RapidRes, der 2x-KI-Hochskalierung in LightRaw, von LightRaw auf die eigene RAW-Pipeline feinabgestimmt (von Philip Hofmann, CC BY 4.0).",
         "spektrafilm": "Für die spektralbasierten Filmemulations-LUTs von Andrea Volpato, die LightRaws integrierte Filmemulationen ermöglichen. Lizenziert unter CC BY-SA 4.0.",
         "u2net": "Für die Architektur zur Erkennung von Himmel und Vordergrund.",
         "you": "Dafür, dass Sie LightRaw nutzen. Ihr Interesse hält dieses Projekt am Leben.",
@@ -2269,13 +2475,11 @@
     "bottomBar": {
       "imagesSelected": "{{current}} von {{total}} Bildern ausgewählt",
       "tooltips": {
-        "collapseFilmstrip": "Filmstreifen minimieren",
         "collapseLeft": "Linkes Panel einklappen",
         "collapseRight": "Rechtes Panel einklappen",
         "copyPasteSettings": "Einstellungen kopieren & einfügen",
         "copySettings": "Einstellungen kopieren",
         "customZoom": "Klicken, um benutzerdefinierten Zoom-Prozentsatz einzugeben",
-        "expandFilmstrip": "Filmstreifen erweitern",
         "expandLeft": "Linkes Panel ausklappen",
         "expandRight": "Rechtes Panel ausklappen",
         "export": "Exportieren",

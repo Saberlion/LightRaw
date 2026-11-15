@@ -3,7 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Text from './Text';
-import { Invokes } from './AppProperties';
+import { Invokes } from '../../types/invokes';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { TextVariants } from '../../types/typography';
 

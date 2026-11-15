@@ -13,10 +13,11 @@ import {
   FileInput,
   Camera,
   Folder as FolderIcon,
-  type LucideIcon,
+  Film,
 } from 'lucide-react';
-import { Panel, PanelRegion } from '../ui/AppProperties';
-import { SwitcherPlacement, useUIStore } from '../../store/useUIStore';
+import { Panel, PanelRegion } from '../../types/ui';
+import { getRegionActivePanel, isPanelAvailable, SwitcherPlacement, useUIStore } from '../../store/useUIStore';
+import type { ParseKeys } from 'i18next';
 import LutIcon from '../ui/LutIcon';
 
 type PanelIconComponent = React.ComponentType<{ size?: number; className?: string }>;
@@ -32,9 +33,10 @@ export const PANEL_ICONS: Record<Panel, PanelIconComponent> = {
   [Panel.Export]: FileInput,
   [Panel.FolderTree]: FolderIcon,
   [Panel.Tethering]: Camera,
+  [Panel.Filmstrip]: Film,
 };
 
-const PANEL_TITLES = {
+const PANEL_TITLES: Record<Panel, ParseKeys> = {
   [Panel.Metadata]: 'editor.switcher.tooltips.info',
   [Panel.Adjustments]: 'editor.switcher.tooltips.adjust',
   [Panel.Crop]: 'editor.switcher.tooltips.crop',
@@ -45,24 +47,81 @@ const PANEL_TITLES = {
   [Panel.Export]: 'editor.switcher.tooltips.export',
   [Panel.FolderTree]: 'library.folders.sourcesTitle',
   [Panel.Tethering]: 'editor.switcher.tooltips.tethering',
-} as const satisfies Record<Panel, string>;
+  [Panel.Filmstrip]: 'editor.switcher.tooltips.filmstrip',
+};
+
+interface PanelTabButtonProps {
+  panel: Panel;
+  isActive: boolean;
+  indicatorId: string;
+  onClick: () => void;
+  isDraggable?: boolean;
+  isDisabled?: boolean;
+  isCompact?: boolean;
+  dragId?: string;
+}
+
+export function PanelTabButton({
+  panel,
+  isActive,
+  indicatorId,
+  onClick,
+  isDraggable = true,
+  isDisabled = false,
+  isCompact = false,
+  dragId = `layout-tab-${panel}`,
+}: PanelTabButtonProps) {
+  const { t } = useTranslation();
+  const isInstantTransition = useUIStore((s) => s.isInstantTransition);
+  const Icon = PANEL_ICONS[panel];
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: dragId,
+    data: { type: 'layout-tab', panel },
+    disabled: !isDraggable || isDisabled,
+  });
+
+  return (
+    <button
+      data-layout-tab
+      data-tab-id={dragId}
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={clsx(
+        'relative rounded-md transition-[color,background-color,opacity] duration-300 shrink-0',
+        isCompact ? 'p-1.5' : 'p-2',
+        isDisabled
+          ? 'text-text-secondary opacity-30 cursor-default'
+          : clsx(
+              isDraggable && 'cursor-grab active:cursor-grabbing',
+              isActive ? 'text-text-primary' : 'text-text-secondary hover:bg-surface hover:text-text-primary',
+            ),
+        isDragging && 'opacity-30',
+      )}
+      onClick={isDisabled ? undefined : onClick}
+      data-tooltip={t(PANEL_TITLES[panel])}
+      style={{ touchAction: 'none' }}
+    >
+      {isActive && (
+        <motion.div
+          layoutId={indicatorId}
+          className="absolute inset-0 bg-surface rounded-md"
+          transition={isInstantTransition ? { duration: 0 } : { type: 'spring', bounce: 0.2, duration: 0.4 }}
+        />
+      )}
+      <Icon size={isCompact ? 18 : 20} className="relative z-10 pointer-events-none" />
+    </button>
+  );
+}
 
 function PanelTab({ panel, region, side }: { panel: Panel; region: PanelRegion; side: 'left' | 'right' }) {
-  const { t } = useTranslation();
-  const activePanels = useUIStore((s) => s.activePanels);
+  const isActive = useUIStore((s) => getRegionActivePanel(s, region) === panel);
+  const isDisabled = useUIStore((s) => !isPanelAvailable(s, panel));
   const setActivePanel = useUIStore((s) => s.setActivePanel);
   const setUI = useUIStore((s) => s.setUI);
   const leftPanelWidth = useUIStore((s) => s.leftPanelWidth);
   const rightPanelWidth = useUIStore((s) => s.rightPanelWidth);
-  const isInstantTransition = useUIStore((s) => s.isInstantTransition);
-
-  const isActive = activePanels[region] === panel;
-  const Icon = PANEL_ICONS[panel];
-
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `layout-tab-${panel}`,
-    data: { type: 'layout-tab', panel },
-  });
 
   const handleClick = () => {
     setActivePanel(region, panel);
@@ -75,30 +134,13 @@ function PanelTab({ panel, region, side }: { panel: Panel; region: PanelRegion; 
   };
 
   return (
-    <button
-      data-layout-tab
-      data-tab-id={`layout-tab-${panel}`}
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={clsx(
-        'relative rounded-md transition-colors duration-200 p-2 shrink-0 cursor-grab active:cursor-grabbing',
-        isActive ? 'text-text-primary' : 'text-text-secondary hover:bg-surface hover:text-text-primary',
-        isDragging && 'opacity-30',
-      )}
+    <PanelTabButton
+      panel={panel}
+      isActive={isActive}
+      indicatorId={`active-indicator-${region}`}
       onClick={handleClick}
-      data-tooltip={t(PANEL_TITLES[panel])}
-      style={{ touchAction: 'none' }}
-    >
-      {isActive && (
-        <motion.div
-          layoutId={`active-indicator-${region}`}
-          className="absolute inset-0 bg-surface rounded-md"
-          transition={isInstantTransition ? { duration: 0 } : { type: 'spring', bounce: 0.2, duration: 0.4 }}
-        />
-      )}
-      <Icon size={20} className="relative z-10 pointer-events-none" />
-    </button>
+      isDisabled={isDisabled}
+    />
   );
 }
 
@@ -111,8 +153,7 @@ export default function PanelSwitcher({
   side: 'left' | 'right';
   placement: SwitcherPlacement;
 }) {
-  const panelLayout = useUIStore((s) => s.panelLayout);
-  const panels = panelLayout[region];
+  const panels = useUIStore((s) => s.panelLayout[region]);
   const movePanelToIndex = useUIStore((s) => s.movePanelToIndex);
 
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -171,7 +212,7 @@ export default function PanelSwitcher({
         }
       }
 
-      let style: any = {};
+      let style: any;
       if (tabs.length === 0) {
         style = isVertical ? { top: 4, left: 4, right: 4, height: 2 } : { left: 4, top: 4, bottom: 4, width: 2 };
       } else if (insertIndex < tabs.length) {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Cpu,
@@ -21,11 +21,14 @@ import {
   ChevronDown,
   ChevronRight,
   Settings as SettingsIcon,
+  Move,
+  MousePointerClick,
+  ArrowBigUp,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup, Variants } from 'framer-motion';
 import clsx from 'clsx';
 import { useShallow } from 'zustand/react/shallow';
 import Button from '../ui/Button';
@@ -36,7 +39,8 @@ import Input from '../ui/Input';
 import Slider from '../ui/Slider';
 import { ThemeProps, THEMES, DEFAULT_THEME_ID } from '../../utils/themes';
 import { useTranslation } from 'react-i18next';
-import { Invokes, Theme } from '../ui/AppProperties';
+import { Invokes } from '../../types/invokes';
+import { Theme } from '../../types/settings';
 import {
   formatKeyCode,
   getDefaultCombo,
@@ -45,6 +49,7 @@ import {
   KEYBIND_SECTIONS,
   normalizeCombo,
 } from '../../utils/keyboardUtils';
+import { DEFAULT_SPEED_EDIT_ADJUSTMENTS, SPEED_EDIT_ADJUSTMENTS } from '../../utils/adjustments';
 import Text from '../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../types/typography';
 import { useOsPlatform } from '../../hooks/useOsPlatform';
@@ -62,6 +67,10 @@ import {
   requestOhosPrivacyConsent,
   revokeOhosPrivacyConsent,
 } from '../../utils/ohosPrivacy';
+import DefaultAdjustmentsSettings from './settings/DefaultAdjustmentsSettings';
+import EditInAppsSettings from './settings/EditInAppsSettings';
+import { applyUiScale, clampUiScale, getDevicePixelRatio, UI_SCALE_PRESETS } from '../../utils/displayScale';
+import type { ParseKeys } from 'i18next';
 
 interface ConfirmModalState {
   confirmText: string;
@@ -285,6 +294,86 @@ const OhosNpuModelStatus = ({ backend }: { backend: string }) => {
   );
 };
 
+const SPEED_EDIT_KEY_ROWS = [
+  {
+    offset: '',
+    keys: [
+      { code: 'KeyQ', label: 'settings.controls.speedEdit.keys.previousImage' },
+      { code: 'KeyW', label: 'settings.controls.speedEdit.keys.hold' },
+      { code: 'KeyE', label: 'settings.controls.speedEdit.keys.nextImage' },
+      { code: 'KeyR', label: 'settings.controls.speedEdit.keys.reset' },
+    ],
+  },
+  {
+    offset: 'ml-4',
+    keys: [
+      { code: 'KeyA', label: 'settings.controls.speedEdit.keys.previousAdjustment' },
+      { code: 'KeyS', label: null },
+      { code: 'KeyD', label: 'settings.controls.speedEdit.keys.nextAdjustment' },
+    ],
+  },
+  {
+    offset: 'ml-12',
+    keys: [
+      { code: 'KeyZ', label: null },
+      { code: 'KeyX', label: null },
+      { code: 'KeyC', label: 'settings.controls.speedEdit.keys.copy' },
+      { code: 'KeyV', label: 'settings.controls.speedEdit.keys.paste' },
+    ],
+  },
+] as const;
+
+const SPEED_EDIT_ARROW_ROWS = [
+  { offset: 'ml-[70px]', keys: [{ code: 'ArrowUp', label: null }] },
+  {
+    offset: '',
+    keys: [
+      { code: 'ArrowLeft', label: 'settings.controls.speedEdit.keys.stepDown' },
+      { code: 'ArrowDown', label: null },
+      { code: 'ArrowRight', label: 'settings.controls.speedEdit.keys.stepUp' },
+    ],
+  },
+] as const;
+
+const SPEED_EDIT_GESTURES = [
+  { icon: Move, label: 'settings.controls.speedEdit.gestures.drag', isPrimary: true },
+  { icon: ArrowBigUp, label: 'settings.controls.speedEdit.gestures.fine', isPrimary: false },
+  { icon: MousePointerClick, label: 'settings.controls.speedEdit.gestures.doubleClick', isPrimary: false },
+] as const;
+
+interface SpeedEditKeyProps {
+  code: string;
+  label: string | null;
+  osPlatform: string;
+}
+
+const SpeedEditKey = ({ code, label, osPlatform }: SpeedEditKeyProps) => {
+  const isHold = code === 'KeyW';
+  return (
+    <kbd
+      className={clsx(
+        'flex flex-col items-center justify-center gap-1 w-16 h-14 px-1 rounded-lg border font-sans text-center',
+        isHold && 'bg-accent border-accent text-button-text',
+        !isHold && label && 'bg-bg-primary border-border-color shadow-[inset_0_-2px_0_rgba(0,0,0,0.25)]',
+        !label && 'border-dashed border-border-color text-text-secondary opacity-40',
+      )}
+    >
+      <span className="text-sm font-semibold leading-none">{formatKeyCode(code, osPlatform)}</span>
+      {label && (
+        <span className={clsx('text-[9px] leading-tight', isHold ? 'text-button-text/80' : 'text-text-secondary')}>
+          {label}
+        </span>
+      )}
+    </kbd>
+  );
+};
+
+const MiniKey = ({ code, osPlatform }: { code: string; osPlatform: string }) => (
+  <kbd className="px-1.5 py-0.5 rounded-sm border border-border-color bg-bg-primary font-sans text-[10px] font-semibold">
+    {formatKeyCode(code, osPlatform)}
+  </kbd>
+);
+
 interface AiProviderSwitchProps {
   selectedProvider: string;
   onProviderChange: (provider: string) => void;
@@ -433,6 +522,55 @@ const PreviewModeSwitch = ({ mode, onModeChange }: PreviewModeSwitchProps) => {
   );
 };
 
+const THANKS_CREDITS: Array<{ name: string; url: string; description: ParseKeys }> = [
+  {
+    name: 'rawler',
+    url: 'https://github.com/dnglab/dnglab/tree/main/rawler',
+    description: 'settings.thanks.list.rawler',
+  },
+  { name: 'lensfun', url: 'https://lensfun.github.io/', description: 'settings.thanks.list.lensfun' },
+  {
+    name: 'spektrafilm',
+    url: 'https://github.com/andreavolpato/spektrafilm',
+    description: 'settings.thanks.list.spektrafilm',
+  },
+  { name: 'NegPy', url: 'https://github.com/marcinz606/NegPy', description: 'settings.thanks.list.negpy' },
+  { name: 'LaMa', url: 'https://github.com/advimman/lama', description: 'settings.thanks.list.lama' },
+  {
+    name: 'Segment Anything',
+    url: 'https://github.com/facebookresearch/segment-anything',
+    description: 'settings.thanks.list.sam2',
+  },
+  {
+    name: 'EfficientSAM3',
+    url: 'https://github.com/SimonZeng7108/efficientsam3',
+    description: 'settings.thanks.list.efficientsam3',
+  },
+  { name: 'BiRefNet', url: 'https://github.com/ZhengPeng7/BiRefNet', description: 'settings.thanks.list.birefnet' },
+  {
+    name: 'MediaPipe',
+    url: 'https://github.com/google-ai-edge/mediapipe',
+    description: 'settings.thanks.list.mediapipe',
+  },
+  {
+    name: 'Depth Anything V2',
+    url: 'https://github.com/DepthAnything/Depth-Anything-V2',
+    description: 'settings.thanks.list.depth',
+  },
+  { name: 'nind-denoise', url: 'https://github.com/trougnouf/nind-denoise', description: 'settings.thanks.list.nind' },
+  {
+    name: '2xBHI_small_span_pretrain',
+    url: 'https://github.com/Phhofm/models/releases/tag/2xBHI_small_span_pretrain',
+    description: 'settings.thanks.list.span',
+  },
+  { name: 'libgphoto2', url: 'http://gphoto.org/', description: 'settings.thanks.list.libgphoto2' },
+  {
+    name: 'darktable & co.',
+    url: 'https://github.com/darktable-org/darktable',
+    description: 'settings.thanks.list.darktable',
+  },
+];
+
 export default function SettingsPanel({
   appSettings,
   onBack,
@@ -466,6 +604,12 @@ export default function SettingsPanel({
 
   const osPlatform = useOsPlatform();
   const isOhos = useSettingsStore((s) => s.isOhos);
+  const [isWgpuSupported, setIsWgpuSupported] = useState(true);
+  useEffect(() => {
+    invoke<boolean>(Invokes.IsWgpuRendererSupported)
+      .then(setIsWgpuSupported)
+      .catch(() => setIsWgpuSupported(false));
+  }, []);
   const [processingSettings, setProcessingSettings] = useState({
     editorPreviewResolution: appSettings?.editorPreviewResolution || 1920,
     smallThumbnailResolution: appSettings?.smallThumbnailResolution || 480,
@@ -488,7 +632,7 @@ export default function SettingsPanel({
   });
   const [restartRequired, setRestartRequired] = useState(false);
   const [activeCategory, setActiveCategory] = useState('general');
-  const [dpr, setDpr] = useState(() => (typeof window !== 'undefined' ? window.devicePixelRatio : 1));
+  const [dpr, setDpr] = useState(() => getDevicePixelRatio());
   const [viewingDoc, setViewingDoc] = useState<AgreementDocKind | null>(null);
   const docViewerRef = useRef<HTMLDivElement | null>(null);
 
@@ -621,10 +765,22 @@ export default function SettingsPanel({
     [t],
   );
 
+  const uiScaleOptions = useMemo<OptionItem<number>[]>(() => {
+    const presetNames: Record<number, string> = {
+      0.8: t('settings.general.uiScaleCompact'),
+      1: t('settings.general.uiScaleDefault'),
+      1.25: t('settings.general.uiScaleLarge'),
+    };
+    return UI_SCALE_PRESETS.map((scale) => {
+      const percent = `${Math.round(scale * 100)}%`;
+      return { value: scale, label: presetNames[scale] ? `${percent} · ${presetNames[scale]}` : percent };
+    });
+  }, [t]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const updateDpr = () => setDpr(window.devicePixelRatio);
+    const updateDpr = () => setDpr(getDevicePixelRatio());
 
     const mediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     mediaQuery.addEventListener('change', updateDpr);
@@ -639,6 +795,7 @@ export default function SettingsPanel({
 
   const customAiTags = Array.from(new Set<string>(appSettings?.customAiTags || []));
   const taggingShortcuts = Array.from(new Set<string>(appSettings?.taggingShortcuts || []));
+  const speedEditAdjustments: string[] = appSettings?.speedEditAdjustments ?? DEFAULT_SPEED_EDIT_ADJUSTMENTS;
 
   useEffect(() => {
     if (appSettings?.aiConnectorAddress !== aiConnectorAddress) {
@@ -657,7 +814,8 @@ export default function SettingsPanel({
       linuxGpuOptimization: appSettings?.linuxGpuOptimization ?? false,
       highResZoomMultiplier: appSettings?.highResZoomMultiplier || 1.0,
       useFullDpiRendering: appSettings?.useFullDpiRendering ?? false,
-      useWgpuRenderer: appSettings?.useWgpuRenderer ?? true,
+      useWgpuRenderer:
+        appSettings?.useWgpuRenderer ?? (osPlatform === 'linux' || osPlatform === 'android' ? false : true),
       thumbnailWorkerThreads: appSettings?.thumbnailWorkerThreads ?? 4,
       imageCacheSize: appSettings?.imageCacheSize ?? 5,
       rawPreprocessingColorNr: appSettings?.rawPreprocessingColorNr ?? 0.5,
@@ -758,7 +916,7 @@ export default function SettingsPanel({
 
   const effectiveRootPaths = rootPaths?.length > 0 ? rootPaths : appSettings?.rootFolders || [];
 
-  const shortcutTagVariants = {
+  const shortcutTagVariants: Variants = {
     visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } },
     exit: { opacity: 0, scale: 0.8, transition: { duration: 0.15 } },
   };
@@ -967,9 +1125,11 @@ export default function SettingsPanel({
                             { value: 'pl', label: 'Polski' },
                             { value: 'pt', label: 'Português' },
                             { value: 'ru', label: 'Русский' },
+                            { value: 'uk', label: 'Українська' },
                             { value: 'ja', label: '日本語' },
                             { value: 'ko', label: '한국어' },
                             { value: 'cs', label: 'Čeština' },
+                            { value: 'lt', label: 'Lietuvių' },
                             { value: 'zh-CN', label: '简体中文' },
                             { value: 'zh-TW', label: '繁體中文' },
                           ]}
@@ -1086,11 +1246,38 @@ export default function SettingsPanel({
                         />
                       </SettingItem>
 
+                      <SettingItem
+                        label={t('settings.general.hideCollapsedPanels')}
+                        description={t('settings.general.hideCollapsedPanelsDesc')}
+                      >
+                        <Switch
+                          checked={appSettings?.hideCollapsedPanels ?? false}
+                          id="hide-collapsed-panels-toggle"
+                          label={t('settings.general.hideCollapsedPanels')}
+                          onChange={(checked) => onSettingsChange({ ...appSettings, hideCollapsedPanels: checked })}
+                        />
+                      </SettingItem>
+
                       <SettingItem label={t('settings.general.font')} description={t('settings.general.fontDesc')}>
                         <Dropdown
                           onChange={(value: any) => onSettingsChange({ ...appSettings, fontFamily: value })}
                           options={fontOptions}
                           value={appSettings?.fontFamily || 'poppins'}
+                          triggerClassName="bg-bg-primary"
+                        />
+                      </SettingItem>
+
+                      <SettingItem
+                        label={t('settings.general.uiScale')}
+                        description={t('settings.general.uiScaleDesc')}
+                      >
+                        <Dropdown
+                          onChange={(value: number) => {
+                            onSettingsChange({ ...appSettings, uiScale: value });
+                            applyUiScale(value);
+                          }}
+                          options={uiScaleOptions}
+                          value={clampUiScale(appSettings?.uiScale)}
                           triggerClassName="bg-bg-primary"
                         />
                       </SettingItem>
@@ -1242,6 +1429,13 @@ export default function SettingsPanel({
 
                         </AnimatePresence>
                     </div>
+                  </div>
+
+                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                    <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
+                      {t('settings.processing.defaultAdjustments.title')}
+                    </Text>
+                    <DefaultAdjustmentsSettings appSettings={appSettings} onSettingsChange={onSettingsChange} />
                   </div>
 
                   <div className="p-6 bg-surface rounded-xl shadow-md">
@@ -1525,149 +1719,19 @@ export default function SettingsPanel({
                     </Text>
                     <Text className="mb-4">{t('settings.thanks.description')}</Text>
                     <Text as="ul" className="space-y-3 list-disc ml-5 pl-1">
-                      <li>
-                        <a
-                          href="https://github.com/dnglab/dnglab/tree/main/rawler"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          rawler
-                        </a>
-                        : {t('settings.thanks.list.rawler')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://lensfun.github.io/"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          lensfun
-                        </a>
-                        : {t('settings.thanks.list.lensfun')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/andreavolpato/spektrafilm"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          spektrafilm
-                        </a>
-                        : {t('settings.thanks.list.spektrafilm')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/marcinz606/NegPy"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          NegPy
-                        </a>
-                        : {t('settings.thanks.list.negpy')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/advimman/lama"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          LaMa
-                        </a>
-                        : {t('settings.thanks.list.lama')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/facebookresearch/segment-anything"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          Segment Anything
-                        </a>
-                        : {t('settings.thanks.list.sam2')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/SimonZeng7108/efficientsam3"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          EfficientSAM3
-                        </a>
-                        : {t('settings.thanks.list.efficientsam3')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/ZhengPeng7/BiRefNet"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          BiRefNet
-                        </a>
-                        : {t('settings.thanks.list.birefnet')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/google-ai-edge/mediapipe"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          MediaPipe
-                        </a>
-                        : {t('settings.thanks.list.mediapipe')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/DepthAnything/Depth-Anything-V2"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          Depth Anything V2
-                        </a>
-                        : {t('settings.thanks.list.depth')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/trougnouf/nind-denoise"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          nind-denoise
-                        </a>
-                        : {t('settings.thanks.list.nind')}
-                      </li>
-                      <li>
-                        <a
-                          href="http://gphoto.org/"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          libgphoto2
-                        </a>
-                        : {t('settings.thanks.list.libgphoto2')}
-                      </li>
-                      <li>
-                        <a
-                          href="https://github.com/darktable-org/darktable"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-accent hover:underline"
-                        >
-                          darktable & co.
-                        </a>
-                        : {t('settings.thanks.list.darktable')}
-                      </li>
+                      {THANKS_CREDITS.map((credit) => (
+                        <li key={credit.name}>
+                          <a
+                            href={credit.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-semibold text-accent hover:underline"
+                          >
+                            {credit.name}
+                          </a>
+                          : {t(credit.description)}
+                        </li>
+                      ))}
                       <li>
                         <span className="font-semibold text-accent">{t('settings.thanks.list.youLabel')}</span>:{' '}
                         {t('settings.thanks.list.you')}
@@ -1740,20 +1804,6 @@ export default function SettingsPanel({
                                   {t('settings.processing.dynamicDesc')}
                                 </Text>
                                 <div className="pl-4 border-l-2 border-border-color ml-1 space-y-3">
-                                  <SettingItem
-                                    description={t('settings.processing.staticPreviewResDesc')}
-                                    label={t('settings.processing.staticPreviewRes')}
-                                  >
-                                    <Dropdown
-                                      onChange={(value: any) =>
-                                        handleProcessingSettingChange('editorPreviewResolution', value)
-                                      }
-                                      options={resolutions}
-                                      value={processingSettings.editorPreviewResolution}
-                                      triggerClassName="bg-bg-primary"
-                                    />
-                                  </SettingItem>
-
                                   <SettingItem
                                     label={t('settings.processing.renderScale')}
                                     description={t('settings.processing.renderScaleDesc')}
@@ -1878,16 +1928,18 @@ export default function SettingsPanel({
                       <SettingItem
                         label={t('settings.processing.wgpu')}
                         description={
-                          osPlatform === 'linux'
-                            ? t('settings.processing.wgpuDescLinux')
-                            : osPlatform === 'android'
-                              ? t('settings.processing.wgpuDescAndroid')
+                          osPlatform === 'android'
+                            ? t('settings.processing.wgpuDescAndroid')
+                            : osPlatform === 'linux'
+                              ? isWgpuSupported
+                                ? t('settings.processing.wgpuDescLinuxExperimental')
+                                : t('settings.processing.wgpuDescLinuxX11')
                               : t('settings.processing.wgpuDescRecommended')
                         }
                       >
                         <Switch
                           checked={processingSettings.useWgpuRenderer}
-                          disabled={osPlatform === 'linux' || osPlatform === 'android'}
+                          disabled={osPlatform === 'android' || !isWgpuSupported}
                           id="wgpu-renderer-toggle"
                           label={t('settings.processing.wgpuLabel')}
                           onChange={(checked) => handleProcessingSettingChange('useWgpuRenderer', checked)}
@@ -2186,7 +2238,7 @@ export default function SettingsPanel({
                           description={t('settings.processing.preprocessing.baselineExposureDesc')}
                         >
                           <Switch
-                            checked={appSettings?.enableBaselineExposure ?? false}
+                            checked={appSettings?.enableBaselineExposure ?? true}
                             id="baseline-exposure-toggle"
                             label={t('settings.processing.preprocessing.enableBaselineExposure')}
                             onChange={(checked) =>
@@ -2196,7 +2248,7 @@ export default function SettingsPanel({
                         </SettingItem>
 
                         <AnimatePresence>
-                          {(appSettings?.enableBaselineExposure ?? false) && (
+                          {(appSettings?.enableBaselineExposure ?? true) && (
                             <motion.div
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
@@ -2303,6 +2355,13 @@ export default function SettingsPanel({
 
                   <div className="p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
+                      {t('settings.processing.editIn.title')}
+                    </Text>
+                    <EditInAppsSettings appSettings={appSettings} onSettingsChange={onSettingsChange} />
+                  </div>
+
+                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                    <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.data.title')}
                     </Text>
                     <DataManagementSettings
@@ -2371,6 +2430,82 @@ export default function SettingsPanel({
                             onSettingsChange({ ...appSettings, zoomPhotoToPixelClick: checked });
                           }}
                         />
+                      </SettingItem>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-surface rounded-xl shadow-md">
+                    <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
+                      {t('settings.controls.speedEdit.title')}
+                    </Text>
+                    <div className="space-y-8">
+                      <div>
+                        <div className="flex items-end gap-6">
+                          {[SPEED_EDIT_KEY_ROWS, SPEED_EDIT_ARROW_ROWS].map((rows) => (
+                            <div className="space-y-1.5" key={rows[0].keys[0].code}>
+                              {rows.map(({ offset, keys }) => (
+                                <div className={clsx('flex gap-1.5', offset)} key={keys[0].code}>
+                                  {keys.map(({ code, label }) => (
+                                    <SpeedEditKey
+                                      code={code}
+                                      key={code}
+                                      label={label && t(label)}
+                                      osPlatform={osPlatform}
+                                    />
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-5">
+                          {SPEED_EDIT_GESTURES.map(({ icon: Icon, label, isPrimary }) => (
+                            <span
+                              className={clsx(
+                                'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs',
+                                isPrimary
+                                  ? 'bg-accent text-button-text font-semibold'
+                                  : 'bg-bg-primary text-text-secondary',
+                              )}
+                              key={label}
+                            >
+                              <Icon size={14} />
+                              {t(label)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <SettingItem label={t('settings.controls.speedEdit.adjustments')}>
+                        <div className="flex flex-wrap items-center gap-1.5 mb-4 text-xs">
+                          <MiniKey code="KeyA" osPlatform={osPlatform} />
+                          {SPEED_EDIT_ADJUSTMENTS.filter(({ id }) => speedEditAdjustments.includes(id)).map(
+                            ({ id, label }, index) => (
+                              <Fragment key={id}>
+                                {index > 0 && <ChevronRight size={12} className="text-text-secondary" />}
+                                <span className="px-2 py-0.5 rounded-full bg-bg-primary">{t(label)}</span>
+                              </Fragment>
+                            ),
+                          )}
+                          <MiniKey code="KeyD" osPlatform={osPlatform} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                          {SPEED_EDIT_ADJUSTMENTS.map(({ id, label }) => (
+                            <Switch
+                              checked={speedEditAdjustments.includes(id)}
+                              id={`speed-edit-${id}`}
+                              key={id}
+                              label={t(label)}
+                              onChange={(checked) =>
+                                onSettingsChange({
+                                  ...appSettings,
+                                  speedEditAdjustments: checked
+                                    ? [...speedEditAdjustments, id]
+                                    : speedEditAdjustments.filter((item) => item !== id),
+                                })
+                              }
+                            />
+                          ))}
+                        </div>
                       </SettingItem>
                     </div>
                   </div>

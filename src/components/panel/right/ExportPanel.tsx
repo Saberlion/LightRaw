@@ -24,9 +24,12 @@ import {
   MAX_EXPORT_DPI,
   TiffBitDepth,
   WatermarkAnchor,
-} from '../../ui/ExportImportProperties';
-import { Invokes, SelectedImage, AppSettings, Panel } from '../../ui/AppProperties';
-import ExportPresetsList from '../../ui/ExportPresetsList';
+} from '../../../types/export';
+import { Invokes } from '../../../types/invokes';
+import { SelectedImage } from '../../../types/editor';
+import { AppSettings } from '../../../types/settings';
+import { Panel } from '../../../types/ui';
+import ExportPresetsList from './ExportPresetsList';
 import { useExportSettings } from '../../../hooks/useExportSettings';
 import { useOsPlatform } from '../../../hooks/useOsPlatform';
 import Text from '../../ui/Text';
@@ -35,7 +38,7 @@ import { useEditorStore } from '../../../store/useEditorStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { useUIStore } from '../../../store/useUIStore';
 import ImmichExportOptions, { useImmichExportAvailable, useImmichExportChoice } from '../../immich/ImmichExportOptions';
-import { prepareImmichExport } from '../../immich/immichApi';
+import { prepareImmichExport } from '../../../utils/immichApi';
 import { formatBytes } from '../../../utils/formatBytes';
 
 interface ExportPanelProps {
@@ -87,6 +90,9 @@ function ValidatedNumberInput({ ariaLabel, disabled, field, max }: ValidatedNumb
       max={max}
       min="0"
       onChange={(e) => field.handleChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+      }}
       step="any"
       type="number"
       value={field.text}
@@ -293,6 +299,12 @@ export default function ExportPanel({
     setStripGps,
     exportMasks,
     setExportMasks,
+    exportOriginal,
+    setExportOriginal,
+    originalCrop,
+    setOriginalCrop,
+    originalKeepExposure,
+    setOriginalKeepExposure,
     filenameTemplate,
     setFilenameTemplate,
     enableWatermark,
@@ -404,6 +416,7 @@ export default function ExportPanel({
 
   const [estimatedSize, setEstimatedSize] = useState<number | null>(null);
   const [isEstimating, setIsEstimating] = useState<boolean>(false);
+  const estimateRequestIdRef = useRef(0);
   const [watermarkImageAspectRatio, setWatermarkImageAspectRatio] = useState(1);
   const [imageAspectRatio, setImageAspectRatio] = useState(16 / 9);
   const filenameInputRef = useRef<HTMLInputElement>(null);
@@ -464,7 +477,7 @@ export default function ExportPanel({
           path: watermarkPath,
         });
         setWatermarkImageAspectRatio(dimensions.height > 0 ? dimensions.width / dimensions.height : 1);
-      } catch (error) {
+      } catch {
         setWatermarkImageAspectRatio(1);
       }
     };
@@ -488,24 +501,27 @@ export default function ExportPanel({
 
   const debouncedEstimateSize = useMemo(
     () =>
-      debounce(async (paths, currentAdj, currentPath, exportSettings, format) => {
+      debounce(async (requestId, paths, currentAdj, currentPath, exportSettings, format) => {
         if (paths.length === 0 || !isVisible) {
           setEstimatedSize(null);
+          setIsEstimating(false);
           return;
         }
         setIsEstimating(true);
         try {
-          const size: number = await invoke(Invokes.EstimateExportSizes, {
+          const size: number | null = await invoke(Invokes.EstimateExportSizes, {
             paths,
             exportSettings,
             outputFormat: format,
             currentEditPath: currentPath || null,
             currentEditAdjustments: currentAdj || null,
           });
+          if (requestId !== estimateRequestIdRef.current || size === null) return;
           setEstimatedSize(size);
-        } catch (err) {
+          setIsEstimating(false);
+        } catch {
+          if (requestId !== estimateRequestIdRef.current) return;
           setEstimatedSize(null);
-        } finally {
           setIsEstimating(false);
         }
       }, 500),
@@ -542,17 +558,24 @@ export default function ExportPanel({
     };
     const format = FILE_FORMATS.find((f: FileFormat) => f.id === fileFormat)?.extensions[0] || 'jpeg';
     const runEstimate = () =>
-      debouncedEstimateSize(pathsToExport, adjustmentsRef.current, selectedImage?.path, exportSettings, format);
+      debouncedEstimateSize(
+        ++estimateRequestIdRef.current,
+        pathsToExport,
+        adjustmentsRef.current,
+        selectedImage?.path,
+        exportSettings,
+        format,
+      );
 
     runEstimate();
 
-    let prevAdjustments = useEditorStore.getState().adjustments;
+    let { adjustments: prevAdjustments, originalSize: prevOriginalSize } = useEditorStore.getState();
     const unsubscribe = useEditorStore.subscribe((state) => {
-      if (state.adjustments !== prevAdjustments) {
-        prevAdjustments = state.adjustments;
-        adjustmentsRef.current = state.adjustments;
-        runEstimate();
-      }
+      if (state.adjustments === prevAdjustments && state.originalSize === prevOriginalSize) return;
+      prevAdjustments = state.adjustments;
+      prevOriginalSize = state.originalSize;
+      adjustmentsRef.current = state.adjustments;
+      runEstimate();
     });
 
     return () => {
@@ -626,6 +649,7 @@ export default function ExportPanel({
       pad: padSettings,
       stripGps,
       exportMasks: exportMasks,
+      exportOriginal: exportOriginal ? { crop: originalCrop, keepExposure: originalKeepExposure } : null,
       watermark:
         enableWatermark && watermarkPath
           ? {
@@ -655,6 +679,7 @@ export default function ExportPanel({
 
       if (isImmich) {
         exportSettings.preserveFolders = false;
+        exportSettings.exportOriginal = null;
         outputFolderOrFile = await prepareImmichExport(immichExport.album, immichExport.withOriginal);
       } else if (isOriginalFolder) {
         outputFolderOrFile = 'originalFolderDummy';
@@ -757,7 +782,7 @@ export default function ExportPanel({
         <Text variant={TextVariants.title}>{t('export.title')}</Text>
       </div>
       <div className="grow overflow-y-auto p-3 space-y-8">
-        {canExport ? (
+        {numImages > 0 ? (
           <>
             <div className={isExporting ? 'opacity-50 pointer-events-none' : ''}>
               <ExportPresetsList
@@ -1031,7 +1056,9 @@ export default function ExportPanel({
                   )}
                 </Section>
 
-                {[FileFormats.Jpeg, FileFormats.Png, FileFormats.Webp].includes(fileFormat as FileFormats) && (
+                {[FileFormats.Jpeg, FileFormats.Png, FileFormats.Webp, FileFormats.Jxl].includes(
+                  fileFormat as FileFormats,
+                ) && (
                   <Section title={t('export.sections.metadata')}>
                     <Switch
                       checked={keepMetadata}
@@ -1182,6 +1209,32 @@ export default function ExportPanel({
                               onChange={setExportMasks}
                               disabled={isExporting}
                             />
+                            {destination !== 'immich' && (
+                              <>
+                                <Switch
+                                  label={t('export.advanced.exportOriginal')}
+                                  checked={exportOriginal}
+                                  onChange={setExportOriginal}
+                                  disabled={isExporting}
+                                />
+                                {exportOriginal && (
+                                  <div className="pl-2 border-l-2 border-card-active flex flex-col gap-4">
+                                    <Switch
+                                      label={t('export.advanced.originalCrop')}
+                                      checked={originalCrop}
+                                      onChange={setOriginalCrop}
+                                      disabled={isExporting}
+                                    />
+                                    <Switch
+                                      label={t('export.advanced.originalKeepExposure')}
+                                      checked={originalKeepExposure}
+                                      onChange={setOriginalKeepExposure}
+                                      disabled={isExporting}
+                                    />
+                                  </div>
+                                )}
+                              </>
+                            )}
                           </>
                         )}
                         {[FileFormats.Jpeg, FileFormats.Png, FileFormats.Tiff].includes(fileFormat as FileFormats) && (

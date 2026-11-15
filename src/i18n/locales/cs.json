@@ -43,7 +43,7 @@
         "shadows": "Stíny"
       },
       "hue": "Odstín",
-      "kelvinModeTooltip": "Zobrazit teplotu v Kelvinech",
+      "kelvinModeTooltip": "Zobrazit teplotu v kelvinech",
       "localHue": "Místní odstín",
       "luminance": "Jas",
       "mixerColors": {
@@ -55,6 +55,57 @@
         "purples": "Fialová",
         "reds": "Červená",
         "yellows": "Žlutá"
+      },
+      "mixerPickerTooltip": "Pipeta míchání barev: klikněte na fotografii a táhněte nahoru nebo dolů",
+      "monochrome": {
+        "badge": "Č/B",
+        "balance": "Vyvážení",
+        "blackWhite": "Černobílá",
+        "film": "Film",
+        "filmDescriptions": {
+          "balanced": "Rovnoměrná citlivost na všechny barvy, se světlejšími červenými a pletí",
+          "extendedRed": "Film citlivý na červenou se zářivou pletí a tmavší oblohou",
+          "infrared": "Zářící listí a téměř černá obloha",
+          "neutral": "Odpovídá vnímanému jasu každé barvy",
+          "orthochromatic": "Necitlivý na červenou, s tmavými červenými a světlou oblohou",
+          "orthoPanchromatic": "Mírně tmavší červené a jasné zelené",
+          "panchromatic": "Klasická odezva filmu se světlejší modrou oblohou"
+        },
+        "films": {
+          "balanced": "Vyvážený",
+          "extendedRed": "Rozšířená červená",
+          "infrared": "Infračervený",
+          "neutral": "Neutrální",
+          "orthochromatic": "Ortochromatický",
+          "orthoPanchromatic": "Orto-pan",
+          "panchromatic": "Panchromatický"
+        },
+        "filter": "Filtr",
+        "filters": {
+          "blue": "Modrá",
+          "green": "Zelená",
+          "none": "Žádný",
+          "orange": "Oranžová",
+          "red": "Červená",
+          "yellow": "Žlutá"
+        },
+        "highlights": "Světla",
+        "hue": "Odstín",
+        "mix": "Č/B mix",
+        "mixPickerTooltip": "Pipeta Č/B mixu: klikněte na fotografii a táhněte nahoru nebo dolů",
+        "saturation": "Sytost",
+        "shadows": "Stíny",
+        "strength": "Síla",
+        "toning": "Tónování",
+        "tonings": {
+          "cyanotype": "Kyanotypie",
+          "gold": "Zlato",
+          "none": "Žádné",
+          "platinum": "Platina",
+          "selenium": "Selen",
+          "sepia": "Sépie",
+          "split": "Dělené tónování"
+        }
       },
       "presence": "Prezence",
       "saturation": "Sytost",
@@ -98,6 +149,8 @@
     "details": {
       "aiDenoise": "AI odšumění",
       "aiDenoiseDetail": "Detail",
+      "aiUpscale": "RapidRes 2x",
+      "aiUpscaleDetail": "Detail",
       "blueYellow": "Modrá/Žlutá",
       "centre": "Střed",
       "chromaticAberration": "Chromatická aberace",
@@ -119,6 +172,7 @@
       "sharpening": "Doostření",
       "sharpness": "Ostrost",
       "structure": "Struktura",
+      "superResolution": "RapidRes",
       "threshold": "Práh"
     },
     "effects": {
@@ -143,6 +197,24 @@
       "lightFlares": "Světelné záblesky",
       "lut": "LUT",
       "midpoint": "Střed",
+      "motionBlur": "Pohybové rozmazání",
+      "motionBlurAngle": "Úhel",
+      "motionBlurDepth": "Hloubka",
+      "motionBlurHighlights": "Světla",
+      "motionBlurLayer": "Pohyb",
+      "motionBlurLayers": {
+        "auto": "Automaticky",
+        "panning": "Švenkování",
+        "subject": "Pohybující se objekt",
+        "uniform": "Rovnoměrně"
+      },
+      "motionBlurType": "Typ",
+      "motionBlurTypes": {
+        "linear": "Lineární",
+        "smooth": "Vyhlazení",
+        "spin": "Otáčení",
+        "zoom": "Zoom"
+      },
       "relight": "Přesvětlení",
       "relightAddLight": "Přidat světlo",
       "relightAmbient": "Okolní světlo",
@@ -227,13 +299,16 @@
       "autoLensCorrection": "Auto korekce objektivu",
       "autoStraighten": "Automaticky vyrovnat",
       "cancel": "Zrušit",
+      "closeViewer": "Zavřít druhé okno",
       "colorLabel": "Barevný štítek",
       "confirmReset": "Potvrďte reset",
+      "convertBlackWhite": "Převést na černobílou",
       "convertNegative": "Převést negativ",
       "copyAdjustments": "Kopírovat úpravy",
       "cullImage": "Automatické třídění",
       "denoise": "Odšumit",
       "editImage": "Upravit snímek",
+      "editIn": "Upravit v",
       "exportImage": "Export snímku",
       "flag": "Vlajka",
       "flagPick": "Vybrané",
@@ -242,6 +317,7 @@
       "mergeHdr": "Sloučit do HDR",
       "noLabel": "Žádný štítek",
       "noRating": "Žádné hodnocení",
+      "openViewer": "Otevřít ve druhém okně",
       "pasteAdjustments": "Vložit úpravy",
       "productivity": "Produktivita",
       "rating": "Hodnocení",
@@ -250,10 +326,15 @@
       "ratingLabel_many": "{{count}} hvězdiček",
       "ratingLabel_other": "{{count}} hvězdiček",
       "redo": "Znovu",
+      "removeBlackWhite": "Odebrat černobílou",
       "removeDenoise": "Odebrat odšumění",
       "removeNegativeConversion": "Odebrat převod negativu",
+      "removeSuperResolution": "Odebrat RapidRes",
       "resetAdjustments": "Obnovit nastavení",
+      "resetToDefaults": "Obnovit na výchozí",
+      "resetToNeutral": "Obnovit na neutrální",
       "stitchPanorama": "Složit panorama",
+      "superResolution": "RapidRes (2x)",
       "tagging": "Otagování",
       "undo": "Zpět",
       "unflagged": "Bez vlajky"
@@ -319,10 +400,10 @@
       "collage_other": "Vytvořit koláž",
       "confirmDelete": "Potvrdit smazání",
       "confirmDeleteVc": "Potvrdit smazání + virtuální kopie",
-      "convertNegative_one": "Převést negativ",
-      "convertNegative_few": "Převést negativy",
-      "convertNegative_many": "Převést negativy",
-      "convertNegative_other": "Převést negativy",
+      "convertNegative_one": "Convert Negative",
+      "convertNegative_few": "Convert Negatives",
+      "convertNegative_many": "Convert Negatives",
+      "convertNegative_other": "Convert Negatives",
       "copyImage_one": "Kopírovat snímek",
       "copyImage_few": "Kopírovat {{count}} snímky",
       "copyImage_many": "Kopírovat {{count}} snímků",
@@ -367,11 +448,18 @@
       "resetAdjustments_many": "Obnovit úpravy u {{count}} snímků",
       "resetAdjustments_other": "Obnovit úpravy u {{count}} snímků",
       "showExplorer": "Zobrazit v Průzkumníku souborů",
+      "superResolution_one": "RapidRes (2x)",
+      "superResolution_few": "RapidRes (2x)",
+      "superResolution_many": "RapidRes (2x)",
+      "superResolution_other": "RapidRes (2x)",
       "virtualCopy": "Virtuální kopie"
     },
     "toasts": {
       "couldNotShowExplorer": "Nelze zobrazit soubor v průzkumníku: {{err}}",
       "couldNotShowFolder": "Nelze zobrazit složku: {{err}}",
+      "editInFailed": "{{app}} selhal: {{err}}",
+      "editInNoOutput": "{{app}} byl zavřen bez uložení.",
+      "editInWaiting": "Čekání na {{app}}. Uložte tam soubor, aby se vrátil zpět, nebo zavřete tuto zprávu a čekání ukončete.",
       "failedAddToAlbum": "Nepodařilo se přidat do alba: {{err}}",
       "failedApplyAuto": "Nepodařilo se použít automatické úpravy: {{err}}",
       "failedChangeIcon": "Ikonu se nepodařilo změnit: {{err}}",
@@ -441,6 +529,15 @@
         "erase": "Vymazat",
         "feather": "Prolnutí štětce",
         "size": "Velikost štětce"
+      },
+      "cloneHeal": {
+        "cloneTooltip": "Zkopíruje zdroj přesně, včetně jasu a barvy",
+        "dragSource": "Tažením přesunete zdroj",
+        "healTooltip": "Zkopíruje texturu zdroje a přizpůsobí ji jasu a barvě okolí",
+        "hintActive": "Tažením obrysu zdroje zvolíte, odkud se pixely berou. Každý nový tah vytvoří samostatnou oblast. Podržením Shift přidáte k této.",
+        "hintEmpty": "Přemalujte skvrnu, drát nebo rušivý prvek. Vhodný zdroj se najde automaticky.",
+        "mode": "Režim",
+        "newSource": "Najít jiný zdroj"
       },
       "comingSoon": "Již brzy",
       "connection": {
@@ -534,7 +631,8 @@
         "selectionPropertiesTitle": "Vlastnosti výběru",
         "useBasicInpaint": "Použijte základní retuš"
       },
-      "touchUpTitle": "Retuše"
+      "touchUpTitle": "Retuše",
+      "upscaling": "Probíhá RapidRes..."
     },
     "compare": {
       "horizontal": "Rozdělit nahoře / dole",
@@ -672,11 +770,13 @@
       "cancel": "Zrušit",
       "drawingActive": "Kreslení aktivní",
       "hint": "Kreslete podél hran na fotografii, které mají být svislé nebo vodorovné.",
+      "horizontalLine": "Vodorovná vodicí čára č. {{index}}",
       "linesStatus": "Aktivní vodicí čáry",
       "toast": {
         "angleRejected": "Úhel čáry je příliš daleko od vodorovného nebo svislého směru",
         "maxLines": "Povoleny jsou maximálně 2 svislé a 2 vodorovné čáry"
-      }
+      },
+      "verticalLine": "Svislá vodicí čára č. {{index}}"
     },
     "layout": {
       "split": "Rozdělit"
@@ -780,8 +880,7 @@
       "toggleAnalyticsTooltip": "Přepnout zobrazení Analytics",
       "tooltips": {
         "addToCurrent": "Přidat {{name}} na aktuální masku nebo vytvořit novou (klikněte pravým tlačítkem)",
-        "createNew": "Vytvořit novou {{name}} masku",
-        "selectNewSourcePoint": "{{modifier}} + kliknutím vyberete nový zdrojový bod"
+        "createNew": "Vytvořit novou {{name}} masku"
       }
     },
     "metadata": {
@@ -794,6 +893,7 @@
         "focalLength": "Ohnisková vzdálenost",
         "iso": "ISO",
         "lens": "Objektiv",
+        "model": "Model",
         "shutterSpeed": "Rychlost závěrky",
         "title": "Podrobnosti o fotoaparátu"
       },
@@ -838,6 +938,8 @@
     },
     "presets": {
       "amount": "Množství",
+      "defaultForAllCameras": "Výchozí pro všechny fotoaparáty",
+      "defaultForCamera": "Výchozí pro {{camera}}",
       "dialog": {
         "allPresetFiles": "Všechny soubory s presety",
         "exportAllTitle": "Exportovat všechny presety",
@@ -858,7 +960,11 @@
         "newPreset": "Nový preset",
         "overwrite": "Přepsat",
         "renameFolder": "Přejmenovat složku",
-        "sortAll": "Seřadit vše podle abecedy"
+        "setDefaultAllCameras": "Nastavit jako výchozí pro všechny fotoaparáty",
+        "setDefaultForCamera": "Nastavit jako výchozí pro {{camera}}",
+        "sortAll": "Seřadit vše podle abecedy",
+        "unsetDefaultAllCameras": "Přestat používat jako výchozí pro všechny fotoaparáty",
+        "unsetDefaultForCamera": "Přestat používat jako výchozí pro {{camera}}"
       },
       "status": {
         "empty": "Zatím nejsou uloženy žádné presety. Vytvořte si vlastní, importujte ze souboru nebo prozkoumejte presety komunity.",
@@ -882,17 +988,25 @@
         "tool": "Nástroj"
       }
     },
+    "speedEdit": {
+      "copied": "Zkopírováno: <0>{{label}}</0> <1>{{value}}</1>",
+      "pasted": "Vloženo: <0>{{label}}</0> <1>{{value}}</1>"
+    },
     "switcher": {
       "tooltips": {
         "adjust": "Upravit",
         "crop": "Oříznout",
         "export": "Export",
+        "filmstrip": "Filmový pás",
         "info": "Info",
         "inpaint": "Retuš",
         "masks": "Masky",
         "presets": "Presety",
         "tethering": "Tetherované snímání"
       }
+    },
+    "toasts": {
+      "embeddedPreview": "LightRaw nedokázal dekódovat tento soubor RAW, takže vidíte a upravujete vložený náhled JPEG z fotoaparátu. Počítejte s nižší kvalitou a menší rezervou pro úpravy než u skutečného RAW."
     },
     "toolbar": {
       "history": "Historie",
@@ -911,11 +1025,18 @@
         "undo": "Zpět (Ctrl+Z) nebo Historie (kliknutí pravým tlačítkem)"
       },
       "vc": "VC"
+    },
+    "viewer": {
+      "openFailed": "Druhé okno nelze otevřít: {{error}}",
+      "windowTitle": "Prohlížeč LightRaw"
     }
   },
   "export": {
     "advanced": {
       "exportMasks": "Exportovat masky jako samostatné soubory",
+      "exportOriginal": "Exportovat také originál",
+      "originalCrop": "Použít ořez",
+      "originalKeepExposure": "Zachovat expozici",
       "preserveFolders": "Zachovat strukturu složek",
       "preserveTimestamps": "Nastavit časová razítka souborů z data pořízení EXIF",
       "title": "Nastavení exportu"
@@ -1056,23 +1177,30 @@
     },
     "export": {
       "album": "Album",
+      "createAlbum": "Vytvořit",
       "destination": "Immich",
+      "newAlbum": "Nové album…",
+      "newAlbumFailed": "Album se nepodařilo vytvořit: {{error}}",
+      "newAlbumName": "Název alba",
       "noAlbum": "Žádné album",
       "sourceAlbum": "Album, ze kterého byl obrázek otevřen",
       "withOriginal": "Nahrát i originál",
       "withOriginalDesc": "Pro obrázky z místní složky: originál se nahraje i s úpravami a export se umístí na něj do zásobníku. Obrázky z Immiche se vždy skládají na svůj originál."
     },
     "section": {
+      "albums": "Alba",
       "empty": "Na serveru nejsou žádná alba.",
       "error": "Immich není dostupný.",
       "loading": "Načítání alb…",
       "refresh": "Obnovit alba",
       "timeline": "Časová osa",
-      "title": "Immich"
+      "title": "Immich",
+      "unassigned": "Bez alba",
+      "unassignedHint": "Přetáhněte sem obrázky a nahrajte je bez přidání do alba."
     },
     "settings": {
       "apiKey": "API klíč",
-      "apiKeyDesc": "Vytvořte jej v Immichi v Nastavení účtu → API klíče s těmito oprávněními: album.read, albumAsset.create, albumAsset.delete, asset.read, asset.view, asset.download, asset.upload, asset.update, asset.delete, stack.read, stack.create a user.read.",
+      "apiKeyDesc": "Vytvořte jej v Immichi v Nastavení účtu → API klíče s těmito oprávněními: album.read, album.create, albumAsset.create, albumAsset.delete, asset.read, asset.view, asset.download, asset.upload, asset.update, asset.delete, stack.read, stack.create a user.read.",
       "connected": "Připojeno jako {{user}} (Immich {{version}})",
       "description": "Procházejte fotky ze svého serveru Immich v knihovně a upravujte je přímo. Originály se stahují při otevření a úpravy se ukládají do Immiche, takže vypadají stejně na každém počítači.",
       "keyInFile": "Uloženo v souboru, který můžete číst jen vy: není k dispozici žádné úložiště přihlašovacích údajů. V KDE zapněte rozhraní Secret Service v nastavení KDE Wallet a uložte znovu.",
@@ -1093,9 +1221,14 @@
       "backOnline": "Immich je opět dostupný a všechny úpravy jsou v něm uložené.",
       "downloadFailed": "Stažení z Immiche se nezdařilo: {{error}}",
       "editsConflict": "{{fileName}} byl upraven také na jiném počítači. Vaše úpravy zůstávají a druhá verze je uložena jako virtuální kopie.",
+      "editsStayLocal": "{{fileName}} patří někomu jinému, proto pro něj Immich nepřijímá úpravy. Tvé úpravy zůstanou v tomto počítači.",
       "offline": "Immich není dostupný. Vaše úpravy zůstávají zde a odešlou se, jakmile bude opět dostupný.",
+      "transferFailed": "Nepřidáno do Immiche: {{number}} ({{error}})",
+      "transferred": "Přidáno do Immiche: {{number}}",
+      "transferring": "Přidávání do Immiche… {{current}}/{{total}}",
       "trashFailed": "Přesun do koše Immiche se nezdařil: {{error}}",
-      "uploaded": "Nahráno do Immiche: {{number}}"
+      "uploaded": "Nahráno do Immiche: {{number}}",
+      "uploadKeptCopy": "{{fileName}} už je v Immichu s jinými úpravami. Ty zůstanou a tvé úpravy se uloží jako virtuální kopie."
     }
   },
   "library": {
@@ -1111,7 +1244,8 @@
         "normalMap": "Analýza povrchů",
         "skyMask": "Vytváření masky oblohy",
         "subjectMask": "Vytváření masky objektu",
-        "textMask": "Vytváření textové masky"
+        "textMask": "Vytváření textové masky",
+        "upscale": "Zvětšování RapidRes"
       },
       "more": "+{{moreCount}} další",
       "pause": "Pozastavit AI zpracování",
@@ -1401,10 +1535,7 @@
       "originalRatio": "Původní poměr"
     },
     "thumbnailSize": {
-      "large": "Velký",
-      "list": "Seznam",
-      "medium": "Střední",
-      "small": "Malý"
+      "list": "Seznam"
     },
     "tooltips": {
       "goHome": "Přejít na domovskou stránku",
@@ -1432,6 +1563,7 @@
       "linear": "Lineární",
       "liquify": "Zkapalnění",
       "luminance": "Jas",
+      "matchBrush": "Štětec shody",
       "others": "Ostatní",
       "quickErase": "Rychlé vymazání",
       "quickEraser": "Rychlá guma",
@@ -1496,6 +1628,8 @@
       "descReplace": "Přepíše všechna vybraná nastavení, zbytek obnoví na výchozí hodnoty.",
       "groups": {
         "aiDenoise": "AI odšumění",
+        "aiUpscale": "RapidRes",
+        "blackWhite": "Černobílá",
         "chromaticAberration": "Chromatická aberace",
         "clarityDehaze": "Zřetelnost a odmlžení",
         "colorCalibration": "Kalibrace barev",
@@ -1513,6 +1647,7 @@
         "lensCorrection": "Korekce objektivu",
         "lut": "LUT",
         "masks": "Masky",
+        "motionBlur": "Pohybové rozmazání",
         "negativeConversion": "Převod negativu",
         "noiseReduction": "Redukce šumu",
         "presence": "Prezence",
@@ -1617,8 +1752,8 @@
       "description": "Zkombinujte více snímků s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
       "descriptionWithCount_one": "Zkombinujte {{count}} snímek s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
       "descriptionWithCount_few": "Zkombinujte {{count}} snímky s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
-      "descriptionWithCount_many": "Zkombinujte {{count}} snímků s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
-      "descriptionWithCount_other": "Zkombinujte {{count}} snímky s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
+      "descriptionWithCount_many": "Zkombinujte {{count}} snímku s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
+      "descriptionWithCount_other": "Zkombinujte {{count}} snímků s různou ohniskovou vzdáleností do jednoho dokonale ostrého snímku.",
       "failed": "Skládání zaostření se nezdařilo",
       "initializing": "Inicializace...",
       "openInEditor": "Otevřít v Editoru",
@@ -1692,7 +1827,6 @@
       "selectManufacturer": "Vyberte výrobce",
       "title": "Korekce objektivu",
       "vignetting": "Vinětace",
-      "waitingAutoDetect": "Čekání na automatickou detekci...",
       "zoomInTooltip": "Přiblížit",
       "zoomOutTooltip": "Oddálit"
     },
@@ -1703,7 +1837,7 @@
       "compareTooltip": "Podržením zobrazíte originál",
       "contrast": "Kontrast (stupeň)",
       "convertAndSave": "Převést a uložit",
-      "convertAndSaveAll": "Převést a uložit vše ({{count}})",
+      "convertAndSaveAll": "Convert & Save All ({{count}})",
       "convertAndSaveAll_one": "Převést a uložit vše ({{count}})",
       "convertAndSaveAll_few": "Převést a uložit vše ({{count}})",
       "convertAndSaveAll_many": "Převést a uložit vše ({{count}})",
@@ -1828,6 +1962,27 @@
       "pressKey": "Stiskněte klávesu... (Esc pro vymazání)",
       "resetDefaults": "Obnovit vše na výchozí",
       "speed": "Rychlost",
+      "speedEdit": {
+        "adjustments": "Úpravy",
+        "gestures": {
+          "doubleClick": "Dvojklikem obnovíte",
+          "drag": "Tažením po plátně upravíte",
+          "fine": "Shift pro jemnost"
+        },
+        "keys": {
+          "copy": "Kopírovat",
+          "hold": "Klepnout / Držet",
+          "nextAdjustment": "Další posuvník",
+          "nextImage": "Další snímek",
+          "paste": "Vložit",
+          "previousAdjustment": "Předch. posuvník",
+          "previousImage": "Předch. snímek",
+          "reset": "Obnovit",
+          "stepDown": "−1 krok",
+          "stepUp": "+1 krok"
+        },
+        "title": "Rychlá úprava"
+      },
       "title": "Ovládání myší",
       "zoom": "Rychlost zoomu",
       "zoomClick": "Přiblížit snímek na 100 %",
@@ -1860,6 +2015,7 @@
         "aiDenoiseMessage": "Opravdu chcete vymazat mezipaměť AI odšumění?\n\nSnímky se zapnutým AI odšuměním bude nutné znovu odšumět, což může trvat několik minut na snímek.",
         "aiMapsMessage": "Opravdu chcete vymazat hloubkové a normálové mapy?\n\nObrázky s rozostřením objektivu, mlhou nebo přesvícením si mapy při dalším otevření vytvoří znovu.",
         "aiMessage": "Opravdu chcete odstranit všechny značky generované AI ze všech snímků ve všech aktivních kořenových složkách?\n\nUživatelem přidané značky tím nebudou dotčeny. Tuto akci nelze vrátit.",
+        "aiUpscaleMessage": "Opravdu chcete vymazat mezipaměť RapidRes?\n\nSnímky se zapnutým RapidRes bude nutné znovu zvětšit.",
         "allMessage": "Opravdu chcete odstranit všechny značky generované umělou inteligencí i přidané uživatelem ze všech snímků ve všech aktivních kořenových složkách?\n\nTuto akci nelze vrátit.",
         "cacheMessage": "Opravdu chcete vymazat mezipaměť miniatur?\n\nVšechny miniatury bude nutné znovu vygenerovat, což může u velkých složek trvat dlouho.",
         "confirmAiTitle": "Potvrďte smazání značky AI",
@@ -1893,6 +2049,7 @@
         "aiSuccess_few": "{{count}} soubory aktualizovány. Značky AI odstraněny.",
         "aiSuccess_many": "{{count}} souborů aktualizováno. Značky AI odstraněny.",
         "aiSuccess_other": "{{count}} souborů aktualizováno. Značky AI odstraněny.",
+        "aiUpscaleSuccess": "Mezipaměť RapidRes byla úspěšně vymazána.",
         "allSuccess": "{{count}} souborů aktualizováno. Odstraněny všechny značky kromě barevných.",
         "allSuccess_one": "{{count}} soubor aktualizován. Odstraněny všechny značky kromě barevných.",
         "allSuccess_few": "{{count}} soubory aktualizovány. Odstraněny všechny značky kromě barevných.",
@@ -1919,6 +2076,8 @@
         "aiDenoiseDesc": "Uložené výsledky odšumění.",
         "aiMaps": "Hloubkové a normálové mapy",
         "aiMapsDesc": "Používá je rozostření objektivu, mlha a přesvícení.",
+        "aiUpscale": "RapidRes",
+        "aiUpscaleDesc": "Uložená 2x zvětšení RapidRes.",
         "immich": "Immich",
         "immichDesc": "Stažené originály. Po dosažení limitu se odstraní nejdéle nepoužité; vaše úpravy zůstanou zachovány.",
         "logs": "Protokoly",
@@ -1951,6 +2110,8 @@
       "folderImageCountsDesc": "Při najetí myší na strom složek zobrazit počet snímků ve složkách.",
       "font": "Písmo",
       "fontDesc": "Změňte písmo aplikace.",
+      "hideCollapsedPanels": "Skrýt sbalené panely",
+      "hideCollapsedPanelsDesc": "Sbalené boční panely se zcela skryjí, místo aby po nich zůstal úzký pruh. Znovu je otevřete ze spodní lišty nebo pomocí jejich klávesových zkratek.",
       "nativeTitlebar": "Nativní záhlaví",
       "nativeTitlebarDesc": "Použijte výchozí záhlaví okna vašeho systému namísto vlastního okna LightRaw.",
       "neutralGreyCanvas": "Neutrální šedé plátno",
@@ -1963,6 +2124,11 @@
       "title": "Obecná nastavení",
       "toolFocusMode": "Režim zaměření na nástroj",
       "toolFocusModeDesc": "Při rozbalení jednoho nástroje v panelu automaticky sbalí ostatní nástroje.",
+      "uiScale": "Měřítko rozhraní",
+      "uiScaleCompact": "Kompaktní",
+      "uiScaleDefault": "Výchozí",
+      "uiScaleDesc": "Zmenšete nebo zvětšete rozhraní nezávisle na systémovém škálování displeje. Kompaktní velikosti se lépe hodí na malé obrazovky notebooků.",
+      "uiScaleLarge": "Velké",
       "xmpSync": "Synchronizace metadat XMP",
       "xmpSyncDesc": "Synchronizujte hodnocení, barevné štítky a značky se standardními doprovodnými soubory XMP pro kompatibilitu s jinými editory fotografií."
     },
@@ -2004,6 +2170,7 @@
         "toggle_adjustments": "Přepnout panel úprav",
         "toggle_ai": "Přepnout panel AI",
         "toggle_analytics": "Přepnout zobrazení analýzy",
+        "toggle_black_white": "Přepnout černobílou",
         "toggle_bottom_panel": "Přepnout filmový pás",
         "toggle_crop": "Přepnout oříznutí / narovnání",
         "toggle_crop_panel": "Přepnout panel oříznutí",
@@ -2018,6 +2185,7 @@
         "toggle_presets": "Přepnout panel předvolby",
         "toggle_reject": "Přepnout odmítnutí",
         "toggle_right_panel": "Přepnout pravý panel",
+        "toggle_viewer_window": "Přepnout druhé okno",
         "undo": "Zrušit úpravu",
         "unflag": "Odebrat příznak",
         "zoom_100": "Přiblížit na 100 %",
@@ -2132,7 +2300,47 @@
         "metal": "Metal",
         "vulkan": "Vulkan"
       },
+      "defaultAdjustments": {
+        "addCamera": "Přidat fotoaparát…",
+        "applyToNonRaw": "Použít také na JPEG, TIFF, PNG a další soubory jiné než RAW",
+        "applyToNonRawDesc": "Když je vypnuto, tyto hodnoty používají jen soubory RAW. JPEG z fotoaparátu jsou obvykle už zpracované a opravené, takže opětovné použití může být přehnané.",
+        "autoLensCorrection": "Automatická korekce objektivu",
+        "autoLensCorrectionDesc": "Opraví zkreslení, chromatickou vadu a vinětaci pomocí profilu objektivu rozpoznaného z metadat každého snímku.",
+        "cameraDefaults": "Výchozí hodnoty pro fotoaparáty",
+        "cameraDefaultsDesc": "Dejte snímkům z konkrétních fotoaparátů vlastní předvolbu. Fotoaparáty, které tu nejsou, používají výchozí předvolbu výše a korekce objektivu platí pro všechny fotoaparáty.",
+        "cameraPresetMissing": "Vybraná předvolba byla smazána, proto snímky z tohoto fotoaparátu opět používají předvolbu pro všechny fotoaparáty.",
+        "description": "Určuje, s čím začínají neupravené snímky a k čemu se vrací „Obnovit úpravy“; upravené snímky si ponechají své nastavení. S výchozími hodnotami se náhledy RAW vykreslují místo použití vloženého náhledu z fotoaparátu a zpočátku se načítají pomaleji.",
+        "lensCorrection": "Korekce objektivu",
+        "noCamerasFound": "Žádné další fotoaparáty nenalezeny. Otevřete složku se snímky z fotoaparátu nebo klikněte pravým tlačítkem na předvolbu při úpravě některého z jeho snímků.",
+        "noPreset": "Žádná (neutrální)",
+        "preset": "Výchozí předvolba",
+        "presetDesc": "Použije se na každý neupravený snímek. Masky, ořezy a transformace se vynechají, protože sedí jen na snímek, na kterém vznikly.",
+        "presetMissing": "Vybraná předvolba byla smazána, proto neupravené snímky opět používají neutrální hodnoty.",
+        "removeCamera": "Odebrat fotoaparát",
+        "sameAsAllCameras": "Stejně jako všechny fotoaparáty",
+        "scope": "Platí pro",
+        "sliderReset": "Obnovení posuvníků",
+        "sliderResetDefaults": "Výchozí úpravy",
+        "sliderResetDesc": "Hodnota, na kterou se posuvník vrátí při obnovení, například dvojklikem nebo v rychlých úpravách. Posuvníky masek se vždy vrací na neutrální hodnotu.",
+        "sliderResetNeutral": "Neutrální hodnota",
+        "title": "Výchozí úpravy"
+      },
       "dynamicDesc": "Editor vykresluje náhled tak, aby odpovídal skutečné hustotě pixelů vašeho displeje. Tím je zajištěno, že každý detail je zobrazen s přesností pixelů 1:1, což poskytuje maximální jasnost při přibližování a kontrole zaostření.",
+      "editIn": {
+        "add": "Přidat program",
+        "args": "Argumenty ({file} = cesta k obrázku)",
+        "browse": "Procházet",
+        "description": "Programy pro nabídku „Upravit v“.",
+        "executable": "Programy",
+        "modes": {
+          "original": "Odeslat původní soubor",
+          "rendered": "Odeslat upravený TIFF"
+        },
+        "name": "Název",
+        "path": "Cesta k programu",
+        "remove": "Odebrat",
+        "title": "Upravit v"
+      },
       "enableLivePreviews": "Povolit živé náhledy",
       "highDpi": "High-DPI rendering",
       "highDpiDesc": "Vykreslovat náhledy v nativním {{dpr}}x fyzickém rozlišení pixelů obrazovky. Poskytuje nejostřejší možný náhled, ale spotřebovává výrazně více paměti.",
@@ -2162,7 +2370,7 @@
         "baselineExposure": "Základní expozice",
         "baselineExposureAmount": "Velikost základu",
         "baselineExposureAmountDesc": "Expozice přidaná k souborům RAW. darktable používá +0,7 EV.",
-        "baselineExposureDesc": "Zesvětlí všechny soubory RAW o pevnou hodnotu, podobně jako výchozí nastavení darktable pro scene-referred zpracování, a přičte značku DNG BaselineExposure, pokud ji soubor obsahuje. Snímky upravené před zavedením této volby nejsou ovlivněny.",
+        "baselineExposureDesc": "Zesvětlí soubory RAW o pevnou hodnotu a přičte značku DNG BaselineExposure, pokud existuje.",
         "colorNr": "Redukce šumu základní barvy",
         "colorNrDesc": "Aplikuje křížový bilaterální filtr na začátku procesu k odstranění barevného šumu. Vyšší hodnota = silnější redukce šumu.",
         "defaultNonRawTonemapper": "Výchozí Non-RAW Tonemapper",
@@ -2175,7 +2383,7 @@
         "enablePreprocessingNonRaws": "Povolit pro soubory bez RAW",
         "enableTonemapperOverride": "Povolte přepsání Tonemapperu",
         "highlightPreservation": "Kompenzace ochrany světel",
-        "highlightPreservationDesc": "Vrátí expozici, kterou fotoaparát ubral v režimech ochrany světel, načtenou ze souboru RAW (Fujifilm DR200/DR400, Canon Priorita jasných tónů a Auto Lighting Optimizer, Nikon Active D-Lighting, gradace Olympus, rozšíření dynamického rozsahu Pentax). Snímky upravené před zavedením této volby nejsou ovlivněny.",
+        "highlightPreservationDesc": "Vrátí expozici sníženou režimy ochrany světel fotoaparátu, např. Fujifilm DR200/DR400 nebo Nikon Active D-Lighting.",
         "highlightRecovery": "RAW Highlight Recovery",
         "highlightRecoveryDesc": "Řídí, kolik detailů se obnoví z přepálených světel v souborech RAW. Vyšší hodnoty obnoví více detailů, ale mohou způsobit fialové artefakty.",
         "linearOptions": {
@@ -2211,15 +2419,14 @@
       "smallThumbnailRes": "Rozlišení miniatur mřížky",
       "smallThumbnailResDesc": "Rozlišení miniatur zobrazených v mřížce knihovny.",
       "staticDesc": "Editor vykresluje snímek v pevném rozlišení. Tento režim je nejrychlejší a nejkonzistentnější, takže je ideální pro slabší hardware, kde je plynulý výkon důležitější než pixelově přesné přiblížení.",
-      "staticPreviewRes": "Rozlišení statického náhledu",
-      "staticPreviewResDesc": "Nastaví rozlišení pro statické náhledy, jako je režim oříznutí, korekce objektivu a nástroje perspektivy. Neovlivňuje hlavní náhled editoru.",
       "threads": "Vlákna",
       "thumbnailRes": "Rozlišení miniatur",
       "thumbnailResDesc": "Určuje rozlišení generovaných miniatur knihovny. Vyšší hodnoty produkují ostřejší snímky během načítání.",
       "title": "Engine zpracování",
       "wgpu": "Přímé vykreslování WGPU",
       "wgpuDescAndroid": "Obchází kódování prohlížeče pro okamžitě reagující živé náhledy. (Na Androidu zakázáno: nativní tvorba povrchů WGPU není v současnosti podporována vedle mobilního webview.)",
-      "wgpuDescLinux": "Obchází kódování prohlížeče pro okamžitě reagující živé náhledy. (Na Linuxu zakázáno: Tauri používá GTK pro webview, což je v konfliktu s WGPU na stejném povrchu X11 a způsobuje blikání.)",
+      "wgpuDescLinuxExperimental": "Experimentální na Linuxu a může být nestabilní.",
+      "wgpuDescLinuxX11": "Není k dispozici na X11.",
       "wgpuDescRecommended": "Obchází kódování prohlížeče pro okamžitě reagující živé náhledy. Důrazně doporučeno pro výkon.",
       "wgpuLabel": "Povolit přímé vykreslování WGPU",
       "workerThreads": "Pracovní vlákna miniatur",
@@ -2268,6 +2475,7 @@
         "nind": "Za poskytování modelů AI, které pohánějí funkce redukce šumu AI v LightRaw.",
         "rawler": "Za vynikající přepravku Rust, která poskytuje základ pro zpracování souborů RAW v tomto projektu.",
         "sam2": "Za poskytnutí základního modelu používaného pro schopnosti detekce předmětů AI.",
+        "span": "Za základní model AI pro RapidRes, 2x AI zvětšování v LightRaw, který LightRaw doladil na vlastním zpracování RAW (autor Philip Hofmann, CC BY 4.0).",
         "spektrafilm": "Pro spektrálně založené filmové emulační LUT od Andrey Volpata, použité pro vestavěné filmové emulace v LightRaw. Licence CC BY-SA 4.0.",
         "u2net": "Pro zajištění robustní architektury používané pro schopnosti detekce oblohy a popředí AI.",
         "you": "Za používání a podporu LightRaw. Váš zájem udržuje tento projekt živý a rozvíjející se.",
@@ -2355,13 +2563,11 @@
     "bottomBar": {
       "imagesSelected": "{{current}} z {{total}} vybrané snímky",
       "tooltips": {
-        "collapseFilmstrip": "Sbalit filmový pás",
         "collapseLeft": "Sbalit levý panel",
         "collapseRight": "Sbalit pravý panel",
         "copyPasteSettings": "Nastavení kopírování a vkládání",
         "copySettings": "Kopírovat úpravy",
         "customZoom": "Kliknutím zadejte vlastní procento přiblížení",
-        "expandFilmstrip": "Rozbalit filmový pás",
         "expandLeft": "Rozbalit levý panel",
         "expandRight": "Rozbalit pravý panel",
         "export": "Export",

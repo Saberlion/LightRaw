@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { useEditorActions } from '../../../hooks/useEditorActions';
-import LUTControl from '../../ui/LUTControl';
+import LUTControl from '../../adjustments/LUTControl';
 import LutIcon from '../../ui/LutIcon';
 import Text from '../../ui/Text';
 import { TextVariants } from '../../../types/typography';

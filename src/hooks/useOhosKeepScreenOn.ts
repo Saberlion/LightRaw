@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
-import { Invokes } from '../components/ui/AppProperties';
-import { Status } from '../components/ui/ExportImportProperties';
+import { Invokes } from '../types/invokes';
+import { Status } from '../types/export';
 import { isJobActive, useProcessStore } from '../store/useProcessStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 

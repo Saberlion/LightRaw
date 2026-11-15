@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Invokes } from '../components/ui/AppProperties';
+import { Invokes } from '../types/invokes';
 
 /**
  * Staged album-import paths (OHOS). The MediaLibraryKit picker returns media

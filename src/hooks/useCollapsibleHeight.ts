@@ -11,16 +11,16 @@ export function useCollapsibleHeight(isOpen: boolean) {
       return;
     }
 
-    const updateMaxHeight = () => {
+    const updateHeight = () => {
       if (isOpen) {
         const contentHeight = content.scrollHeight;
-        wrapper.style.maxHeight = `${contentHeight}px`;
+        wrapper.style.height = `${contentHeight}px`;
       } else {
-        wrapper.style.maxHeight = '0px';
+        wrapper.style.height = '0px';
       }
     };
 
-    updateMaxHeight();
+    updateHeight();
 
     // ArkWeb hit-testing ignores the overflow clip: collapsed content still
     // swallows pointer events and stays in the accessibility tree with its
@@ -29,7 +29,7 @@ export function useCollapsibleHeight(isOpen: boolean) {
     // hit-testing, focus and the a11y tree in one go.
     wrapper.inert = !isOpen;
 
-    const resizeObserver = new ResizeObserver(updateMaxHeight);
+    const resizeObserver = new ResizeObserver(updateHeight);
     resizeObserver.observe(content);
 
     return () => resizeObserver.disconnect();
