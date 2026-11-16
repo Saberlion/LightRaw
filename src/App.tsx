@@ -1156,7 +1156,7 @@ function App() {
                       onBatchPaste={() => handlePasteAdjustments()}
                       onClearSelection={handleClearSelection}
                       renderSettings={() => (
-                        <div className="w-full h-full flex flex-col p-4 overflow-y-auto custom-scrollbar">
+                        <div className="w-full h-full flex flex-col p-4 pb-20 overflow-y-auto custom-scrollbar">
                           <SettingsPanel
                             appSettings={appSettings}
                             onBack={() => setUI({ phoneTab: 'gallery' })}
@@ -1196,6 +1196,7 @@ function App() {
                         requestThumbnails={requestThumbnails}
                         groupByDate
                         isPhoneLayout
+                        gridBottomInset={80}
                         hideBottomBar
                       />
                     </PhoneTabShell>

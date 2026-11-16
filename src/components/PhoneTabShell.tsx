@@ -214,17 +214,21 @@ export default function PhoneTabShell({
   const isBatchMode = phoneTab === 'gallery' && multiSelectedPaths.length > 0;
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 h-full">
+    <div className="relative flex flex-col flex-1 min-h-0 h-full">
       {/* Keep every tab mounted; hide the inactive ones so the library grid
-          (and its thumbnail pipeline) never remounts on tab switches. */}
+          (and its thumbnail pipeline) never remounts on tab switches.
+          All tab content runs the FULL height: the pill nav floats over it
+          (absolute, below), so the gallery grid scrolls edge-to-edge behind
+          the nav — the grid only adds a spacer row (gridBottomPadding) so the
+          last thumbnails can be scrolled up above the pill. */}
       <div className={clsx('flex-1 min-h-0', phoneTab === 'gallery' ? 'flex flex-col' : 'hidden')}>{children}</div>
       {phoneTab === 'albums' && (
-        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col pb-20">
           <PhoneAlbumsTab onSelectAlbum={onSelectAlbum} onNewAlbum={onNewAlbum} />
         </div>
       )}
       {phoneTab === 'presets' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar">
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar pb-20">
           <PresetsPanel />
         </div>
       )}
@@ -232,11 +236,10 @@ export default function PhoneTabShell({
 
       <nav
         className={clsx(
-          // No bottom margin: the root's --safe-bottom padding already keeps
-          // the pill clear of the gesture strip — extra margin just reads as
-          // dead space at the bottom of the phone layout.
-          'shrink-0 mx-2 rounded-full bg-surface border border-border-color/20',
-          'shadow-[0_4px_20px_rgba(0,0,0,0.18)] flex items-stretch p-1 z-40',
+          // Floating pill (user design: the nav hovers OVER the page, the
+          // image area extends behind it to the full screen).
+          'absolute bottom-0 inset-x-0 mx-2 rounded-full bg-surface border border-border-color/20',
+          'shadow-[0_4px_20px_rgba(0,0,0,0.18)] flex items-stretch p-1 z-40 pointer-events-auto',
         )}
         aria-label={isBatchMode ? t('library.header.selectItems') : t('library.header.title')}
       >

@@ -64,6 +64,9 @@ interface MainLibraryProps {
   groupByDate?: boolean;
   /** Phone tab shell: compact header (no display-mode switch / jobs menu). */
   isPhoneLayout?: boolean;
+  /** Phone floating nav: spacer height under the grid so the last row can
+   * scroll above the pill (flows into LibraryGrid via {...props}). */
+  gridBottomInset?: number;
   libraryViewMode: LibraryViewMode;
   multiSelectedPaths: Array<string>;
   onClearSelection(): void;
@@ -679,8 +682,10 @@ export default function MainLibrary(props: MainLibraryProps) {
           className={clsx(
             // z-30: above the grid, but under the view-options dropdown
             // (z-50, same stacking context) so an open panel is never
-            // covered by the import FABs.
-            'absolute bottom-18 right-8 h-12 w-12 shadow-lg p-0 flex items-center justify-center z-30 border border-border-color/50',
+            // covered by the import FABs. On the phone shell the pill nav
+            // floats over the grid bottom, so the FABs sit above it.
+            'absolute right-8 h-12 w-12 shadow-lg p-0 flex items-center justify-center z-30 border border-border-color/50',
+            props.isPhoneLayout ? 'bottom-24' : 'bottom-18',
             props.onImportFromAlbum ? 'bg-surface text-text-primary' : 'bg-accent text-button-text',
           )}
           onClick={(e) => {
@@ -694,7 +699,10 @@ export default function MainLibrary(props: MainLibraryProps) {
       )}
       {props.onImportFromAlbum && (
         <Button
-          className="absolute bottom-32 right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-30 border border-border-color/50"
+          className={clsx(
+            'absolute right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-30 border border-border-color/50',
+            props.isPhoneLayout ? 'bottom-38' : 'bottom-32',
+          )}
           onClick={(e) => {
             e.stopPropagation();
             props.onImportFromAlbum?.();

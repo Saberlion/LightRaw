@@ -270,6 +270,10 @@ export default function LibraryGrid(props: any) {
     onThumbnailSizeChange,
     groupBadgeInfo,
     groupByDate,
+    // Floating pill nav clearance: the grid scrolls edge-to-edge behind the
+    // nav, so its virtualized list needs a spacer row of this height to be
+    // able to scroll the last thumbnails up above the pill.
+    gridBottomInset = 0,
   } = props;
   const { listColumnWidths, setLibrary, sortCriteria, setSortCriteria } = useLibraryStore(
     useShallow((state) => ({
@@ -513,6 +517,7 @@ export default function LibraryGrid(props: any) {
     groupByDate,
     sortCriteria.key,
     exifByPath,
+    gridBottomInset,
   ]);
 
   const visibleImagePaths = useMemo(
@@ -574,7 +579,7 @@ export default function LibraryGrid(props: any) {
       if (!gridData) return 0;
       const row = gridData.rows[index];
       if (!row) return 0;
-      if (row.type === 'footer') return gridData.isListView ? 24 : gridData.OUTER_PADDING;
+      if (row.type === 'footer') return gridData.isListView ? 24 : gridData.OUTER_PADDING + gridBottomInset;
       if (row.type === 'header') return gridData.headerHeight;
       return gridData.isListView ? gridData.listRowHeight : (row.rowHeight || gridData.itemWidth) + gridData.ITEM_GAP;
     },
