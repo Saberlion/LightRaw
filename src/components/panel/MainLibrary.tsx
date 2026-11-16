@@ -666,7 +666,10 @@ export default function MainLibrary(props: MainLibraryProps) {
       {(props.isTouchUi || useSettingsStore.getState().isOhos) && (
         <Button
           className={clsx(
-            'absolute bottom-18 right-8 h-12 w-12 shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50',
+            // z-30: above the grid, but under the view-options dropdown
+            // (z-50, same stacking context) so an open panel is never
+            // covered by the import FABs.
+            'absolute bottom-18 right-8 h-12 w-12 shadow-lg p-0 flex items-center justify-center z-30 border border-border-color/50',
             props.onImportFromAlbum ? 'bg-surface text-text-primary' : 'bg-accent text-button-text',
           )}
           onClick={(e) => {
@@ -680,7 +683,7 @@ export default function MainLibrary(props: MainLibraryProps) {
       )}
       {props.onImportFromAlbum && (
         <Button
-          className="absolute bottom-32 right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50"
+          className="absolute bottom-32 right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-30 border border-border-color/50"
           onClick={(e) => {
             e.stopPropagation();
             props.onImportFromAlbum?.();
