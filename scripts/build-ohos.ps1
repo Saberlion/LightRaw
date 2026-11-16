@@ -236,6 +236,20 @@ try {
   } else {
     Write-Host "no source-built libonnxruntime.so under src-tauri/libs/ohos/$targetAbi - HAP ships without ORT (AI degrades gracefully)"
   }
+  # libgphoto2 tethering stack (docs/OHOS_USB_TETHERING_PLAN.md). The two core
+  # libs ride in via the cargo stage's DT_NEEDED copy; the usb1 io driver and
+  # the camlibs are dlopen'd at runtime from CAMLIBS/IOLIBS (lib.rs setup points
+  # both at the app lib dir), so they need the same post-package injection
+  # channel as ORT. Inject all six deterministically (idempotent).
+  $gphotoLibs = Get-ChildItem -Path "$repo\src-tauri\libs\ohos\$targetAbi" -Filter 'libgphoto*.so' -File -ErrorAction SilentlyContinue
+  foreach ($g in $gphotoLibs) {
+    $old = $zip.GetEntry("libs/$targetAbi/$($g.Name)")
+    if ($old) { $old.Delete() }
+    [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+      $zip, $g.FullName, "libs/$targetAbi/$($g.Name)",
+      [IO.Compression.CompressionLevel]::Optimal) | Out-Null
+    Write-Host "gphoto lib injected into HAP libs/$targetAbi/: $($g.Name)"
+  }
   # CANN vendor libs (machine-local, same provisioning channel as ORT).
   # The HCL facade AND libai_fmk_tensor.so ride in the HAP, each with its
   # full transitive dependency closure. The facade is the one CANN piece
