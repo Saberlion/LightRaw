@@ -486,13 +486,27 @@ pub fn run() {
                 // libgphoto2 (tethering) dlopens its camlibs and port io
                 // drivers at runtime from the dirs in CAMLIBS/IOLIBS. They
                 // ship in the HAP libs dir alongside liblightraw.so, so point
-                // both vars at our own module dir (never a desktop-style
-                // app_data_dir - see the app_paths rules in AGENTS.md).
-                if let Ok(exe) = std::env::current_exe()
-                    && let Some(module_dir) = exe.parent()
-                    && module_dir.join("libgphoto2.so").exists()
-                {
-                    let dir = module_dir.to_string_lossy().into_owned();
+                // both vars at that dir.
+                //
+                // current_exe() is useless here: on OHOS it resolves to the
+                // ability runtime binary, not this library. Find our own
+                // module dir through /proc/self/maps instead (liblightraw.so
+                // and its DT_NEEDED libgphoto2.so are both mapped from the
+                // nativeLibraryDir at this point).
+                let module_dir = std::fs::read_to_string("/proc/self/maps")
+                    .ok()
+                    .and_then(|maps| {
+                        maps.lines().find_map(|line| {
+                            let path = line.rsplit_once(' ')?.1.trim();
+                            let is_self = path.ends_with("/liblightraw.so");
+                            let is_gphoto = path.ends_with("/libgphoto2.so");
+                            (is_self || is_gphoto)
+                                .then(|| std::path::Path::new(path).parent().map(|d| d.to_path_buf()))
+                                .flatten()
+                        })
+                    });
+                if let Some(dir) = module_dir.filter(|d| d.join("libgphoto2.so").exists()) {
+                    let dir = dir.to_string_lossy().into_owned();
                     // SAFETY: single-threaded app setup, before any camera
                     // thread can read these variables.
                     unsafe {
