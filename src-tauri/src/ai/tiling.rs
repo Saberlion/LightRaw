@@ -143,48 +143,19 @@ fn run_tiled(
         for (i, (&(y0, x0), tile)) in origins.iter().zip(receiver).enumerate() {
             on_progress(i as f32 / total as f32);
             let tile = tile?;
-            let (tile_h, tile_w) = (tile.dim().2, tile.dim().3);
-            if tile_h < params.cs * s || tile_w < params.cs * s {
-                return Err(anyhow::anyhow!(
-                    "Unexpected output tile size {:?} for a {} px input",
-                    tile.dim(),
-                    params.cs
-                ));
-            }
-            let data = tile
-                .as_slice()
-                .ok_or_else(|| anyhow::anyhow!("Output tile is not contiguous"))?;
-            let plane = tile_h * tile_w;
-
-            let (ox, oy, om) = (x0 * scale as i32, y0 * scale as i32, params.margin * s);
-            let top = oy + om as i32;
-            let first = top.max(0) as usize;
-            let last = (top + (valid * s) as i32).clamp(0, out_h as i32) as usize;
-            if first >= last {
-                continue;
-            }
-            accumulator[first * out_w * 3..last * out_w * 3]
-                .par_chunks_exact_mut(out_w * 3)
-                .zip(weight_sum[first * out_w..last * out_w].par_chunks_exact_mut(out_w))
-                .enumerate()
-                .for_each(|(row, (acc, wsum))| {
-                    let ty = (first + row) as i32 - top;
-                    let ty = ty as usize;
-                    let line = (om + ty) * tile_w + om;
-                    for tx in 0..valid * s {
-                        let gx = ox + (om + tx) as i32;
-                        if gx < 0 || gx >= out_w as i32 {
-                            continue;
-                        }
-                        let w = weights[ty] * weights[tx];
-                        let gx = gx as usize;
-                        for c in 0..3 {
-                            let v = data[c * plane + line + tx].clamp(0.0, 1.0);
-                            acc[gx * 3 + c] += v * w;
-                        }
-                        wsum[gx] += w;
-                    }
-                });
+            blend_upscale_tile(
+                &tile,
+                x0,
+                y0,
+                params,
+                s,
+                valid,
+                &weights,
+                out_w,
+                out_h,
+                &mut accumulator,
+                &mut weight_sum,
+            )?;
         }
         Ok(())
     })?;
@@ -200,6 +171,68 @@ fn run_tiled(
         });
     Rgb32FImage::from_raw(out_w as u32, out_h as u32, accumulator)
         .ok_or_else(|| anyhow::anyhow!("Tiled output does not match its dimensions"))
+}
+
+/// Blend one upscaled output tile into the full-resolution accumulator.
+/// Shared by the ORT path (via `run_tiled`) and the OHOS CANN `.om` path.
+#[allow(clippy::too_many_arguments)]
+fn blend_upscale_tile(
+    tile: &Array4<f32>,
+    x0: i32,
+    y0: i32,
+    params: TileParams,
+    s: usize,
+    valid: usize,
+    weights: &[f32],
+    out_w: usize,
+    out_h: usize,
+    accumulator: &mut [f32],
+    weight_sum: &mut [f32],
+) -> Result<(), anyhow::Error> {
+    let scale = s as u32;
+    let (tile_h, tile_w) = (tile.dim().2, tile.dim().3);
+    if tile_h < params.cs * s || tile_w < params.cs * s {
+        return Err(anyhow::anyhow!(
+            "Unexpected output tile size {:?} for a {} px input",
+            tile.dim(),
+            params.cs
+        ));
+    }
+    let data = tile
+        .as_slice()
+        .ok_or_else(|| anyhow::anyhow!("Output tile is not contiguous"))?;
+    let plane = tile_h * tile_w;
+
+    let (ox, oy, om) = (x0 * scale as i32, y0 * scale as i32, params.margin * s);
+    let top = oy + om as i32;
+    let first = top.max(0) as usize;
+    let last = (top + (valid * s) as i32).clamp(0, out_h as i32) as usize;
+    if first >= last {
+        return Ok(());
+    }
+    accumulator[first * out_w * 3..last * out_w * 3]
+        .par_chunks_exact_mut(out_w * 3)
+        .zip(weight_sum[first * out_w..last * out_w].par_chunks_exact_mut(out_w))
+        .enumerate()
+        .for_each(|(row, (acc, wsum))| {
+            let ty = (first + row) as i32 - top;
+            let ty = ty as usize;
+            let line = (om + ty) * tile_w + om;
+            for tx in 0..valid * s {
+                let gx = ox + (om + tx) as i32;
+                if gx < 0 || gx >= out_w as i32 {
+                    continue;
+                }
+                let w = weights[ty] * weights[tx];
+                let gx = gx as usize;
+                for c in 0..3 {
+                    let v = data[c * plane + line + tx].clamp(0.0, 1.0);
+                    acc[gx * 3 + c] += v * w;
+                }
+                wsum[gx] += w;
+            }
+        });
+    Ok(())
 }
 
 /// Sequential denoise tile loop with pluggable inference — the OHOS native
@@ -359,6 +392,80 @@ fn run_native_denoise_om(
     })
 }
 
+/// CANN (.om) tile loop for the RapidRes upscale: sequential (the native
+/// engine cannot share the ORT pipeline's scoped producer thread, same as
+/// the denoise OM path), with the 2x-upscale blending logic shared with
+/// `run_tiled` via `blend_upscale_tile`.
+#[cfg(target_env = "ohos")]
+fn run_tiled_upscale_om(
+    img: &Rgb32FImage,
+    session: &Mutex<crate::ohos_integration::om::OmModel>,
+    params: TileParams,
+    scale: u32,
+    on_progress: &dyn Fn(f32),
+) -> Result<Rgb32FImage> {
+    let s = scale as usize;
+    let (width, height) = (img.width() as usize, img.height() as usize);
+    let (out_w, out_h) = (width * s, height * s);
+    let valid = params.cs - 2 * params.margin;
+    let weights = tile_blend_weights(TileParams {
+        cs: params.cs * s,
+        margin: params.margin * s,
+        overlap: params.overlap * s,
+    });
+    let xs = tile_origins(width, params);
+    let ys = tile_origins(height, params);
+    let total = xs.len() * ys.len();
+    let mut done = 0usize;
+
+    let mut accumulator = vec![0.0f32; out_w * out_h * 3];
+    let mut weight_sum = vec![0.0f32; out_w * out_h];
+
+    for &y0 in &ys {
+        for &x0 in &xs {
+            let crop = extract_tile_mirror(img, x0, y0, params.cs);
+            let input_slice = crop
+                .as_slice()
+                .ok_or_else(|| anyhow::anyhow!("tile extraction produced non-contiguous data"))?;
+            let out_flat = {
+                let model = session.lock().unwrap();
+                model.write_input_f32(0, input_slice)?;
+                model.run()?;
+                model.read_output_f32(0)?
+            };
+            let tile = Array4::from_shape_vec((1, 3, params.cs * s, params.cs * s), out_flat)
+                .map_err(|e| anyhow::anyhow!("Unexpected OM upscale output shape: {}", e))?;
+            blend_upscale_tile(
+                &tile,
+                x0,
+                y0,
+                params,
+                s,
+                valid,
+                &weights,
+                out_w,
+                out_h,
+                &mut accumulator,
+                &mut weight_sum,
+            )?;
+            done += 1;
+            on_progress(done as f32 / total as f32);
+        }
+    }
+
+    accumulator
+        .par_chunks_exact_mut(3)
+        .zip(weight_sum.par_iter())
+        .for_each(|(px, &w)| {
+            let inv = if w > 0.0 { 1.0 / w } else { 0.0 };
+            for v in px {
+                *v = (*v * inv).clamp(0.0, 1.0);
+            }
+        });
+    Rgb32FImage::from_raw(out_w as u32, out_h as u32, accumulator)
+        .ok_or_else(|| anyhow::anyhow!("Tiled output does not match its dimensions"))
+}
+
 pub fn run_ai_denoise(
     rgb_img: &Rgb32FImage,
     session: &DenoiseSession,
@@ -380,9 +487,17 @@ pub fn run_ai_denoise(
 
 pub fn run_ai_upscale(
     rgb_img: &Rgb32FImage,
-    session: &Mutex<Session>,
+    session: &crate::ai::models::UpscaleSession,
     scale: u32,
     on_progress: &dyn Fn(f32),
 ) -> Result<Rgb32FImage> {
-    run_tiled(rgb_img, session, UPSCALE_TILE, scale, on_progress)
+    match session {
+        crate::ai::models::UpscaleSession::Ort(model) => {
+            run_tiled(rgb_img, model, UPSCALE_TILE, scale, on_progress)
+        }
+        #[cfg(target_env = "ohos")]
+        crate::ai::models::UpscaleSession::Cann(model) => {
+            run_tiled_upscale_om(rgb_img, model, UPSCALE_TILE, scale, on_progress)
+        }
+    }
 }
