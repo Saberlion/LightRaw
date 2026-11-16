@@ -157,6 +157,33 @@
     background-color: theme('colors.hover-color');
   }
 
+  /* Phone shell (docs/HARMONYOS_PHONE_LAYOUT.md): thicker, more visible
+     scrollbars — the 6px effective desktop thumb is too thin on a 366px
+     viewport with a 3.5 dpr screen, and touch scrolling benefits from a
+     grabbable thumb. */
+  .phone-tab-shell ::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+  }
+  .phone-tab-shell ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 14px;
+    /* 14px track - 2x2px border = 10px visual (was 6px) */
+    background-color: var(--color-text-secondary);
+    background-clip: padding-box;
+    opacity: 0.8;
+  }
+  .phone-tab-shell ::-webkit-scrollbar-thumb:hover,
+  .phone-tab-shell ::-webkit-scrollbar-thumb:active {
+    background-color: var(--color-accent);
+    opacity: 1;
+  }
+  /* The compact editor panel's bottom strip has dark chrome; give its
+     scrollbar a lighter shade for contrast. */
+  .phone-tab-shell .bg-bg-secondary ::-webkit-scrollbar-thumb {
+    background-color: var(--color-text-secondary);
+  }
+
   .macos-window-shell {
     border-radius: 14px;
     overflow: hidden;
