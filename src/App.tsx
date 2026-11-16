@@ -331,6 +331,16 @@ function App() {
   // wide mode and drops the shell for the larger canvas.
   const usePhoneTabShell = isOhosPhone && useCompactPanels;
 
+  // Tethering backend capability (fifth "connect" tab, OHOS_USB_TETHERING_PLAN
+  // §4.4). is_tethering_supported is a compile-time constant on the Rust side,
+  // so this is a single cheap invoke cached for the app lifetime.
+  const [tetheringSupported, setTetheringSupported] = useState(false);
+  useEffect(() => {
+    invoke<boolean>(Invokes.IsTetheringSupported)
+      .then(setTetheringSupported)
+      .catch(() => setTetheringSupported(false));
+  }, []);
+
   // The phone gallery renders CamRAW-style date sections, which only read
   // correctly over a date-sorted list — default the library sort to capture
   // date (newest first) once when the shell activates and the sort is still
@@ -1155,6 +1165,12 @@ function App() {
                       onBatchCopy={handleCopyAdjustments}
                       onBatchPaste={() => handlePasteAdjustments()}
                       onClearSelection={handleClearSelection}
+                      tetheringSupported={tetheringSupported}
+                      renderTethering={() => (
+                        <div className="w-full h-full flex flex-col p-4">
+                          <TetheringPanel onLibraryRefresh={handleLibraryRefresh} onImageSelect={handleImageSelect} />
+                        </div>
+                      )}
                       renderSettings={() => (
                         <div className="w-full h-full flex flex-col p-4 pb-20 overflow-y-auto custom-scrollbar">
                           <SettingsPanel

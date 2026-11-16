@@ -483,6 +483,28 @@ pub fn run() {
 
             #[cfg(target_env = "ohos")]
             {
+                // libgphoto2 (tethering) dlopens its camlibs and port io
+                // drivers at runtime from the dirs in CAMLIBS/IOLIBS. They
+                // ship in the HAP libs dir alongside liblightraw.so, so point
+                // both vars at our own module dir (never a desktop-style
+                // app_data_dir - see the app_paths rules in AGENTS.md).
+                if let Ok(exe) = std::env::current_exe()
+                    && let Some(module_dir) = exe.parent()
+                    && module_dir.join("libgphoto2.so").exists()
+                {
+                    let dir = module_dir.to_string_lossy().into_owned();
+                    // SAFETY: single-threaded app setup, before any camera
+                    // thread can read these variables.
+                    unsafe {
+                        std::env::set_var("CAMLIBS", &dir);
+                        std::env::set_var("IOLIBS", &dir);
+                    }
+                    log::info!("[tether-ohos] CAMLIBS/IOLIBS = {dir}");
+                }
+            }
+
+            #[cfg(target_env = "ohos")]
+            {
                 // Pipeline warmup: the Maleoon Vulkan driver takes ~11s to
                 // compile the five compute pipelines on a cold cache (first
                 // launch or after a WGSL change, 2026-10-05) — that used to

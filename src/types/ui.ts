@@ -29,7 +29,7 @@ export const OPTION_SEPARATOR = 'separator';
 // Bottom tab shell for the OHOS phone (compact) library layout — see
 // docs/HARMONYOS_PHONE_LAYOUT.md §3. Tabs are view-level only: the library
 // data flow keeps running underneath, switching tabs never remounts it.
-export type PhoneTab = 'gallery' | 'albums' | 'presets' | 'me';
+export type PhoneTab = 'gallery' | 'albums' | 'presets' | 'connect' | 'me';
 
 export enum Panel {
   Adjustments = 'adjustments',

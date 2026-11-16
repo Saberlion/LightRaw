@@ -2,3 +2,9 @@
 	path = src-tauri/vendor/onnxruntime
 	url = https://github.com/microsoft/onnxruntime
 	branch = v1.22.0
+[submodule "src-tauri/vendor/libusb"]
+	path = src-tauri/vendor/libusb
+	url = https://github.com/libusb/libusb.git
+[submodule "src-tauri/vendor/libgphoto2"]
+	path = src-tauri/vendor/libgphoto2
+	url = https://github.com/gphoto/libgphoto2.git

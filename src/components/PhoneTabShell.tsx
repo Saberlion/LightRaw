@@ -6,6 +6,7 @@ import {
   FolderHeart,
   SwatchBook,
   Settings,
+  Camera,
   Plus,
   Trash2,
   Copy,
@@ -155,6 +156,10 @@ interface PhoneTabShellProps {
   onNewAlbum(): void;
   /** Renders the "me" tab content (SettingsPanel) — keeps App-level wiring here. */
   renderSettings(): React.ReactNode;
+  /** Renders the "connect" tab content (TetheringPanel, phone re-layout). */
+  renderTethering(): React.ReactNode;
+  /** Whether the tethering backend is compiled in (fifth tab visibility). */
+  tetheringSupported: boolean;
   /** Batch bar actions (gallery tab with an active multi-selection). */
   onBatchDelete(): void;
   onBatchExport(): void;
@@ -184,6 +189,8 @@ export default function PhoneTabShell({
   onSelectAlbum,
   onNewAlbum,
   renderSettings,
+  renderTethering,
+  tetheringSupported,
   onBatchDelete,
   onBatchExport,
   onBatchCopy,
@@ -200,11 +207,14 @@ export default function PhoneTabShell({
 
   const setTab = (tab: PhoneTab) => setUI({ phoneTab: tab });
 
+  // Tethering tab (docs/OHOS_USB_TETHERING_PLAN.md §4.4): fifth tab, only when
+  // the backend ships the feature; falls out cleanly on non-tethering builds.
   const tabs: Array<{ id: PhoneTab; label: string; Icon: React.ComponentType<{ size?: number; className?: string }> }> =
     [
       { id: 'gallery', label: t('library.header.title'), Icon: Images },
       { id: 'albums', label: t('library.folders.sections.albums'), Icon: FolderHeart },
       { id: 'presets', label: t('editor.presets.title'), Icon: SwatchBook },
+      ...(tetheringSupported ? [{ id: 'connect' as PhoneTab, label: t('tethering.title'), Icon: Camera }] : []),
       { id: 'me', label: t('settings.title'), Icon: Settings },
     ];
 
@@ -231,6 +241,9 @@ export default function PhoneTabShell({
         <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar pb-20">
           <PresetsPanel />
         </div>
+      )}
+      {phoneTab === 'connect' && (
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar pb-20">{renderTethering()}</div>
       )}
       {phoneTab === 'me' && <div className="flex-1 min-h-0 flex flex-col">{renderSettings()}</div>}
 
