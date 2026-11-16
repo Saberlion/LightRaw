@@ -432,7 +432,10 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
         className="flex-1 min-w-0 h-full overflow-hidden flex items-center pl-1"
         style={{ opacity: isActive ? 1 : 0, pointerEvents: isActive ? 'auto' : 'none', transition: 'opacity 0.2s' }}
       >
-        <div ref={contentRef} className="flex items-center gap-2 h-full flex-nowrap min-w-[250px] pr-2">
+        <div
+          ref={contentRef}
+          className="flex items-center gap-2 h-full flex-nowrap min-w-[250px] max-[600px]:min-w-[120px] pr-2"
+        >
           {tags.map((tag) => {
             const match = tag.match(ADVANCED_QUERY_REGEX);
             const isQuery = !!match;
@@ -468,7 +471,7 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
             );
           })}
           <input
-            className="grow w-full h-full bg-transparent text-text-primary placeholder-text-secondary border-none focus:outline-hidden min-w-[150px]"
+            className="grow w-full h-full bg-transparent text-text-primary placeholder-text-secondary border-none focus:outline-hidden min-w-[150px] max-[600px]:min-w-[60px]"
             disabled={isIndexing}
             onBlur={() => {
               if (tags.length === 0 && !text) setIsSearchActive(false);

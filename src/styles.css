@@ -418,6 +418,13 @@
     transform-origin: top right;
   }
 
+  /* Phone tab shell: the floating pill nav owns the bottom strip, so the
+     dropdown must stop above it (nav ~66px + margins) instead of rendering
+     its lower sections into the same band. */
+  .phone-tab-shell .library-view-options-menu {
+    max-height: calc(100dvh - var(--safe-bottom) - 11rem);
+  }
+
   .library-view-options-content {
     flex-direction: column;
   }

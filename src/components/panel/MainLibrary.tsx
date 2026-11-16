@@ -485,7 +485,7 @@ export default function MainLibrary(props: MainLibraryProps) {
   return (
     <div className="relative z-20 flex-1 flex flex-col min-w-0 min-h-0 bg-bg-secondary rounded-lg overflow-visible">
       <header
-        className="p-3 shrink-0 flex justify-between items-center border-b border-surface gap-4"
+        className="p-3 shrink-0 flex flex-wrap justify-between items-center border-b border-surface gap-x-4 gap-y-2"
         onMouseEnter={() => setIsProgressHovered(true)}
         onMouseLeave={() => setIsProgressHovered(false)}
       >
@@ -566,10 +566,10 @@ export default function MainLibrary(props: MainLibraryProps) {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-4 shrink-0">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0 grow justify-end">
               <DisplayModeSwitch displayMode={libraryDisplayMode} setDisplayMode={setLibraryDisplayMode} t={t} />
 
-              <div className="flex items-center bg-surface p-1 rounded-lg gap-1 border border-border-color/20">
+              <div className="flex flex-wrap items-center bg-surface p-1 rounded-lg gap-1 border border-border-color/20">
                 <SearchInput indexingProgress={props.aiTaggingJob?.progress} isIndexing={!!props.aiTaggingJob} />
                 <ViewOptionsDropdown
                   libraryViewMode={props.libraryViewMode}

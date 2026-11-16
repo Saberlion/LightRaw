@@ -1029,6 +1029,7 @@ function App() {
         className={clsx(
           'flex flex-col h-dvh font-sans text-text-primary overflow-hidden select-none',
           useMacWindowShell && 'macos-window-shell',
+          usePhoneTabShell && 'phone-tab-shell',
           isWgpuActive ? 'bg-transparent' : 'bg-bg-primary',
         )}
         style={
@@ -1060,7 +1061,11 @@ function App() {
           className={clsx(
             'flex-1 flex flex-col min-h-0',
             isLayoutReady && hasMainContent && !isInstantTransition && 'transition-all duration-300 ease-in-out',
-            [hasMainContent && (isFullScreen ? 'p-0 gap-0' : 'p-2 gap-2')],
+            // Phone shell: vertical padding is pure waste there — the safe-area
+            // padding above already clears the status bar and the pill nav
+            // carries its own bottom offset, so the content column goes
+            // edge-to-edge vertically (side padding keeps the card rounded).
+            hasMainContent && (isFullScreen ? 'p-0 gap-0' : usePhoneTabShell ? 'px-2 gap-2' : 'p-2 gap-2'),
           )}
         >
           <DndContext

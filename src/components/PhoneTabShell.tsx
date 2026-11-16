@@ -232,7 +232,10 @@ export default function PhoneTabShell({
 
       <nav
         className={clsx(
-          'shrink-0 mx-2 mb-2 rounded-full bg-surface border border-border-color/20',
+          // No bottom margin: the root's --safe-bottom padding already keeps
+          // the pill clear of the gesture strip — extra margin just reads as
+          // dead space at the bottom of the phone layout.
+          'shrink-0 mx-2 rounded-full bg-surface border border-border-color/20',
           'shadow-[0_4px_20px_rgba(0,0,0,0.18)] flex items-stretch p-1 z-40',
         )}
         aria-label={isBatchMode ? t('library.header.selectItems') : t('library.header.title')}
