@@ -121,6 +121,23 @@ if (-not (Test-Path $inner)) { Fail "missing $inner" }
 $ndkMsys = ToMsys $ndk
 $jobs = if ($Jobs -gt 0) { "$Jobs" } else { '0' }   # 0 -> inner script uses nproc
 
+# ---------- ld shim (docs/HARMONYOS_PORTING.md §6.30) ----------
+# libtool asks the compiler for its linker via `clang -print-prog-name=ld`,
+# which is a PATH lookup for "ld" -> it would find MSYS2's PE ld.exe. On
+# x86_64 that ld answers the `-m elf_x86_64` probe well enough to be treated
+# as a real GNU ld, then fails every shared-library probe -> configure
+# silently disables shared libs. Shadow it with the NDK's own lld (renamed
+# ld.exe so the PATH lookup finds it) plus its sibling DLLs.
+$shimDir = "$root\toolshim"
+New-Item -ItemType Directory -Force -Path $shimDir | Out-Null
+Copy-Item "$ndk\llvm\bin\ld.lld.exe" "$shimDir\ld.exe" -Force
+foreach ($dll in @('libxml2.dll', 'liblzma.dll', 'libz.dll', 'zlib.dll', 'libzstd.dll')) {
+  if (Test-Path "$ndk\llvm\bin\$dll") { Copy-Item "$ndk\llvm\bin\$dll" $shimDir -Force }
+}
+# NB: MSYS2 login shells re-prepend /usr/bin via /etc/profile, so the shim
+# must be re-prepended INSIDE the inner script (LD_SHIM env var below).
+$env:LD_SHIM = ToMsys $shimDir
+
 $env:HOST = $hostTriple
 $env:CC = "$ndkMsys/llvm/bin/clang.exe -target $clangTarget --sysroot=$ndkMsys/sysroot -D__MUSL__"
 $env:AR = "$ndkMsys/llvm/bin/llvm-ar.exe"

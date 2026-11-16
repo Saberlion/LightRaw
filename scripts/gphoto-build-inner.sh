@@ -18,6 +18,15 @@ set -e
 
 if [ -z "$JOBS" ] || [ "$JOBS" -le 0 ] 2>/dev/null; then JOBS=$(nproc); fi
 
+# libtool linker shadowing (docs/HARMONYOS_PORTING.md §6.30): re-prepend the
+# ld shim AFTER the login shell profile has prepended /usr/bin, so
+# `clang -print-prog-name=ld` resolves to the NDK lld instead of MSYS2's
+# PE ld.exe. Also force lt_cv_prog_gnu_ld=yes: lld's -v banner says
+# "compatible with GNU linkers", which libtool's "GNU ld" grep misses, and
+# without with_gnu_ld=yes the linux tag config emits empty archive_cmds.
+if [ -n "$LD_SHIM" ]; then export PATH="$LD_SHIM:$PATH"; fi
+GNU_LD_CACHE_ARG="lt_cv_prog_gnu_ld=yes"
+
 echo "== inner env =="
 echo "HOST=$HOST CC=$CC"
 echo "SRC_LIBTOOL=$SRC_LIBTOOL"
@@ -39,6 +48,7 @@ if [ ! -f "$PREFIX/lib/libltdl.a" ]; then
   # (builds libltdlc.la but installs nothing into $PREFIX).
   "$SRC_LIBTOOL/libltdl/configure" \
     --host="$HOST" --prefix="$PREFIX" \
+    $GNU_LD_CACHE_ARG \
     --disable-shared --enable-static \
     --enable-ltdl-install \
     lt_cv_sys_lib_dlsearch_path_spec="$PREFIX/lib"
@@ -56,6 +66,7 @@ if [ ! -f "$PREFIX/lib/libusb-1.0.a" ]; then
   mkdir -p "$BLD/libusb" && cd "$BLD/libusb"
   "$SRC_LIBUSB/configure" \
     --host="$HOST" --prefix="$PREFIX" \
+    $GNU_LD_CACHE_ARG \
     --enable-static --disable-shared --disable-udev \
     --disable-tests
   make -j"$JOBS"
@@ -74,6 +85,7 @@ if [ ! -f Makefile ]; then
   LIBLTDL="-L$PREFIX/lib -lltdl" \
   "$SRC_GPHOTO/configure" \
     --host="$HOST" --prefix="$PREFIX" \
+    $GNU_LD_CACHE_ARG \
     --disable-nls \
     --without-libxml2 --without-libcurl --without-gdlib \
     --without-libtiff --without-libexif --without-libjpeg
