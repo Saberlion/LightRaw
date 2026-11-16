@@ -332,12 +332,29 @@ export default class EntryAbility extends RustAbility {
     const gesture: window.AvoidArea | null = this.safeAvoidArea(win, window.AvoidAreaType.TYPE_SYSTEM_GESTURE);
     const indicator: window.AvoidArea | null =
       this.safeAvoidArea(win, window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
-    const top: number = Math.max(system?.topRect.height ?? 0, cutout?.topRect.height ?? 0);
-    const bottom: number =
-      Math.max(system?.bottomRect.height ?? 0, gesture?.bottomRect.height ?? 0, indicator?.bottomRect.height ?? 0);
+    // getWindowAvoidArea reports SCREEN-space rects; with
+    // setWindowLayoutFullScreen(false) (real phones) the window already starts
+    // below the status bar, so only the part overlapping the WINDOW may pad
+    // the webview. Emulators run full-screen (winTop=0) and keep the full
+    // inset. Clip every rect to the window rect first.
+    const winRect: window.Rect = win.getWindowProperties().windowRect;
+    const winTop: number = winRect.top;
+    const winBottom: number = winRect.top + winRect.height;
+    const topInset = (area: window.AvoidArea | null): number => {
+      if (!area) return 0;
+      const r: window.Rect = area.topRect;
+      return Math.max(0, Math.min(r.top + r.height, winTop + r.height) - Math.max(r.top, winTop));
+    };
+    const bottomInset = (area: window.AvoidArea | null): number => {
+      if (!area) return 0;
+      const r: window.Rect = area.bottomRect;
+      return Math.max(0, Math.min(winBottom, r.top + r.height) - Math.max(winTop, r.top));
+    };
+    const top: number = Math.max(topInset(system), topInset(cutout));
+    const bottom: number = Math.max(bottomInset(system), bottomInset(gesture), bottomInset(indicator));
     const left: number = Math.max(cutout?.leftRect.width ?? 0, gesture?.leftRect.width ?? 0);
     const right: number = Math.max(cutout?.rightRect.width ?? 0, gesture?.rightRect.width ?? 0);
-    notify(top, right, bottom, left);
+    notify(top, right, bottom, left, winRect.height);
   }
 
   // ---- "open with" / share (docs 6.22) ----

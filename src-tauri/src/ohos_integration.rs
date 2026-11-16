@@ -159,12 +159,15 @@ mod system_bridge {
     // ArkTS `deviceInfo.deviceType`: "phone" | "tablet" | "2in1" | "default" |
     // … (docs 6.14). Drives form-factor-dependent UI and grant strategy.
     static DEVICE_TYPE: OnceLock<String> = OnceLock::new();
-    // Safe-area insets (top, right, bottom, left) in physical px, pushed by
-    // EntryAbility from `window.getWindowAvoidArea` and re-pushed on every
-    // `avoidAreaChange` event (phone layout G1; MULTIDEVICE_ADAPTATION P0#3).
-    // The webview consumes them as `--safe-*` CSS variables — ArkWeb's
-    // `env(safe-area-inset-*)` proved unreliable on this webview.
-    static AVOID_AREA: Mutex<(u32, u32, u32, u32)> = Mutex::new((0, 0, 0, 0));
+    // Safe-area insets (top, right, bottom, left) and the physical window-rect
+    // height, pushed by EntryAbility from `window.getWindowAvoidArea` /
+    // `getWindowProperties()` and re-pushed on every `avoidAreaChange` event
+    // (phone layout G1; MULTIDEVICE_ADAPTATION P0#3). The webview consumes
+    // them as `--safe-*` CSS variables — ArkWeb's `env(safe-area-inset-*)`
+    // proved unreliable on this webview. The window height lets the frontend
+    // detect the case where ArkUI already insets the webview below the system
+    // bars (default safe-area handling): then the insets must not pad again.
+    static AVOID_AREA: Mutex<(u32, u32, u32, u32, u32)> = Mutex::new((0, 0, 0, 0, 0));
     static AVOID_AREA_KNOWN: AtomicBool = AtomicBool::new(false);
 
     pub fn set_app_handle(handle: tauri::AppHandle) {
@@ -183,7 +186,7 @@ mod system_bridge {
         DEVICE_TYPE.get().cloned()
     }
 
-    pub fn avoid_area() -> Option<(u32, u32, u32, u32)> {
+    pub fn avoid_area() -> Option<(u32, u32, u32, u32, u32)> {
         if AVOID_AREA_KNOWN.load(Ordering::Relaxed) {
             Some(*AVOID_AREA.lock().unwrap())
         } else {
@@ -281,23 +284,37 @@ mod system_bridge {
     }
 
     /// NAPI export (ArkTS name: `notifyOhosAvoidArea`). EntryAbility pushes the
-    /// merged safe-area insets (top/right/bottom/left, physical px) once the
-    /// native module is registered and on every `window.on('avoidAreaChange')`
-    /// event; the frontend queries the initial value (`get_ohos_avoid_area`)
-    /// and follows the `ohos-avoid-area` event. Values are physical px — the
-    /// webview divides by its CSS device pixel ratio before using them.
+    /// merged safe-area insets (top/right/bottom/left, physical px) plus the
+    /// physical window-rect height once the native module is registered and on
+    /// every `window.on('avoidAreaChange')` event; the frontend queries the
+    /// initial value (`get_ohos_avoid_area`) and follows the `ohos-avoid-area`
+    /// event. Values are physical px — the webview divides by its CSS device
+    /// pixel ratio before using them. The window height lets the frontend
+    /// detect when ArkUI has ALREADY inset the webview below the system bars
+    /// (default safe-area handling): then the insets must not pad again.
     #[napi_derive_ohos::napi]
-    pub fn notify_ohos_avoid_area(top: u32, right: u32, bottom: u32, left: u32) -> Result<()> {
-        let next = (top, right, bottom, left);
+    pub fn notify_ohos_avoid_area(
+        top: u32,
+        right: u32,
+        bottom: u32,
+        left: u32,
+        window_height: u32,
+    ) -> Result<()> {
+        let next = (top, right, bottom, left, window_height);
         let mut area = AVOID_AREA.lock().unwrap();
         let changed = !AVOID_AREA_KNOWN.swap(true, Ordering::Relaxed) || *area != next;
         *area = next;
         drop(area);
         if changed {
-            log::info!("OHOS avoid area: top={top} right={right} bottom={bottom} left={left}");
+            log::info!(
+                "OHOS avoid area: top={top} right={right} bottom={bottom} left={left} window_height={window_height}"
+            );
             emit(
                 "ohos-avoid-area",
-                serde_json::json!({ "top": top, "right": right, "bottom": bottom, "left": left }),
+                serde_json::json!({
+                    "top": top, "right": right, "bottom": bottom, "left": left,
+                    "windowHeight": window_height,
+                }),
             );
         }
         Ok(())
@@ -336,10 +353,13 @@ pub fn get_ohos_device_type() -> Option<String> {
 
 /// Safe-area insets (physical px) for the OHOS window: top/right/bottom/left
 /// merged on the ArkTS side from the system, cutout, gesture and
-/// navigation-indicator avoid rects. `None` before the bridge has reported
-/// (and on every other platform). The phone layout consumes these as
-/// `--safe-*` CSS variables (see `useSafeAreaInsets`) because ArkWeb's
-/// `env(safe-area-inset-*)` is unreliable.
+/// navigation-indicator avoid rects, plus the physical window-rect height.
+/// `None` before the bridge has reported (and on every other platform). The
+/// phone layout consumes these as `--safe-*` CSS variables (see
+/// `useSafeAreaInsets`) because ArkWeb's `env(safe-area-inset-*)` is
+/// unreliable; the window height lets the frontend detect the case where
+/// ArkUI's own safe-area handling already insets the webview, so the CSS
+/// padding must be zeroed instead of duplicated.
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OhosAvoidArea {
@@ -347,17 +367,19 @@ pub struct OhosAvoidArea {
     pub right: u32,
     pub bottom: u32,
     pub left: u32,
+    pub window_height: u32,
 }
 
 #[tauri::command]
 pub fn get_ohos_avoid_area() -> Option<OhosAvoidArea> {
     #[cfg(target_env = "ohos")]
     {
-        system_bridge::avoid_area().map(|(top, right, bottom, left)| OhosAvoidArea {
+        system_bridge::avoid_area().map(|(top, right, bottom, left, window_height)| OhosAvoidArea {
             top,
             right,
             bottom,
             left,
+            window_height,
         })
     }
     #[cfg(not(target_env = "ohos"))]
