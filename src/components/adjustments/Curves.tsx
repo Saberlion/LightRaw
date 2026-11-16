@@ -504,7 +504,11 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
 
   const handlePointStart = (e: any, index: number) => {
     if (isParametricMode || e.button === 2) return;
-    if (!e.touches) e.preventDefault();
+    // Always prevent the default touch gesture (scrolling the parent panel):
+    // the `touch-none` CSS on the container is the first line of defense, but
+    // ArkWeb can still let a vertical swipe scroll the surrounding panel
+    // unless the touchstart handler itself calls preventDefault().
+    if (e.cancelable) e.preventDefault();
     e.stopPropagation();
 
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -537,6 +541,10 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
 
   const handleContainerStart = (e: any) => {
     if (isParametricMode || (!e.touches && e.button !== 0) || e.target.tagName === 'circle') return;
+
+    // Same scroll-prevention as handlePointStart: a touch on the curve canvas
+    // (background or near a point) must not also scroll the enclosing panel.
+    if (e.cancelable) e.preventDefault();
 
     const svg = svgRef.current;
     if (!svg) return;
@@ -876,7 +884,12 @@ function CurveGraph({ adjustments, setAdjustments, theme, onDragStateChange }: C
           onDoubleClick={handleDoubleClick}
           onContextMenu={handleContextMenu}
         >
-          <svg ref={svgRef} viewBox="0 0 255 255" className="w-full h-full overflow-visible">
+          <svg
+            ref={svgRef}
+            viewBox="0 0 255 255"
+            className="w-full h-full overflow-visible"
+            style={{ touchAction: 'none' }}
+          >
             <path
               d={
                 isParametricMode
