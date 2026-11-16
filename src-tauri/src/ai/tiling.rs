@@ -115,6 +115,7 @@ fn run_tiled(
         .iter()
         .flat_map(|&y| xs.iter().map(move |&x| (y, x)))
         .collect();
+    let total_start = std::time::Instant::now();
 
     std::thread::scope(|scope| -> Result<()> {
         let (sender, receiver) = std::sync::mpsc::sync_channel::<Result<Array4<f32>>>(1);
@@ -143,6 +144,15 @@ fn run_tiled(
         for (i, (&(y0, x0), tile)) in origins.iter().zip(receiver).enumerate() {
             on_progress(i as f32 / total as f32);
             let tile = tile?;
+            // CPU baseline for the OM/NPU comparison: pipelined total is what
+            // matters, logged once at the end (see run_tiled_upscale_om).
+            if i == 0 {
+                log::info!(
+                    "[upscale-tile:ort] first of {} tiles ready after {:?} (cold start)",
+                    total,
+                    total_start.elapsed()
+                );
+            }
             blend_upscale_tile(
                 &tile,
                 x0,
@@ -159,6 +169,14 @@ fn run_tiled(
         }
         Ok(())
     })?;
+    let elapsed = total_start.elapsed();
+    log::info!(
+        "[upscale:ort] {} tiles in {:?} ({:.2} tiles/s, {:.1} ms/tile avg)",
+        total,
+        elapsed,
+        total as f64 / elapsed.as_secs_f64().max(1e-9),
+        elapsed.as_millis() as f64 / total.max(1) as f64
+    );
 
     accumulator
         .par_chunks_exact_mut(3)
@@ -421,18 +439,36 @@ fn run_tiled_upscale_om(
     let mut accumulator = vec![0.0f32; out_w * out_h * 3];
     let mut weight_sum = vec![0.0f32; out_w * out_h];
 
+    // Benchmarking hook: CPU-vs-NPU comparisons read these lines from app.log
+    // (docs/MOBILE_SR_MODELS_SURVEY.md P0, RAPIDRES_NPU_FEASIBILITY §7).
+    let total_start = std::time::Instant::now();
+
     for &y0 in &ys {
         for &x0 in &xs {
             let crop = extract_tile_mirror(img, x0, y0, params.cs);
             let input_slice = crop
                 .as_slice()
                 .ok_or_else(|| anyhow::anyhow!("tile extraction produced non-contiguous data"))?;
+            let tile_t0 = std::time::Instant::now();
             let out_flat = {
                 let model = session.lock().unwrap();
                 model.write_input_f32(0, input_slice)?;
                 model.run()?;
                 model.read_output_f32(0)?
             };
+            // Per-tile diagnostics, same sampling policy as the denoise OM
+            // path: every 8th tile, or any tile over the 5s stall threshold
+            // (D-27/D-28) so a hung NPU call pinpoints in the log.
+            if done % 8 == 0 || tile_t0.elapsed() > std::time::Duration::from_secs(5) {
+                log::info!(
+                    "[upscale-tile:om] {}/{} at ({},{}) took {:?}",
+                    done + 1,
+                    total,
+                    x0,
+                    y0,
+                    tile_t0.elapsed()
+                );
+            }
             let tile = Array4::from_shape_vec((1, 3, params.cs * s, params.cs * s), out_flat)
                 .map_err(|e| anyhow::anyhow!("Unexpected OM upscale output shape: {}", e))?;
             blend_upscale_tile(
@@ -452,6 +488,14 @@ fn run_tiled_upscale_om(
             on_progress(done as f32 / total as f32);
         }
     }
+    let elapsed = total_start.elapsed();
+    log::info!(
+        "[upscale:om] {} tiles in {:?} ({:.2} tiles/s, {:.1} ms/tile avg)",
+        total,
+        elapsed,
+        total as f64 / elapsed.as_secs_f64().max(1e-9),
+        elapsed.as_millis() as f64 / total.max(1) as f64
+    );
 
     accumulator
         .par_chunks_exact_mut(3)
