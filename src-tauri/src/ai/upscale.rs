@@ -2,7 +2,7 @@ use crate::ai::base_cache::{BaseCache, entry_key, source_string};
 use crate::ai::denoise::DenoiseMethod;
 use crate::app::state::{AppState, LoadedImage};
 use crate::render::adjustment_utils::is_effect_enabled;
-use image::{DynamicImage, GenericImageView, Rgb32FImage};
+use image::{DynamicImage, GenericImageView, Rgb32FImage, imageops};
 use rayon::prelude::*;
 use std::borrow::Cow;
 use std::path::Path;
@@ -378,10 +378,24 @@ fn input_for(
     let Some(method) = denoise else {
         return Ok(base.to_rgb32f());
     };
-    crate::ai::denoise::full_strength(path, method)
-        .filter(|entry| (entry.width, entry.height) == base.dimensions())
-        .map(|entry| entry.to_rgb32f())
-        .ok_or_else(|| "AI denoise result is not available".to_string())
+    let entry = crate::ai::denoise::full_strength(path, method)
+        .ok_or_else(|| "AI denoise result is not available".to_string())?;
+    if (entry.width, entry.height) == base.dimensions() {
+        return Ok(entry.to_rgb32f());
+    }
+    // The denoise stage caps its working resolution at MAX_EDGE (D-28), so
+    // entries for large images arrive smaller than the base. Resize up to the
+    // base dims — the same fallback the render path applies in
+    // `apply_ai_denoise`. Previously a dimension mismatch was rejected here
+    // with "AI denoise result is not available", which failed every
+    // denoise+upscale run on images over 2560px (observed on a phone with a
+    // 6960x4640 CR3).
+    Ok(imageops::resize(
+        &entry.to_rgb32f(),
+        base.width(),
+        base.height(),
+        imageops::FilterType::Triangle,
+    ))
 }
 
 fn run_upscaler(
