@@ -48,6 +48,7 @@ import {
 } from '../../../types/library';
 import {
   LibraryViewMode,
+  LibraryDisplayMode,
   ExifOverlay,
   GroupingMode,
   ThumbnailSize,
@@ -549,6 +550,12 @@ interface ViewOptionsDropdownProps {
   editedStatusOptions: Array<{ key: EditedStatus; label: string }>;
   flagStatusOptions: Array<{ key: FlagStatus; label: string }>;
   sortOptions: Array<{ key: string; label: string; disabled?: boolean }>;
+  /** Phone shell: the header's display-mode switch is hidden for compactness,
+   * so the grid/list/cull switch lives HERE (replacing the flat/recursive
+   * segmented, which stays a desktop concern). */
+  isPhoneLayout?: boolean;
+  displayMode?: LibraryDisplayMode;
+  onDisplayModeChange?: (mode: LibraryDisplayMode) => void;
 }
 
 export function ViewOptionsDropdown({
@@ -566,6 +573,9 @@ export function ViewOptionsDropdown({
   editedStatusOptions,
   flagStatusOptions,
   sortOptions,
+  isPhoneLayout = false,
+  displayMode,
+  onDisplayModeChange,
 }: ViewOptionsDropdownProps) {
   const { t } = useTranslation();
   const { filterCriteria, setFilterCriteria, sortCriteria, setSortCriteria } = useLibraryStore(
@@ -719,20 +729,46 @@ export function ViewOptionsDropdown({
               {t('library.header.viewOptions.displayMode')}
             </Text>
             <div className="px-3 mt-1">
-              <SegmentedSwitch
-                options={[
-                  { id: LibraryViewMode.Flat, label: t('library.header.viewOptions.currentFolder') },
-                  { id: LibraryViewMode.Recursive, label: t('library.header.viewOptions.recursive') },
-                ]}
-                value={libraryViewMode}
-                onChange={async (val) => {
-                  setLibraryViewMode(val as LibraryViewMode);
-                  if (appSettings) {
-                    await handleSettingsChange({ ...appSettings, libraryViewMode: val as LibraryViewMode });
-                    onLibraryRefresh?.();
-                  }
-                }}
-              />
+              {isPhoneLayout && displayMode && onDisplayModeChange ? (
+                // Phone shell: grid/list/cull lives here (the header switch is
+                // hidden); flat/recursive is a desktop concern.
+                <SegmentedSwitch
+                  options={[
+                    {
+                      id: LibraryDisplayMode.Grid,
+                      label: t('library.viewMode.grid'),
+                      title: t('library.viewMode.grid'),
+                    },
+                    {
+                      id: LibraryDisplayMode.List,
+                      label: t('library.viewMode.list'),
+                      title: t('library.viewMode.list'),
+                    },
+                    {
+                      id: LibraryDisplayMode.Cull,
+                      label: t('library.viewMode.culling'),
+                      title: t('library.viewMode.culling'),
+                    },
+                  ]}
+                  value={displayMode}
+                  onChange={(val) => onDisplayModeChange(val as LibraryDisplayMode)}
+                />
+              ) : (
+                <SegmentedSwitch
+                  options={[
+                    { id: LibraryViewMode.Flat, label: t('library.header.viewOptions.currentFolder') },
+                    { id: LibraryViewMode.Recursive, label: t('library.header.viewOptions.recursive') },
+                  ]}
+                  value={libraryViewMode}
+                  onChange={async (val) => {
+                    setLibraryViewMode(val as LibraryViewMode);
+                    if (appSettings) {
+                      await handleSettingsChange({ ...appSettings, libraryViewMode: val as LibraryViewMode });
+                      onLibraryRefresh?.();
+                    }
+                  }}
+                />
+              )}
             </div>
           </div>
 

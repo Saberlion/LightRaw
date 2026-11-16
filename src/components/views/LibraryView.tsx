@@ -44,6 +44,8 @@ interface LibraryViewProps {
   requestThumbnails: any;
   /** Phone gallery: date section headers (see MainLibrary). */
   groupByDate?: boolean;
+  /** Phone tab shell: compact header + smaller default thumbnails. */
+  isPhoneLayout?: boolean;
   /** Phone tab shell: the shell owns the bottom bar area (tab nav / batch
    * actions), so the library BottomBar would stack on top of it. */
   hideBottomBar?: boolean;
@@ -77,6 +79,7 @@ export default function LibraryView({
   handleResetAdjustments,
   requestThumbnails,
   groupByDate = false,
+  isPhoneLayout = false,
   hideBottomBar = false,
 }: LibraryViewProps) {
   const { activeView, setUI } = useUIStore(
@@ -148,6 +151,7 @@ export default function LibraryView({
           currentFolderPath={currentFolderPath}
           groupBadgeInfo={groupBadgeInfo}
           groupByDate={groupByDate}
+          isPhoneLayout={isPhoneLayout}
           imageList={sortedImageList}
           imageRatings={imageRatings}
           importState={importState}

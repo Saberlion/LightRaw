@@ -232,7 +232,10 @@ function App() {
     })),
   );
 
-  const defaultThumbnailSize = osPlatform === 'android' ? ThumbnailSize.Small : ThumbnailSize.Medium;
+  const defaultThumbnailSize =
+    osPlatform === 'android' || (isOhos && ohosDeviceType === 'phone') ? ThumbnailSize.Small : ThumbnailSize.Medium;
+  // CamRAW-style phone grid: Small (160px) gives two columns on the 366px
+  // viewport; the desktop default Medium (240px) would fit only one.
   const defaultLibraryViewMode = osPlatform === 'android' ? LibraryViewMode.Recursive : LibraryViewMode.Flat;
 
   const selectedImagePathRef = useRef<string | null>(null);
@@ -1192,6 +1195,7 @@ function App() {
                         handleResetAdjustments={handleResetAdjustments}
                         requestThumbnails={requestThumbnails}
                         groupByDate
+                        isPhoneLayout
                         hideBottomBar
                       />
                     </PhoneTabShell>
