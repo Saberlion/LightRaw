@@ -231,7 +231,7 @@ fn heal_bloated_exif(meta: &mut ImageMetadata) -> bool {
     healed
 }
 
-fn quarantine_sidecar(sidecar_path: &Path, error: &serde_json::Error) {
+fn quarantine_sidecar(sidecar_path: &Path, error: &impl std::fmt::Display) {
     let mut quarantined = sidecar_path.as_os_str().to_os_string();
     quarantined.push(format!(".corrupt-{}", Utc::now().format("%Y%m%d%H%M%S")));
     match fs::rename(sidecar_path, &quarantined) {
@@ -254,6 +254,15 @@ fn read_sidecar(sidecar_path: &Path) -> std::io::Result<(ImageMetadata, bool)> {
     let content = match fs::read_to_string(sidecar_path) {
         Ok(content) => content,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Ok((ImageMetadata::default(), false));
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::InvalidData => {
+            // Binary garbage where a JSON sidecar should be — observed when an
+            // import copied byte-identical image "sidecars" (a .rrdata that is
+            // really the JPEG). Quarantine it like a corrupt sidecar and
+            // continue with defaults so the next save self-heals instead of
+            // failing forever with "stream did not contain valid UTF-8".
+            quarantine_sidecar(sidecar_path, &e);
             return Ok((ImageMetadata::default(), false));
         }
         Err(e) => return Err(e),
