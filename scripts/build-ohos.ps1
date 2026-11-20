@@ -32,7 +32,8 @@ param(
   [string]$ModelsDir = '',        # local dir with model files to bundle (release only). Default: src-tauri\libs\ohos\models (gitignored, machine-local)
   [switch]$SkipBuild,            # skip the cargo stage; only inject ORT + report (HAP must already exist)
   [switch]$SkipOrtBuild,         # do not build ONNX Runtime from source (use an existing libs/ohos/<abi>/libonnxruntime.so)
-  [switch]$RebuildOrt            # force a clean ONNX Runtime source build
+  [switch]$RebuildOrt,           # force a clean ONNX Runtime source build
+  [switch]$NoTethering           # build without the tethering feature (default ON since the phone Connect tab needs it; docs/OHOS_USB_TETHERING_PLAN.md)
 )
 $ErrorActionPreference = 'Stop'
 $repo = (Split-Path -Parent $PSScriptRoot)
@@ -138,17 +139,38 @@ if (-not $SkipOrtBuild) {
   }
 }
 
+# ---------- 2.5b libgphoto2 tethering stack (vendored pins) ----------
+# Same pattern as ORT above: build from the pinned submodules when the libs
+# are missing (docs/OHOS_USB_TETHERING_PLAN.md §4.1), then point the Rust
+# link path at the HAP libs dir. Tethering is optional at runtime (AI-style
+# graceful degradation), so the stack build is only mandatory with the feature
+# on — which is the default for this script.
+if (-not $NoTethering) {
+  $gphotoSo = "$repo\src-tauri\libs\ohos\$targetAbi\libgphoto2.so"
+  if (-not (Test-Path $gphotoSo)) {
+    Invoke-Stage -Name 'gphoto-build' -Cmd ('powershell -NoProfile -ExecutionPolicy Bypass -File "' + "$repo\scripts\build-gphoto-ohos.ps1" + '" -Target ' + $Target) -StageTimeoutSec 2700
+  } else {
+    Write-Host "using existing gphoto stack: $gphotoSo (delete or -Clean via build-gphoto-ohos.ps1 to rebuild)"
+  }
+  # gphoto2-sys build.rs link directives (shell-only env; AGENTS.md red line:
+  # never commit these to .cargo/config.toml).
+  $env:GPHOTO2_LIB_DIR = "$repo\src-tauri\libs\ohos\$targetAbi"
+  $env:GPHOTO2_INCLUDE_DIR = "$repo\src-tauri\target\gphoto-ohos\$Target\prefix\include"
+}
+
 # ---------- 3. build (single cargo stage; cargo/ohrs/hvigor failures all surface via exit code) ----------
 if (-not $SkipBuild) {
   # Release needs the runner passthrough: the tauri CLI's own cargo stage
   # follows -d/--debug, but the ohrs stage (which places the .so that hvigor
   # packages) defaults to dev unless it receives --release via `--` args.
+  # Tethering rides the same `--` passthrough (single separator per path).
   if ($Release) {
-    $buildArgs = (@('cargo', 'tauri', 'ohos', 'build', '-t', $Target, '--', '--release') + $ExtraArgs) -join ' '
+    $buildArgs = @('cargo', 'tauri', 'ohos', 'build', '-t', $Target, '--', '--release') + $ExtraArgs
   } else {
-    $buildArgs = (@('cargo', 'tauri', 'ohos', 'build', '-d', '-t', $Target) + $ExtraArgs) -join ' '
+    $buildArgs = @('cargo', 'tauri', 'ohos', 'build', '-d', '-t', $Target) + $ExtraArgs + @('--')
   }
-  Invoke-Stage -Name 'ohos-build' -Cmd $buildArgs -StageTimeoutSec $TimeoutSec
+  if (-not $NoTethering) { $buildArgs += @('--features', 'tethering') }
+  Invoke-Stage -Name 'ohos-build' -Cmd ($buildArgs -join ' ') -StageTimeoutSec $TimeoutSec
 }
 
 # ---------- 3.5 inject ORT into the HAP (target ABI only) ----------
@@ -213,6 +235,20 @@ try {
     Write-Host "ORT injected into HAP libs/$targetAbi/"
   } else {
     Write-Host "no source-built libonnxruntime.so under src-tauri/libs/ohos/$targetAbi - HAP ships without ORT (AI degrades gracefully)"
+  }
+  # libgphoto2 tethering stack (docs/OHOS_USB_TETHERING_PLAN.md). The two core
+  # libs ride in via the cargo stage's DT_NEEDED copy; the usb1 io driver and
+  # the camlibs are dlopen'd at runtime from CAMLIBS/IOLIBS (lib.rs setup points
+  # both at the app lib dir), so they need the same post-package injection
+  # channel as ORT. Inject all six deterministically (idempotent).
+  $gphotoLibs = Get-ChildItem -Path "$repo\src-tauri\libs\ohos\$targetAbi" -Filter 'libgphoto*.so' -File -ErrorAction SilentlyContinue
+  foreach ($g in $gphotoLibs) {
+    $old = $zip.GetEntry("libs/$targetAbi/$($g.Name)")
+    if ($old) { $old.Delete() }
+    [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+      $zip, $g.FullName, "libs/$targetAbi/$($g.Name)",
+      [IO.Compression.CompressionLevel]::Optimal) | Out-Null
+    Write-Host "gphoto lib injected into HAP libs/$targetAbi/: $($g.Name)"
   }
   # CANN vendor libs (machine-local, same provisioning channel as ORT).
   # The HCL facade AND libai_fmk_tensor.so ride in the HAP, each with its

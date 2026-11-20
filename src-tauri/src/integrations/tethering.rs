@@ -20,6 +20,10 @@ pub struct CameraConfigChoice {
 pub struct CameraSession {
     pub context: Option<gphoto2::Context>,
     pub camera: Option<gphoto2::Camera>,
+    /// usbfs fd wrapped into libgphoto2 via gp_port_usb_set_sys_device on
+    /// OHOS; dropped on the next connect, which closes the node.
+    #[cfg(all(target_os = "linux", target_env = "ohos"))]
+    pub usb_fd: Option<std::os::fd::OwnedFd>,
 }
 
 #[cfg(not(feature = "tethering"))]
@@ -32,6 +36,8 @@ impl CameraSession {
             Self {
                 context: gphoto2::Context::new().ok(),
                 camera: None,
+                #[cfg(all(target_os = "linux", target_env = "ohos"))]
+                usb_fd: None,
             }
         }
         #[cfg(not(feature = "tethering"))]
@@ -41,6 +47,130 @@ impl CameraSession {
     }
 }
 
+/// OpenHarmony USB open layer (docs/OHOS_USB_TETHERING_PLAN.md §3.1).
+///
+/// OHOS does not give apps global USB enumeration; the only route to a USB
+/// camera is opening its authorized usbfs node and handing the fd to
+/// libgphoto2 via `gp_port_usb_set_sys_device()` (the upstream Android-style
+/// "authorized fd" path; camlibs/usb driver then wrap it with
+/// libusb_wrap_sys_device + LIBUSB_OPTION_NO_DEVICE_DISCOVERY). Everything
+/// after the wrap — autodetect, open, capture, config — is the stock
+/// libgphoto2 flow shared with the desktop.
+#[cfg(all(feature = "tethering", target_os = "linux", target_env = "ohos"))]
+mod ohos_usb {
+    use std::fs::{self, OpenOptions};
+    use std::os::fd::{AsRawFd, OwnedFd};
+
+    const USBFS_ROOT: &str = "/dev/bus/usb";
+
+    /// All usbfs device nodes as "BBB/DDD" (bus/dev, zero padded), sorted.
+    pub fn scan_nodes() -> Vec<String> {
+        let mut nodes = Vec::new();
+        let Ok(buses) = fs::read_dir(USBFS_ROOT) else {
+            return nodes;
+        };
+        for bus in buses.flatten() {
+            let bus_name = bus.file_name().to_string_lossy().into_owned();
+            let Ok(devs) = fs::read_dir(bus.path()) else {
+                continue;
+            };
+            for dev in devs.flatten() {
+                let dev_name = dev.file_name().to_string_lossy().into_owned();
+                if dev_name.starts_with('.') {
+                    continue;
+                }
+                nodes.push(format!("{bus_name}/{dev_name}"));
+            }
+        }
+        nodes.sort();
+        nodes
+    }
+
+    /// Open one usbfs node read/write. The fd must come from a device the
+    /// user authorized (or one the platform already grants us); the io error
+    /// string carries the errno for diagnosis.
+    pub fn open_node(relative: &str) -> Result<OwnedFd, String> {
+        let path = format!("{USBFS_ROOT}/{relative}");
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)
+            .map(From::from)
+            .map_err(|e| format!("{path}: {e}"))
+    }
+
+    /// Hand an already-opened, authorized fd to libgphoto2. From here the
+    /// usb1 io driver only ever sees this one device.
+    pub fn wrap_sys_device(fd: &OwnedFd) -> Result<(), String> {
+        // SAFETY: gp_port_usb_set_sys_device stores the fd in a static; the
+        // fd stays valid for as long as the caller keeps the OwnedFd alive.
+        let rc = unsafe { gphoto2_sys::gp_port_usb_set_sys_device(fd.as_raw_fd()) };
+        if rc < 0 {
+            Err(format!("gp_port_usb_set_sys_device failed: {rc}"))
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Wrap + probe one node: returns the cameras autodetected on it (with
+    /// the port names libgphoto2 synthesized for the wrapped device).
+    pub fn probe_node(
+        relative: &str,
+        fd: &OwnedFd,
+    ) -> Result<Vec<gphoto2::camera::CameraDescriptor>, String> {
+        wrap_sys_device(fd)?;
+        let context = gphoto2::Context::new()
+            .map_err(|e| format!("Failed to create gphoto2 context: {e}"))?;
+        let cameras = gphoto2::Camera::autodetect(&context).map_err(|e| e.to_string())?;
+        let _ = relative;
+        Ok(cameras)
+    }
+}
+
+#[cfg(all(feature = "tethering", target_os = "linux", target_env = "ohos"))]
+fn list_cameras_blocking() -> Result<Vec<String>, String> {
+    let nodes = ohos_usb::scan_nodes();
+    if nodes.is_empty() {
+        log::info!("[tether-ohos] no usbfs device nodes under /dev/bus/usb");
+        return Ok(Vec::new());
+    }
+    let mut out = Vec::new();
+    for node in &nodes {
+        match ohos_usb::open_node(node) {
+            Ok(fd) => {
+                log::info!("[tether-ohos] usbfs node {node} opened, probing");
+                match ohos_usb::probe_node(node, &fd) {
+                    Ok(cameras) => {
+                        for camera in cameras {
+                            out.push(format!("{} (usbfs:{})", camera.model, node));
+                        }
+                    }
+                    Err(e) => log::warn!("[tether-ohos] probe on {node} failed: {e}"),
+                }
+                // OwnedFd drop closes the node.
+            }
+            Err(e) => {
+                log::warn!("[tether-ohos] cannot open {node} (needs USB authorization?): {e}")
+            }
+        }
+    }
+    Ok(out)
+}
+
+#[cfg(all(
+    feature = "tethering",
+    not(all(target_os = "linux", target_env = "ohos"))
+))]
+fn list_cameras_blocking() -> Result<Vec<String>, String> {
+    let context =
+        gphoto2::Context::new().map_err(|e| format!("Failed to create gphoto2 context: {e}"))?;
+    let cameras = gphoto2::Camera::autodetect(&context).map_err(|e| e.to_string())?;
+    Ok(cameras
+        .into_iter()
+        .map(|c| format!("{} ({})", c.model, c.port))
+        .collect())
+}
+
 unsafe impl Send for CameraSession {}
 unsafe impl Sync for CameraSession {}
 
@@ -48,17 +178,9 @@ unsafe impl Sync for CameraSession {}
 pub async fn tether_list_cameras() -> Result<Vec<String>, String> {
     #[cfg(feature = "tethering")]
     {
-        tauri::async_runtime::spawn_blocking(move || {
-            let context = gphoto2::Context::new()
-                .map_err(|e| format!("Failed to create gphoto2 context: {}", e))?;
-            let cameras = gphoto2::Camera::autodetect(&context).map_err(|e| e.to_string())?;
-            Ok(cameras
-                .into_iter()
-                .map(|c| format!("{} ({})", c.model, c.port))
-                .collect())
-        })
-        .await
-        .map_err(|e| format!("Task panicked: {}", e))?
+        tauri::async_runtime::spawn_blocking(list_cameras_blocking)
+            .await
+            .map_err(|e| format!("Task panicked: {}", e))?
     }
     #[cfg(not(feature = "tethering"))]
     Err("Tethering is not supported in this build.".into())
@@ -74,6 +196,11 @@ pub async fn tether_connect(app_handle: tauri::AppHandle) -> Result<String, Stri
             {
                 let mut session = state.camera_session.lock().unwrap();
                 session.camera = None;
+                // Drop the previous wrapped usbfs fd (OHOS) — closes the node.
+                #[cfg(all(target_os = "linux", target_env = "ohos"))]
+                {
+                    session.usb_fd = None;
+                }
             }
 
             std::thread::sleep(std::time::Duration::from_millis(150));
@@ -81,8 +208,53 @@ pub async fn tether_connect(app_handle: tauri::AppHandle) -> Result<String, Stri
             let context = gphoto2::Context::new()
                 .map_err(|e| format!("Failed to initialize gphoto2 context: {}", e))?;
 
-            let cameras = gphoto2::Camera::autodetect(&context).map_err(|e| e.to_string())?;
-            let descriptor = cameras.into_iter().next().ok_or("No camera found")?;
+            #[cfg(all(target_os = "linux", target_env = "ohos"))]
+            let descriptor = {
+                // OHOS: wrap the first usbfs node that opens and reports a
+                // camera (docs/OHOS_USB_TETHERING_PLAN.md §3.1). The fd lives
+                // in CameraSession for the whole session.
+                let mut found: Option<(gphoto2::camera::CameraDescriptor, std::os::fd::OwnedFd)> =
+                    None;
+                let nodes = ohos_usb::scan_nodes();
+                if nodes.is_empty() {
+                    return Err("No USB devices found under /dev/bus/usb - connect the camera with an OTG cable and set its USB mode to PC/Webcam/PTP.".into());
+                }
+                for node in nodes {
+                    match ohos_usb::open_node(&node) {
+                        Ok(fd) => match ohos_usb::probe_node(&node, &fd) {
+                            Ok(cameras) => {
+                                if let Some(camera) = cameras.into_iter().next() {
+                                    log::info!(
+                                        "[tether-ohos] connecting to {} ({}) via usbfs:{node}",
+                                        camera.model,
+                                        camera.port
+                                    );
+                                    found = Some((camera, fd));
+                                    break;
+                                }
+                            }
+                            Err(e) => log::warn!("[tether-ohos] probe {node}: {e}"),
+                        },
+                        Err(e) => {
+                            return Err(format!("Cannot open USB device {node} ({e}). Grant USB access to the camera in system settings, then retry."))
+                        }
+                    }
+                }
+                let (camera, fd) =
+                    found.ok_or("No camera found on the connected USB devices")?;
+                ohos_usb::wrap_sys_device(&fd)
+                    .map_err(|e| format!("Failed to hand USB device to libgphoto2: {e}"))?;
+                {
+                    let mut session = state.camera_session.lock().unwrap();
+                    session.usb_fd = Some(fd);
+                }
+                camera
+            };
+            #[cfg(not(all(target_os = "linux", target_env = "ohos")))]
+            let descriptor = {
+                let cameras = gphoto2::Camera::autodetect(&context).map_err(|e| e.to_string())?;
+                cameras.into_iter().next().ok_or("No camera found")?
+            };
 
             let camera = match gphoto2::Camera::open(&context, &descriptor.model, &descriptor.port)
             {

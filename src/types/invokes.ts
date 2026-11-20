@@ -123,6 +123,7 @@ export enum Invokes {
   GetOhosAiNpuStatus = 'get_ohos_ai_npu_status',
   GetOhosColorMode = 'get_ohos_color_mode',
   GetOhosDeviceType = 'get_ohos_device_type',
+  GetOhosAvoidArea = 'get_ohos_avoid_area',
   GetOhosPrivacyState = 'get_ohos_privacy_state',
   IsOhosBuild = 'is_ohos_build',
   OpenExternalUrl = 'open_external_url',

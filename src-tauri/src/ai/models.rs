@@ -140,6 +140,12 @@ const UPSCALE_SHA256: &str = "9d3a51deab2518cde257048180070b078840f2aa32326b8bf0
 
 const UPSCALE_SPATIAL_DIMS: [&str; 2] = ["h", "w"];
 
+/// Side-loaded CANN `.om` for the RapidRes upscale model (same provisioning
+/// channel as `nind_v2.om`: never bundled, always SoC-specific, built with
+/// `omg --platform=<soc>` per docs/RAPIDRES_NPU_FEASIBILITY.md).
+#[cfg(target_env = "ohos")]
+pub const UPSCALE_OM_FILENAME: &str = "2xBHI_small_span_rapidraw.om";
+
 const LAMA_URL: &str =
     "https://hf-mirror.com/CyberTimon/RapidRAW-Models/resolve/main/lama_fp16.onnx?download=true";
 
@@ -1228,6 +1234,27 @@ fn denoise_om_contract_matches(model: &crate::ohos_integration::om::OmModel) -> 
             .is_some_and(|o| o.dims == [1, 3, 504, 504] && o.byte_size == expected_bytes)
 }
 
+/// The RapidRes `.om` is converted from the same ONNX with its tile input
+/// pinned to the upscale tile size (544x544, overlap 16) and must upscale
+/// exactly 2x (docs/RAPIDRES_NPU_FEASIBILITY.md §1).
+#[cfg(target_env = "ohos")]
+fn upscale_om_contract_matches(model: &crate::ohos_integration::om::OmModel) -> bool {
+    const TILE: usize = crate::ai::tiling::UPSCALE_TILE_SIZE;
+    let out = TILE * 2;
+    let in_bytes = 3 * TILE * TILE * std::mem::size_of::<f32>();
+    let out_bytes = 3 * out * out * std::mem::size_of::<f32>();
+    let tile = TILE as i32;
+    let out_dim = out as i32;
+    model.input_count() == 1
+        && model.output_count() == 1
+        && model
+            .input_info(0)
+            .is_some_and(|i| i.dims == [1, 3, tile, tile] && i.byte_size == in_bytes)
+        && model
+            .output_info(0)
+            .is_some_and(|o| o.dims == [1, 3, out_dim, out_dim] && o.byte_size == out_bytes)
+}
+
 /// Provision the MindSpore Lite denoise model: prefer a copy bundled in the
 /// HAP rawfile set (release builds), otherwise download/verify it. Either way
 /// the pinned SHA256 is enforced. Any failure (bad hash, download error, IO
@@ -1272,7 +1299,7 @@ pub async fn get_or_init_upscale_model(
     app_handle: &tauri::AppHandle,
     ai_state_mutex: &Mutex<Option<AiState>>,
     ai_init_lock: &TokioMutex<()>,
-) -> Result<Arc<Mutex<Session>>> {
+) -> Result<Arc<UpscaleSession>> {
     if let Some(upscale_model) =
         cached_ai_state(ai_state_mutex, |state| state.upscale_model.clone())
     {
@@ -1288,6 +1315,55 @@ pub async fn get_or_init_upscale_model(
     }
 
     let models_dir = get_models_dir(app_handle)?;
+
+    // OpenHarmony NPU path, mirroring the denoise selection: the shared NPU
+    // backend setting gates it, a side-loaded SoC-specific `.om` provides the
+    // graph (converted from the same ONNX with its tile input pinned to
+    // 544x544 — docs/RAPIDRES_NPU_FEASIBILITY.md §6). Any problem falls
+    // back to ORT.
+    #[cfg(target_env = "ohos")]
+    {
+        let npu_selected = crate::app::settings::load_settings(app_handle.clone())
+            .unwrap_or_default()
+            .ai_denoise_backend
+            .as_deref()
+            .is_some_and(|backend| backend == "npu");
+        if npu_selected {
+            let om_path = models_dir.join(UPSCALE_OM_FILENAME);
+            if om_path.exists() {
+                match crate::ohos_integration::om::OmModel::new(&om_path, OM_PERF_MODE_CNN) {
+                    Ok(model) if upscale_om_contract_matches(&model) => {
+                        log::info!("NPU mode: using CANN .om upscale model.");
+                        let upscale_model = Arc::new(UpscaleSession::Cann(Mutex::new(model)));
+                        crate::register_exit_handler();
+                        ai_state_mutex
+                            .lock()
+                            .unwrap()
+                            .get_or_insert_with(AiState::default)
+                            .upscale_model = Some(upscale_model.clone());
+                        return Ok(upscale_model);
+                    }
+                    Ok(_) => {
+                        log::warn!(
+                            "NPU mode: {} IO contract mismatch, trying .onnx/ORT fallback.",
+                            UPSCALE_OM_FILENAME
+                        );
+                    }
+                    Err(e) => {
+                        log::warn!(
+                            "NPU mode: .om upscale init failed ({e}), trying .onnx/ORT fallback."
+                        );
+                    }
+                }
+            } else {
+                log::warn!(
+                    "NPU mode: no {} in the models dir, using the ORT upscale model.",
+                    UPSCALE_OM_FILENAME
+                );
+            }
+        }
+    }
+
     download_and_verify_model(app_handle, &models_dir, &UPSCALE_ASSET).await?;
 
     let _ = ort::init().with_name("AI-Upscale").commit();
@@ -1299,7 +1375,7 @@ pub async fn get_or_init_upscale_model(
         None,
         &UPSCALE_SPATIAL_DIMS.map(|dim| (dim, tile)),
     )?;
-    let upscale_model = Arc::new(Mutex::new(session));
+    let upscale_model = Arc::new(UpscaleSession::Ort(Mutex::new(session)));
 
     crate::register_exit_handler();
 
@@ -1466,11 +1542,23 @@ pub enum DenoiseSession {
     Cann(Mutex<crate::ohos_integration::om::OmModel>),
 }
 
+/// RapidRes upscale model backend — the same NPU selection story as
+/// `DenoiseSession` (the `ai_denoise_backend` setting governs the whole NPU
+/// pipeline). ORT is the default; a side-loaded
+/// `2xBHI_small_span_rapidraw.om` next to the ONNX in the models dir runs
+/// on the CANN/HIAI NPU instead.
+pub enum UpscaleSession {
+    Ort(Mutex<Session>),
+    /// CANN/HIAI (.om model).
+    #[cfg(target_env = "ohos")]
+    Cann(Mutex<crate::ohos_integration::om::OmModel>),
+}
+
 #[derive(Default)]
 pub struct AiState {
     pub models: Option<Arc<AiModels>>,
     pub denoise_model: Option<Arc<DenoiseSession>>,
-    pub upscale_model: Option<Arc<Mutex<Session>>>,
+    pub upscale_model: Option<Arc<UpscaleSession>>,
     pub clip_models: Option<Arc<ClipModels>>,
     pub lama_model: Option<Arc<Mutex<Session>>>,
     pub normal_model: Option<Arc<Mutex<Session>>>,

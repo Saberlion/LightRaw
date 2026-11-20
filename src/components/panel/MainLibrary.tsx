@@ -58,6 +58,15 @@ interface MainLibraryProps {
   isLoading: boolean;
   isTouchUi: boolean;
   isTreeLoading: boolean;
+  /** Phone gallery (CamRAW workbench): render date section headers in the
+   * flat grid while the sort is date_taken. Flows into LibraryGrid via
+   * the {...props} spread. */
+  groupByDate?: boolean;
+  /** Phone tab shell: compact header (no display-mode switch / jobs menu). */
+  isPhoneLayout?: boolean;
+  /** Phone floating nav: spacer height under the grid so the last row can
+   * scroll above the pill (flows into LibraryGrid via {...props}). */
+  gridBottomInset?: number;
   libraryViewMode: LibraryViewMode;
   multiSelectedPaths: Array<string>;
   onClearSelection(): void;
@@ -481,7 +490,7 @@ export default function MainLibrary(props: MainLibraryProps) {
   return (
     <div className="relative z-20 flex-1 flex flex-col min-w-0 min-h-0 bg-bg-secondary rounded-lg overflow-visible">
       <header
-        className="p-3 shrink-0 flex justify-between items-center border-b border-surface gap-4"
+        className="p-3 shrink-0 flex flex-wrap justify-between items-center border-b border-surface gap-x-4 gap-y-2"
         onMouseEnter={() => setIsProgressHovered(true)}
         onMouseLeave={() => setIsProgressHovered(false)}
       >
@@ -562,13 +571,22 @@ export default function MainLibrary(props: MainLibraryProps) {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-4 shrink-0">
-              <DisplayModeSwitch displayMode={libraryDisplayMode} setDisplayMode={setLibraryDisplayMode} t={t} />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0 grow justify-end">
+              {/* Phone shell: the display-mode switch and the jobs menu are
+                  niche on a phone and their width is what forced the header
+                  into three wrapped rows — hide them there so the remaining
+                  controls fit a single row. */}
+              {!props.isPhoneLayout && (
+                <DisplayModeSwitch displayMode={libraryDisplayMode} setDisplayMode={setLibraryDisplayMode} t={t} />
+              )}
 
-              <div className="flex items-center bg-surface p-1 rounded-lg gap-1 border border-border-color/20">
+              <div className="flex flex-wrap items-center bg-surface p-1 rounded-lg gap-1 border border-border-color/20">
                 <SearchInput indexingProgress={props.aiTaggingJob?.progress} isIndexing={!!props.aiTaggingJob} />
                 <ViewOptionsDropdown
                   libraryViewMode={props.libraryViewMode}
+                  isPhoneLayout={props.isPhoneLayout}
+                  displayMode={libraryDisplayMode}
+                  onDisplayModeChange={setLibraryDisplayMode}
                   onSelectSize={props.onThumbnailSizeChange}
                   onSelectAspectRatio={props.onThumbnailAspectRatioChange}
                   onLibraryRefresh={props.onLibraryRefresh}
@@ -583,7 +601,7 @@ export default function MainLibrary(props: MainLibraryProps) {
                   flagStatusOptions={translatedFlagStatusOptions}
                   sortOptions={translatedSortOptions}
                 />
-                <JobsMenu onNavigateToFolder={props.onNavigateToFolder} />
+                {!props.isPhoneLayout && <JobsMenu onNavigateToFolder={props.onNavigateToFolder} />}
                 {props.isTouchUi && (
                   <Button
                     className="h-12 w-12 bg-accent text-button-text shadow-none p-0 flex items-center justify-center"
@@ -662,7 +680,12 @@ export default function MainLibrary(props: MainLibraryProps) {
       {(props.isTouchUi || useSettingsStore.getState().isOhos) && (
         <Button
           className={clsx(
-            'absolute bottom-18 right-8 h-12 w-12 shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50',
+            // z-30: above the grid, but under the view-options dropdown
+            // (z-50, same stacking context) so an open panel is never
+            // covered by the import FABs. On the phone shell the pill nav
+            // floats over the grid bottom, so the FABs sit above it.
+            'absolute right-8 h-12 w-12 shadow-lg p-0 flex items-center justify-center z-30 border border-border-color/50',
+            props.isPhoneLayout ? 'bottom-24' : 'bottom-18',
             props.onImportFromAlbum ? 'bg-surface text-text-primary' : 'bg-accent text-button-text',
           )}
           onClick={(e) => {
@@ -676,7 +699,10 @@ export default function MainLibrary(props: MainLibraryProps) {
       )}
       {props.onImportFromAlbum && (
         <Button
-          className="absolute bottom-32 right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-50 border border-border-color/50"
+          className={clsx(
+            'absolute right-8 h-12 w-12 bg-accent text-button-text shadow-lg p-0 flex items-center justify-center z-30 border border-border-color/50',
+            props.isPhoneLayout ? 'bottom-38' : 'bottom-32',
+          )}
           onClick={(e) => {
             e.stopPropagation();
             props.onImportFromAlbum?.();

@@ -39,6 +39,7 @@ import TetheringPanel from './components/panel/right/TetheringPanel';
 
 import EditorView from './components/views/EditorView';
 import LibraryView from './components/views/LibraryView';
+import PhoneTabShell from './components/PhoneTabShell';
 
 import { ContextMenuProvider } from './context/ContextMenuContext';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -64,6 +65,7 @@ import { useImagePreloader } from './hooks/useImagePreloader';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useExternalEditSession } from './hooks/useExternalEditSession';
 import { useOhosKeepScreenOn } from './hooks/useOhosKeepScreenOn';
+import { useSafeAreaInsets } from './hooks/useSafeAreaInsets';
 import ExternalEditBar from './components/panel/ExternalEditBar';
 import { Status } from './types/export';
 
@@ -76,7 +78,7 @@ import { useAndroidBackHandler } from './hooks/useAndroidBackHandler';
 import './i18n';
 
 import { Invokes } from './types/invokes';
-import { ImageFile } from './types/library';
+import { ImageFile, SortDirection } from './types/library';
 import { LibraryViewMode, Theme, ThumbnailSize, ThumbnailAspectRatio } from './types/settings';
 import { Panel, PanelRegion } from './types/ui';
 
@@ -230,7 +232,10 @@ function App() {
     })),
   );
 
-  const defaultThumbnailSize = osPlatform === 'android' ? ThumbnailSize.Small : ThumbnailSize.Medium;
+  const defaultThumbnailSize =
+    osPlatform === 'android' || (isOhos && ohosDeviceType === 'phone') ? ThumbnailSize.Small : ThumbnailSize.Medium;
+  // CamRAW-style phone grid: Small (160px) gives two columns on the 366px
+  // viewport; the desktop default Medium (240px) would fit only one.
   const defaultLibraryViewMode = osPlatform === 'android' ? LibraryViewMode.Recursive : LibraryViewMode.Flat;
 
   const selectedImagePathRef = useRef<string | null>(null);
@@ -283,6 +288,7 @@ function App() {
   });
 
   useOhosKeepScreenOn();
+  useSafeAreaInsets();
 
   const isAndroid = osPlatform === 'android';
   // OpenHarmony form factor: tablets are touch-first and keep the desktop
@@ -319,6 +325,34 @@ function App() {
 
   const useCompactPanels = layoutMode === 'compact';
   const useWidePanels = layoutMode === 'wide';
+  // Phone tab shell (docs/HARMONYOS_PHONE_LAYOUT.md §3): only the OHOS phone
+  // in its compact (portrait) layout gets the bottom tab navigation. Android
+  // keeps its existing phone layout for now; landscape crosses 600px into
+  // wide mode and drops the shell for the larger canvas.
+  const usePhoneTabShell = isOhosPhone && useCompactPanels;
+
+  // Tethering backend capability (fifth "connect" tab, OHOS_USB_TETHERING_PLAN
+  // §4.4). is_tethering_supported is a compile-time constant on the Rust side,
+  // so this is a single cheap invoke cached for the app lifetime.
+  const [tetheringSupported, setTetheringSupported] = useState(false);
+  useEffect(() => {
+    invoke<boolean>(Invokes.IsTetheringSupported)
+      .then(setTetheringSupported)
+      .catch(() => setTetheringSupported(false));
+  }, []);
+
+  // The phone gallery renders CamRAW-style date sections, which only read
+  // correctly over a date-sorted list — default the library sort to capture
+  // date (newest first) once when the shell activates and the sort is still
+  // the pristine default. The user can still change it from the view options;
+  // any non-date sort simply drops the headers.
+  useEffect(() => {
+    if (!usePhoneTabShell) return;
+    const { sortCriteria, setSortCriteria } = useLibraryStore.getState();
+    if (sortCriteria.key === 'name' && sortCriteria.order === SortDirection.Ascending) {
+      setSortCriteria({ key: 'date_taken', order: SortDirection.Descending });
+    }
+  }, [usePhoneTabShell]);
 
   // Touch tablets start with the adjustments rail collapsed so the canvas gets
   // the whole width; tapping a rail icon slides the panel out (SidePanelArea).
@@ -1001,8 +1035,22 @@ function App() {
         className={clsx(
           'flex flex-col h-dvh font-sans text-text-primary overflow-hidden select-none',
           useMacWindowShell && 'macos-window-shell',
+          usePhoneTabShell && 'phone-tab-shell',
           isWgpuActive ? 'bg-transparent' : 'bg-bg-primary',
         )}
+        style={
+          // OHOS safe-area insets from the native avoid-area bridge
+          // (phone layout G1). Other platforms keep their existing handling
+          // (Android: MainActivity insets; desktop: none needed).
+          isOhos
+            ? {
+                paddingTop: 'var(--safe-top)',
+                paddingRight: 'var(--safe-right)',
+                paddingBottom: 'var(--safe-bottom)',
+                paddingLeft: 'var(--safe-left)',
+              }
+            : undefined
+        }
       >
         {!isTouchUi && (
           <div
@@ -1019,7 +1067,11 @@ function App() {
           className={clsx(
             'flex-1 flex flex-col min-h-0',
             isLayoutReady && hasMainContent && !isInstantTransition && 'transition-all duration-300 ease-in-out',
-            [hasMainContent && (isFullScreen ? 'p-0 gap-0' : 'p-2 gap-2')],
+            // Phone shell: vertical padding is pure waste there — the safe-area
+            // padding above already clears the status bar and the pill nav
+            // carries its own bottom offset, so the content column goes
+            // edge-to-edge vertically (side padding keeps the card rounded).
+            hasMainContent && (isFullScreen ? 'p-0 gap-0' : usePhoneTabShell ? 'px-2 gap-2' : 'p-2 gap-2'),
           )}
         >
           <DndContext
@@ -1092,34 +1144,101 @@ function App() {
                     activeView === 'editor' && selectedImage ? 'hidden' : 'flex',
                   )}
                 >
-                  <LibraryView
-                    sortedImageList={sortedImageList}
-                    groupBadgeInfo={groupBadgeInfo}
-                    thumbnailSize={thumbnailSize}
-                    thumbnailAspectRatio={thumbnailAspectRatio}
-                    libraryViewMode={libraryViewMode}
-                    isTouchUi={isTouchUi}
-                    layoutMode={layoutMode}
-                    setThumbnailSize={setThumbnailSize}
-                    setThumbnailAspectRatio={setThumbnailAspectRatio}
-                    setLibraryViewMode={setLibraryViewMode}
-                    handleClearSelection={handleClearSelection}
-                    handleLibraryImageSingleClick={handleLibraryImageSingleClick}
-                    handleImageSelect={handleImageSelect}
-                    handleRate={handleRate}
-                    handleThumbnailContextMenu={handleThumbnailContextMenu}
-                    handleMainLibraryContextMenu={handleMainLibraryContextMenu}
-                    handleContinueSession={handleContinueSession}
-                    handleGoHome={handleGoHome}
-                    handleOpenFolder={handleOpenFolder}
-                    handleNavigateToFolder={(path) => handleSelectSubfolder(path, false, undefined, true)}
-                    handleImportClick={handleImportClick}
-                    handleLibraryRefresh={handleLibraryRefresh}
-                    handleCopyAdjustments={handleCopyAdjustments}
-                    handlePasteAdjustments={handlePasteAdjustments}
-                    handleResetAdjustments={handleResetAdjustments}
-                    requestThumbnails={requestThumbnails}
-                  />
+                  {usePhoneTabShell ? (
+                    <PhoneTabShell
+                      onSelectAlbum={(album) => {
+                        handleSelectAlbum(album.id, album.name, album.images, false, false);
+                        setUI({ phoneTab: 'gallery' });
+                      }}
+                      onNewAlbum={() => setUI({ isCreateAlbumModalOpen: true })}
+                      onBatchDelete={handleDeleteSelected}
+                      onBatchExport={() =>
+                        setUI((state) => ({ isLibraryExportPanelVisible: !state.isLibraryExportPanelVisible }))
+                      }
+                      onBatchCopy={handleCopyAdjustments}
+                      onBatchPaste={() => handlePasteAdjustments()}
+                      onClearSelection={handleClearSelection}
+                      tetheringSupported={tetheringSupported}
+                      renderTethering={() => (
+                        <div className="w-full h-full flex flex-col p-4">
+                          <TetheringPanel onLibraryRefresh={handleLibraryRefresh} onImageSelect={handleImageSelect} />
+                        </div>
+                      )}
+                      renderSettings={() => (
+                        <div className="w-full h-full flex flex-col p-4 pb-20 overflow-y-auto custom-scrollbar">
+                          <SettingsPanel
+                            appSettings={appSettings}
+                            onBack={() => setUI({ phoneTab: 'gallery' })}
+                            onLibraryRefresh={handleLibraryRefresh}
+                            onSettingsChange={handleSettingsChange}
+                            rootPaths={rootPaths}
+                          />
+                        </div>
+                      )}
+                    >
+                      <LibraryView
+                        sortedImageList={sortedImageList}
+                        groupBadgeInfo={groupBadgeInfo}
+                        thumbnailSize={thumbnailSize}
+                        thumbnailAspectRatio={thumbnailAspectRatio}
+                        libraryViewMode={libraryViewMode}
+                        isTouchUi={isTouchUi}
+                        layoutMode={layoutMode}
+                        setThumbnailSize={setThumbnailSize}
+                        setThumbnailAspectRatio={setThumbnailAspectRatio}
+                        setLibraryViewMode={setLibraryViewMode}
+                        handleClearSelection={handleClearSelection}
+                        handleLibraryImageSingleClick={handleLibraryImageSingleClick}
+                        handleImageSelect={handleImageSelect}
+                        handleRate={handleRate}
+                        handleThumbnailContextMenu={handleThumbnailContextMenu}
+                        handleMainLibraryContextMenu={handleMainLibraryContextMenu}
+                        handleContinueSession={handleContinueSession}
+                        handleGoHome={handleGoHome}
+                        handleOpenFolder={handleOpenFolder}
+                        handleNavigateToFolder={(path) => handleSelectSubfolder(path, false, undefined, true)}
+                        handleImportClick={handleImportClick}
+                        handleLibraryRefresh={handleLibraryRefresh}
+                        handleCopyAdjustments={handleCopyAdjustments}
+                        handlePasteAdjustments={handlePasteAdjustments}
+                        handleResetAdjustments={handleResetAdjustments}
+                        requestThumbnails={requestThumbnails}
+                        groupByDate
+                        isPhoneLayout
+                        gridBottomInset={80}
+                        hideBottomBar
+                      />
+                    </PhoneTabShell>
+                  ) : (
+                    <LibraryView
+                      sortedImageList={sortedImageList}
+                      groupBadgeInfo={groupBadgeInfo}
+                      thumbnailSize={thumbnailSize}
+                      thumbnailAspectRatio={thumbnailAspectRatio}
+                      libraryViewMode={libraryViewMode}
+                      isTouchUi={isTouchUi}
+                      layoutMode={layoutMode}
+                      setThumbnailSize={setThumbnailSize}
+                      setThumbnailAspectRatio={setThumbnailAspectRatio}
+                      setLibraryViewMode={setLibraryViewMode}
+                      handleClearSelection={handleClearSelection}
+                      handleLibraryImageSingleClick={handleLibraryImageSingleClick}
+                      handleImageSelect={handleImageSelect}
+                      handleRate={handleRate}
+                      handleThumbnailContextMenu={handleThumbnailContextMenu}
+                      handleMainLibraryContextMenu={handleMainLibraryContextMenu}
+                      handleContinueSession={handleContinueSession}
+                      handleGoHome={handleGoHome}
+                      handleOpenFolder={handleOpenFolder}
+                      handleNavigateToFolder={(path) => handleSelectSubfolder(path, false, undefined, true)}
+                      handleImportClick={handleImportClick}
+                      handleLibraryRefresh={handleLibraryRefresh}
+                      handleCopyAdjustments={handleCopyAdjustments}
+                      handlePasteAdjustments={handlePasteAdjustments}
+                      handleResetAdjustments={handleResetAdjustments}
+                      requestThumbnails={requestThumbnails}
+                    />
+                  )}
                 </div>
                 {isSettingsOpen && appSettings && hasRoots && (
                   <div className="absolute inset-0 z-50 flex bg-bg-secondary rounded-lg">

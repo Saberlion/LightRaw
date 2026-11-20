@@ -11,7 +11,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = []
-tethering = ["dep:gphoto2"]
+tethering = ["dep:gphoto2", "dep:gphoto2-sys"]
 
 [dependencies]
 tauri = { version = "2.11", features = [ "macos-private-api", "rustls-tls", "protocol-asset" ] }
@@ -97,9 +97,22 @@ windows = { version = "0.62", features = [
 ] }
 windows-native-keyring-store = "1"
 
-# gphoto2 (tethering) is POSIX desktop-only; excluded on OpenHarmony.
+# gphoto2 (tethering): desktop build links the system libgphoto2 via pkg-config.
 [target.'cfg(any(target_os = "macos", all(target_os = "linux", not(target_env = "ohos"))))'.dependencies]
 gphoto2 = { git = "https://github.com/CyberTimon/libgphoto2-rs", optional = true }
+
+# OpenHarmony tethering (docs/OHOS_USB_TETHERING_PLAN.md §4.2): same engine,
+# but the whole libgphoto2 stack (2.5.34 + libusb 1.0.29 + libltdl) is
+# cross-compiled from the vendored pins by scripts/build-gphoto-ohos.ps1 and
+# located via GPHOTO2_LIB_DIR (set by scripts/build-ohos.ps1, never committed).
+# default-features = false selects the crate's committed pregenerated FFI
+# bindings: bindgen at cross time would use the LLP64 host layout (wrong for
+# aarch64) and require libclang on the build host.
+# gphoto2-sys is a direct dep only for gp_port_usb_set_sys_device (the
+# authorized-fd wrap for USB devices; not re-exported by the wrapper crate).
+[target.'cfg(all(target_os = "linux", target_env = "ohos"))'.dependencies]
+gphoto2 = { git = "https://github.com/CyberTimon/libgphoto2-rs", optional = true, default-features = false }
+gphoto2-sys = { git = "https://github.com/CyberTimon/libgphoto2-rs", optional = true, default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 apple-native-keyring-store = { version = "1", features = ["keychain"] }

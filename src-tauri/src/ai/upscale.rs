@@ -1,13 +1,14 @@
 use crate::ai::base_cache::{BaseCache, entry_key, source_string};
 use crate::ai::denoise::DenoiseMethod;
+use crate::ai::models::UpscaleSession;
 use crate::app::state::{AppState, LoadedImage};
 use crate::render::adjustment_utils::is_effect_enabled;
 use crate::render::color_space::working_luma;
-use image::{DynamicImage, GenericImageView, Rgb32FImage};
+use image::{DynamicImage, GenericImageView, Rgb32FImage, imageops};
 use rayon::prelude::*;
 use std::borrow::Cow;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tauri::Manager;
 
 pub const FACTOR: u32 = 2;
@@ -27,8 +28,6 @@ static CACHE: BaseCache = BaseCache::new(
     "ai-upscale",
     "AI upscale",
 );
-
-type Session = Arc<Mutex<ort::session::Session>>;
 
 pub fn initialize_cache_dir(cache_dir: &Path) {
     CACHE.initialize_dir(cache_dir);
@@ -383,15 +382,29 @@ fn input_for(
     let Some(method) = denoise else {
         return Ok(base.to_rgb32f());
     };
-    crate::ai::denoise::full_strength(path, method)
-        .filter(|entry| (entry.width, entry.height) == base.dimensions())
-        .map(|entry| entry.to_rgb32f())
-        .ok_or_else(|| "AI denoise result is not available".to_string())
+    let entry = crate::ai::denoise::full_strength(path, method)
+        .ok_or_else(|| "AI denoise result is not available".to_string())?;
+    if (entry.width, entry.height) == base.dimensions() {
+        return Ok(entry.to_rgb32f());
+    }
+    // The denoise stage caps its working resolution at MAX_EDGE (D-28), so
+    // entries for large images arrive smaller than the base. Resize up to the
+    // base dims — the same fallback the render path applies in
+    // `apply_ai_denoise`. Previously a dimension mismatch was rejected here
+    // with "AI denoise result is not available", which failed every
+    // denoise+upscale run on images over 2560px (observed on a phone with a
+    // 6960x4640 CR3).
+    Ok(imageops::resize(
+        &entry.to_rgb32f(),
+        base.width(),
+        base.height(),
+        imageops::FilterType::Triangle,
+    ))
 }
 
 fn run_upscaler(
     input: &Rgb32FImage,
-    session: &Session,
+    session: &Arc<UpscaleSession>,
     on_progress: &(dyn Fn(f32) + Sync),
 ) -> Result<Rgb32FImage, String> {
     let (w, h) = input.dimensions();
@@ -400,8 +413,9 @@ fn run_upscaler(
         .par_iter_mut()
         .for_each(|v| *v = v.clamp(0.0, 1.0).powf(1.0 / GAMMA));
 
-    let mut output = crate::ai::tiling::run_ai_upscale(&encoded, session, FACTOR, on_progress)
-        .map_err(|e| e.to_string())?;
+    let mut output =
+        crate::ai::tiling::run_ai_upscale(&encoded, session.as_ref(), FACTOR, on_progress)
+            .map_err(|e| e.to_string())?;
     drop(encoded);
     if output.dimensions() != (w * FACTOR, h * FACTOR) {
         return Err(format!(
@@ -423,7 +437,7 @@ fn run_upscaler(
     Ok(output)
 }
 
-async fn load_session(app_handle: tauri::AppHandle) -> Result<Session, String> {
+async fn load_session(app_handle: tauri::AppHandle) -> Result<Arc<UpscaleSession>, String> {
     let state = app_handle.state::<AppState>();
     crate::ai::models::get_or_init_upscale_model(&app_handle, &state.ai_state, &state.ai_init_lock)
         .await

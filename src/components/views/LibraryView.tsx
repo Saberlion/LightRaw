@@ -42,6 +42,15 @@ interface LibraryViewProps {
   handlePasteAdjustments: () => void;
   handleResetAdjustments: () => void;
   requestThumbnails: any;
+  /** Phone gallery: date section headers (see MainLibrary). */
+  groupByDate?: boolean;
+  /** Phone tab shell: compact header + smaller default thumbnails. */
+  isPhoneLayout?: boolean;
+  /** Phone floating nav: grid bottom spacer height (see MainLibrary). */
+  gridBottomInset?: number;
+  /** Phone tab shell: the shell owns the bottom bar area (tab nav / batch
+   * actions), so the library BottomBar would stack on top of it. */
+  hideBottomBar?: boolean;
 }
 
 export default function LibraryView({
@@ -71,6 +80,10 @@ export default function LibraryView({
   handlePasteAdjustments,
   handleResetAdjustments,
   requestThumbnails,
+  groupByDate = false,
+  isPhoneLayout = false,
+  gridBottomInset = 0,
+  hideBottomBar = false,
 }: LibraryViewProps) {
   const { activeView, setUI } = useUIStore(
     useShallow((state) => ({
@@ -134,43 +147,46 @@ export default function LibraryView({
     <div className="flex flex-row grow h-full min-h-0">
       <div className="flex-1 flex flex-col min-w-0 gap-2">
         <MainLibrary
-            activePath={libraryActivePath}
-            aiModelDownloadStatus={aiModelDownloadStatus}
-            aiTaggingJob={aiTaggingJob}
-            appSettings={appSettings}
-            currentFolderPath={currentFolderPath}
-            groupBadgeInfo={groupBadgeInfo}
-            imageList={sortedImageList}
-            imageRatings={imageRatings}
-            importState={importState}
-            isLoading={isViewLoading}
-            isTreeLoading={isTreeLoading}
-            isTouchUi={isTouchUi}
-            libraryViewMode={libraryViewMode}
-            multiSelectedPaths={multiSelectedPaths}
-            onClearSelection={handleClearSelection}
-            onContextMenu={handleThumbnailContextMenu}
-            onNavigateToFolder={handleNavigateToFolder}
-            onContinueSession={handleContinueSession}
-            onEmptyAreaContextMenu={handleMainLibraryContextMenu}
-            onGoHome={handleGoHome}
-            onImageClick={handleLibraryImageSingleClick}
-            onImageDoubleClick={handleImageSelect}
-            onImportClick={handleMainLibraryImportClick}
-            onImportFromAlbum={isOhos ? handleImportFromAlbum : undefined}
-            onLibraryRefresh={handleLibraryRefresh}
-            onOpenFolder={handleOpenFolder}
-            onSettingsChange={handleSettingsChange}
-            onThumbnailAspectRatioChange={setThumbnailAspectRatio}
-            onThumbnailSizeChange={setThumbnailSize}
-            onRequestThumbnails={requestThumbnails}
-            rootPaths={rootPaths}
-            setLibraryViewMode={setLibraryViewMode}
-            theme={theme}
-            thumbnailAspectRatio={thumbnailAspectRatio}
-            thumbnailSize={thumbnailSize}
-          />
-        {rootPaths && rootPaths.length > 0 && (
+          activePath={libraryActivePath}
+          aiModelDownloadStatus={aiModelDownloadStatus}
+          aiTaggingJob={aiTaggingJob}
+          appSettings={appSettings}
+          currentFolderPath={currentFolderPath}
+          groupBadgeInfo={groupBadgeInfo}
+          groupByDate={groupByDate}
+          isPhoneLayout={isPhoneLayout}
+          gridBottomInset={gridBottomInset}
+          imageList={sortedImageList}
+          imageRatings={imageRatings}
+          importState={importState}
+          isLoading={isViewLoading}
+          isTreeLoading={isTreeLoading}
+          isTouchUi={isTouchUi}
+          libraryViewMode={libraryViewMode}
+          multiSelectedPaths={multiSelectedPaths}
+          onClearSelection={handleClearSelection}
+          onContextMenu={handleThumbnailContextMenu}
+          onNavigateToFolder={handleNavigateToFolder}
+          onContinueSession={handleContinueSession}
+          onEmptyAreaContextMenu={handleMainLibraryContextMenu}
+          onGoHome={handleGoHome}
+          onImageClick={handleLibraryImageSingleClick}
+          onImageDoubleClick={handleImageSelect}
+          onImportClick={handleMainLibraryImportClick}
+          onImportFromAlbum={isOhos ? handleImportFromAlbum : undefined}
+          onLibraryRefresh={handleLibraryRefresh}
+          onOpenFolder={handleOpenFolder}
+          onSettingsChange={handleSettingsChange}
+          onThumbnailAspectRatioChange={setThumbnailAspectRatio}
+          onThumbnailSizeChange={setThumbnailSize}
+          onRequestThumbnails={requestThumbnails}
+          rootPaths={rootPaths}
+          setLibraryViewMode={setLibraryViewMode}
+          theme={theme}
+          thumbnailAspectRatio={thumbnailAspectRatio}
+          thumbnailSize={thumbnailSize}
+        />
+        {rootPaths && rootPaths.length > 0 && !hideBottomBar && (
           <BottomBar
             isCopied={isCopied}
             isCopyDisabled={multiSelectedPaths.length === 0}

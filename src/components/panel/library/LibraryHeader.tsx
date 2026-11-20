@@ -48,6 +48,7 @@ import {
 } from '../../../types/library';
 import {
   LibraryViewMode,
+  LibraryDisplayMode,
   ExifOverlay,
   GroupingMode,
   ThumbnailSize,
@@ -432,7 +433,10 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
         className="flex-1 min-w-0 h-full overflow-hidden flex items-center pl-1"
         style={{ opacity: isActive ? 1 : 0, pointerEvents: isActive ? 'auto' : 'none', transition: 'opacity 0.2s' }}
       >
-        <div ref={contentRef} className="flex items-center gap-2 h-full flex-nowrap min-w-[250px] pr-2">
+        <div
+          ref={contentRef}
+          className="flex items-center gap-2 h-full flex-nowrap min-w-[250px] max-[600px]:min-w-[120px] pr-2"
+        >
           {tags.map((tag) => {
             const match = tag.match(ADVANCED_QUERY_REGEX);
             const isQuery = !!match;
@@ -468,7 +472,7 @@ export function SearchInput({ indexingProgress, isIndexing }: any) {
             );
           })}
           <input
-            className="grow w-full h-full bg-transparent text-text-primary placeholder-text-secondary border-none focus:outline-hidden min-w-[150px]"
+            className="grow w-full h-full bg-transparent text-text-primary placeholder-text-secondary border-none focus:outline-hidden min-w-[150px] max-[600px]:min-w-[60px]"
             disabled={isIndexing}
             onBlur={() => {
               if (tags.length === 0 && !text) setIsSearchActive(false);
@@ -546,6 +550,12 @@ interface ViewOptionsDropdownProps {
   editedStatusOptions: Array<{ key: EditedStatus; label: string }>;
   flagStatusOptions: Array<{ key: FlagStatus; label: string }>;
   sortOptions: Array<{ key: string; label: string; disabled?: boolean }>;
+  /** Phone shell: the header's display-mode switch is hidden for compactness,
+   * so the grid/list/cull switch lives HERE (replacing the flat/recursive
+   * segmented, which stays a desktop concern). */
+  isPhoneLayout?: boolean;
+  displayMode?: LibraryDisplayMode;
+  onDisplayModeChange?: (mode: LibraryDisplayMode) => void;
 }
 
 export function ViewOptionsDropdown({
@@ -563,6 +573,9 @@ export function ViewOptionsDropdown({
   editedStatusOptions,
   flagStatusOptions,
   sortOptions,
+  isPhoneLayout = false,
+  displayMode,
+  onDisplayModeChange,
 }: ViewOptionsDropdownProps) {
   const { t } = useTranslation();
   const { filterCriteria, setFilterCriteria, sortCriteria, setSortCriteria } = useLibraryStore(
@@ -716,20 +729,46 @@ export function ViewOptionsDropdown({
               {t('library.header.viewOptions.displayMode')}
             </Text>
             <div className="px-3 mt-1">
-              <SegmentedSwitch
-                options={[
-                  { id: LibraryViewMode.Flat, label: t('library.header.viewOptions.currentFolder') },
-                  { id: LibraryViewMode.Recursive, label: t('library.header.viewOptions.recursive') },
-                ]}
-                value={libraryViewMode}
-                onChange={async (val) => {
-                  setLibraryViewMode(val as LibraryViewMode);
-                  if (appSettings) {
-                    await handleSettingsChange({ ...appSettings, libraryViewMode: val as LibraryViewMode });
-                    onLibraryRefresh?.();
-                  }
-                }}
-              />
+              {isPhoneLayout && displayMode && onDisplayModeChange ? (
+                // Phone shell: grid/list/cull lives here (the header switch is
+                // hidden); flat/recursive is a desktop concern.
+                <SegmentedSwitch
+                  options={[
+                    {
+                      id: LibraryDisplayMode.Grid,
+                      label: t('library.viewMode.grid'),
+                      title: t('library.viewMode.grid'),
+                    },
+                    {
+                      id: LibraryDisplayMode.List,
+                      label: t('library.viewMode.list'),
+                      title: t('library.viewMode.list'),
+                    },
+                    {
+                      id: LibraryDisplayMode.Cull,
+                      label: t('library.viewMode.culling'),
+                      title: t('library.viewMode.culling'),
+                    },
+                  ]}
+                  value={displayMode}
+                  onChange={(val) => onDisplayModeChange(val as LibraryDisplayMode)}
+                />
+              ) : (
+                <SegmentedSwitch
+                  options={[
+                    { id: LibraryViewMode.Flat, label: t('library.header.viewOptions.currentFolder') },
+                    { id: LibraryViewMode.Recursive, label: t('library.header.viewOptions.recursive') },
+                  ]}
+                  value={libraryViewMode}
+                  onChange={async (val) => {
+                    setLibraryViewMode(val as LibraryViewMode);
+                    if (appSettings) {
+                      await handleSettingsChange({ ...appSettings, libraryViewMode: val as LibraryViewMode });
+                      onLibraryRefresh?.();
+                    }
+                  }}
+                />
+              )}
             </div>
           </div>
 

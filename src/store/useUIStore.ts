@@ -11,7 +11,7 @@ import {
   MergePreview,
   MergeSettings,
 } from '../types/library';
-import { Panel, UiVisibility, PanelRegion, CollapsibleSectionsState } from '../types/ui';
+import { Panel, UiVisibility, PanelRegion, CollapsibleSectionsState, PhoneTab } from '../types/ui';
 import { WorkspaceState } from '../types/settings';
 import { useEditorStore } from './useEditorStore';
 import { pickCropGeometry } from '../utils/adjustments';
@@ -317,6 +317,10 @@ export interface UIState {
   uiVisibility: UiVisibility;
   isLibraryExportPanelVisible: boolean;
   isSettingsOpen: boolean;
+  // Phone layout (compact OHOS phone): which bottom-tab-shell tab the library
+  // form factor shows. Tab switching never remounts the underlying library
+  // data flow — only the visible tab content changes.
+  phoneTab: PhoneTab;
 
   leftPanelWidth: number;
   rightPanelWidth: number;
@@ -392,6 +396,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   uiVisibility: { filmstrip: true, leftPanel: true, rightPanel: true, quickFilter: false },
   isLibraryExportPanelVisible: false,
   isSettingsOpen: false,
+  phoneTab: 'gallery',
 
   leftPanelWidth: DEFAULT_PANEL_WIDTH,
   rightPanelWidth: DEFAULT_PANEL_WIDTH,

@@ -21,6 +21,7 @@ dependencies = [
  "fuzzy-matcher",
  "glam 0.33.5",
  "gphoto2",
+ "gphoto2-sys",
  "gtk",
  "half",
  "hex",

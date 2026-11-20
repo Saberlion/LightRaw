@@ -157,6 +157,43 @@ const groupImagesByFolder = (images: any[], baseFolderPath: string | null) => {
   }));
 };
 
+// CamRAW-style date sections (phone gallery, docs HARMONYOS_PHONE_LAYOUT §3.3):
+// capture date from EXIF DateTimeOriginal ("YYYY:MM:DD HH:MM:SS"), falling
+// back to the file's modified timestamp. Entries are grouped into CONSECUTIVE
+// same-date runs, so any sort order degrades gracefully — with a date sort the
+// whole list collapses into day sections, and any other order simply shows
+// fewer headers where equal dates happen to line up.
+export const groupImagesByDate = (images: ImageFile[], exifByPath: Record<string, Record<string, string>>) => {
+  const groups: Array<{ key: string; timestamp: number; images: ImageFile[] }> = [];
+
+  const dayKeyFromTimestamp = (ms: number) => {
+    const d = new Date(ms);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  for (const img of images) {
+    const exifDate = exifByPath[img.path]?.DateTimeOriginal || img.exif?.DateTimeOriginal;
+    const dayPart = exifDate ? exifDate.split(' ')[0] : '';
+    let timestamp = img.modified;
+    let dayKey: string;
+    if (/^\d{4}:\d{2}:\d{2}$/.test(dayPart)) {
+      dayKey = `${dayPart.slice(0, 4)}-${dayPart.slice(5, 7)}-${dayPart.slice(8, 10)}`;
+      timestamp = new Date(`${dayKey}T00:00:00`).getTime();
+    } else {
+      dayKey = dayKeyFromTimestamp(img.modified);
+    }
+
+    const last = groups[groups.length - 1];
+    if (last && last.key === dayKey) {
+      last.images.push(img);
+    } else {
+      groups.push({ key: dayKey, timestamp, images: [img] });
+    }
+  }
+
+  return groups;
+};
+
 export function buildJustifiedRows(
   images: any[],
   ratioMap: Record<string, number>,
@@ -232,6 +269,11 @@ export default function LibraryGrid(props: any) {
     thumbnailSizeOptions,
     onThumbnailSizeChange,
     groupBadgeInfo,
+    groupByDate,
+    // Floating pill nav clearance: the grid scrolls edge-to-edge behind the
+    // nav, so its virtualized list needs a spacer row of this height to be
+    // able to scroll the last thumbnails up above the pill.
+    gridBottomInset = 0,
   } = props;
   const { listColumnWidths, setLibrary, sortCriteria, setSortCriteria } = useLibraryStore(
     useShallow((state) => ({
@@ -241,6 +283,10 @@ export default function LibraryGrid(props: any) {
       setSortCriteria: state.setSortCriteria,
     })),
   );
+  // Date sections read the capture date from the EXIF map the library loader
+  // fills in the background (chunked); files without EXIF fall back to the
+  // modified timestamp inside groupImagesByDate.
+  const exifByPath = useLibraryStore((s) => s.exifByPath);
 
   const [gridSize, setGridSize] = useState({ height: 0, width: 0 });
   const [listHandle, setListHandle] = useListCallbackRef();
@@ -409,7 +455,28 @@ export default function LibraryGrid(props: any) {
         }
       });
     } else {
-      if (isJustified) {
+      // Phone gallery (CamRAW workbench): date sections over a date-sorted
+      // flat list. Only the plain grid (not justified, not list) gets them,
+      // and only while the sort is date_taken — any other order shows the
+      // plain grid so the headers can never lie about contiguity.
+      const useDateGroups = groupByDate && sortCriteria.key === 'date_taken' && !isJustified && !isListView;
+      if (useDateGroups) {
+        groupImagesByDate(imageList, exifByPath).forEach((group) => {
+          rows.push({
+            type: 'header',
+            isDate: true,
+            timestamp: group.timestamp,
+            count: group.images.length,
+          });
+          for (let i = 0; i < group.images.length; i += columnCount) {
+            rows.push({
+              type: 'images',
+              images: group.images.slice(i, i + columnCount),
+              startIndex: i,
+            });
+          }
+        });
+      } else if (isJustified) {
         rows.push(...buildJustifiedRows(imageList, ratioMapRef.current, availableWidth, minThumbWidth, ITEM_GAP));
       } else {
         for (let i = 0; i < imageList.length; i += columnCount) {
@@ -447,6 +514,10 @@ export default function LibraryGrid(props: any) {
     thumbnailSizeOptions,
     thumbnailAspectRatio,
     ratioMapVersion,
+    groupByDate,
+    sortCriteria.key,
+    exifByPath,
+    gridBottomInset,
   ]);
 
   const visibleImagePaths = useMemo(
@@ -508,7 +579,7 @@ export default function LibraryGrid(props: any) {
       if (!gridData) return 0;
       const row = gridData.rows[index];
       if (!row) return 0;
-      if (row.type === 'footer') return gridData.isListView ? 24 : gridData.OUTER_PADDING;
+      if (row.type === 'footer') return gridData.isListView ? 24 : gridData.OUTER_PADDING + gridBottomInset;
       if (row.type === 'header') return gridData.headerHeight;
       return gridData.isListView ? gridData.listRowHeight : (row.rowHeight || gridData.itemWidth) + gridData.ITEM_GAP;
     },

@@ -207,7 +207,21 @@ pub fn write_file_atomic(path: &Path, contents: &[u8]) -> std::io::Result<()> {
                 attempt += 1;
                 thread::sleep(std::time::Duration::from_millis(20 << attempt));
             }
-            Err(e) => return Err(e.error),
+            Err(e) => {
+                // FUSE mounts (OHOS app_data_dir) deny rename() with EACCES —
+                // the persist_downloaded_asset precedent in ai_processing.rs
+                // keeps a plain byte-copy fallback for exactly this. Losing
+                // atomicity beats losing every sidecar save on such mounts.
+                log::warn!(
+                    "Atomic rename for {} failed ({}), falling back to a direct write",
+                    path.display(),
+                    e.error
+                );
+                let mut file = fs::File::create(path)?;
+                file.write_all(contents)?;
+                let _ = file.sync_all();
+                return Ok(());
+            }
         }
     }
 }
@@ -809,6 +823,33 @@ pub fn delete_files_with_associated(
     Ok(())
 }
 
+/// Copies a `.rrdata`/`.rrexif` companion during an import, but only when it
+/// is actually a JSON sidecar: these files are read back as UTF-8 JSON, and a
+/// binary impostor (observed: a byte-identical copy of the image itself,
+/// 837540 bytes of JPEG) would poison every subsequent sidecar read/save with
+/// "stream did not contain valid UTF-8". JSON companions always start with
+/// '{', so anything else is dropped with a warning.
+fn copy_sidecar_companion(source: &Path, dest: &Path) {
+    let plausible = fs::read(source)
+        .map(|bytes| bytes.first() == Some(&b'{'))
+        .unwrap_or(false);
+    if !plausible {
+        log::warn!(
+            "Skipping import of sidecar {}: not a JSON sidecar (binary or empty), keeping the library clean",
+            source.display()
+        );
+        return;
+    }
+    if let Err(e) = fs::copy(source, dest) {
+        log::warn!(
+            "Failed to copy sidecar {} -> {}: {}",
+            source.display(),
+            dest.display(),
+            e
+        );
+    }
+}
+
 #[tauri::command]
 pub async fn import_files(
     source_paths: Vec<String>,
@@ -931,7 +972,7 @@ pub async fn import_files(
                     && let Some(dest_str) = dest_file_path.to_str()
                 {
                     let (_, dest_sidecar) = parse_virtual_path(dest_str);
-                    fs::copy(&source_sidecar, &dest_sidecar).map_err(|e| e.to_string())?;
+                    copy_sidecar_companion(&source_sidecar, &dest_sidecar);
                 }
 
                 let mut source_rrexif_name = source_path.file_name().unwrap().to_os_string();
@@ -942,7 +983,7 @@ pub async fn import_files(
                     let mut dest_rrexif_name = dest_file_path.file_name().unwrap().to_os_string();
                     dest_rrexif_name.push(".rrexif");
                     let dest_rrexif = dest_file_path.with_file_name(dest_rrexif_name);
-                    let _ = fs::copy(&source_rrexif, &dest_rrexif);
+                    copy_sidecar_companion(&source_rrexif, &dest_rrexif);
                 }
 
                 if settings.delete_after_import {

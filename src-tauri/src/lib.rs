@@ -488,6 +488,42 @@ pub fn run() {
 
             #[cfg(target_env = "ohos")]
             {
+                // libgphoto2 (tethering) dlopens its camlibs and port io
+                // drivers at runtime from the dirs in CAMLIBS/IOLIBS. They
+                // ship in the HAP libs dir alongside liblightraw.so, so point
+                // both vars at that dir.
+                //
+                // current_exe() is useless here: on OHOS it resolves to the
+                // ability runtime binary, not this library. Find our own
+                // module dir through /proc/self/maps instead (liblightraw.so
+                // and its DT_NEEDED libgphoto2.so are both mapped from the
+                // nativeLibraryDir at this point).
+                let module_dir = std::fs::read_to_string("/proc/self/maps")
+                    .ok()
+                    .and_then(|maps| {
+                        maps.lines().find_map(|line| {
+                            let path = line.rsplit_once(' ')?.1.trim();
+                            let is_self = path.ends_with("/liblightraw.so");
+                            let is_gphoto = path.ends_with("/libgphoto2.so");
+                            (is_self || is_gphoto)
+                                .then(|| std::path::Path::new(path).parent().map(|d| d.to_path_buf()))
+                                .flatten()
+                        })
+                    });
+                if let Some(dir) = module_dir.filter(|d| d.join("libgphoto2.so").exists()) {
+                    let dir = dir.to_string_lossy().into_owned();
+                    // SAFETY: single-threaded app setup, before any camera
+                    // thread can read these variables.
+                    unsafe {
+                        std::env::set_var("CAMLIBS", &dir);
+                        std::env::set_var("IOLIBS", &dir);
+                    }
+                    log::info!("[tether-ohos] CAMLIBS/IOLIBS = {dir}");
+                }
+            }
+
+            #[cfg(target_env = "ohos")]
+            {
                 // Pipeline warmup: the Maleoon Vulkan driver takes ~11s to
                 // compile the five compute pipelines on a cold cache (first
                 // launch or after a WGSL change, 2026-10-05) — that used to
@@ -911,6 +947,7 @@ pub fn run() {
             ohos_integration::exit_app,
             ohos_integration::get_ohos_color_mode,
             ohos_integration::get_ohos_device_type,
+            ohos_integration::get_ohos_avoid_area,
             ohos_integration::get_ohos_ai_npu_status,
             ohos_integration::set_ohos_keep_screen_on,
             ohos_integration::pick_ohos_folder,
