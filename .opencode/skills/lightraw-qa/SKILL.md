@@ -1,6 +1,6 @@
 ---
 name: LightRaw QA
-description: LightRaw 全量质量保障技能:鸿蒙移植 TC-* 用例集(192 条/18 模块,docs/TEST_CASES.md)+ test-assets 语料回归 + 静态门禁 + 测试报告流转。触发场景:测试用例、测试执行、回归测试、测试报告、TC-BUILD/TC-PLAT/TC-PATH/TC-FILE/TC-EXPORT/TC-AI 等模块测试、静态门禁、test-assets 语料、D-TA-01 复测、鸿蒙真机/模拟器测试。测试执行子代理必须使用 DeepSeek-V4.1-Flash-1017 模型(alibaba-cn/deepseek-v4.1-flash-1017)。
+description: LightRaw 全量质量保障技能:鸿蒙移植 TC-* 用例集(192 条/18 模块,docs/TEST_CASES.md)+ test-assets 语料回归 + 静态门禁 + 测试报告流转。触发场景:测试用例、测试执行、回归测试、测试报告、TC-BUILD/TC-PLAT/TC-PATH/TC-FILE/TC-EXPORT/TC-AI 等模块测试、静态门禁、test-assets 语料、D-TA-01 复测、鸿蒙真机/模拟器测试。测试执行子代理必须使用 volceapi/deepseek-v4.1-flash 模型。
 ---
 
 # LightRaw QA(TC 用例集 + test-assets 语料回归)
@@ -14,13 +14,13 @@ description: LightRaw 全量质量保障技能:鸿蒙移植 TC-* 用例集(192 �
 
 ## 测试模型(强制)
 
-所有测试必须使用 **DeepSeek-V4.1-Flash-1017**,精确模型 ID:
+所有测试必须使用 **DeepSeek V4.1 Flash**,精确模型 ID:
 
 ```
-alibaba-cn/deepseek-v4.1-flash-1017
+volceapi/deepseek-v4.1-flash
 ```
 
-- 通过 subagent 工具派发测试执行、结果分析、回归复测、报告整理等子任务时,必须传 `model: "alibaba-cn/deepseek-v4.1-flash-1017"`;排障等深度推理场景可用变体 `alibaba-cn/deepseek-v4.1-flash-1017#high`。
+- 通过 subagent 工具派发测试执行、结果分析、回归复测、报告整理等子任务时,必须传 `model: "volceapi/deepseek-v4.1-flash"`(配 `provider: "volceapi"`);排障等深度推理场景可用变体 `volceapi/deepseek-v4.1-flash#high`。
 - 不要改用其他模型,除非用户明确要求。
 
 ## 文档体系

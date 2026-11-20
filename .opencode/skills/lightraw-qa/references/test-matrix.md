@@ -55,7 +55,7 @@
 ## 结果记录模板
 
 ```
-日期:YYYY-MM-DD · 构建:debug/release · commit:<hash> · 执行模型:alibaba-cn/deepseek-v4.1-flash-1017
+日期:YYYY-MM-DD · 构建:debug/release · commit:<hash> · 执行模型:volceapi/deepseek-v4.1-flash
 R1 通过 / R2 通过 / ... (失败附现象+复现次数)
 T1–T4:通过/失败
 新缺陷编号:D-TA-XX(现象、构建 profile、复现次数)
