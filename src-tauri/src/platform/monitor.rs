@@ -362,7 +362,7 @@ mod platform {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", not(target_env = "ohos")))]
 mod platform {
     use super::{MonitorState, SurfaceTag, SystemColor, WideGamut};
     use std::collections::HashMap;
@@ -460,7 +460,11 @@ mod platform {
     pub fn tag_surface(_surface: &wgpu::Surface, _tag: SurfaceTag) {}
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+#[cfg(not(any(
+    target_os = "windows",
+    target_os = "macos",
+    all(target_os = "linux", not(target_env = "ohos"))
+)))]
 mod platform {
     use super::{MonitorState, SurfaceTag};
 

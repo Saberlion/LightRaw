@@ -1,4 +1,4 @@
-﻿use crate::app::settings::{AppSettings, load_settings};
+use crate::app::settings::{AppSettings, load_settings};
 use crate::app::state::{AppState, PreviewTarget};
 use crate::platform::monitor::{
     self, HdrDisplay, MonitorState, SurfaceTag, SystemColor, WideGamut,
@@ -727,7 +727,7 @@ pub fn build_wgpu_display(
         content_key: None,
         rect_key: None,
         pending_rect: None,
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
         wayland: platform,
     };
     display.apply_backgrounds();
