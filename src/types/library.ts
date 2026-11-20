@@ -105,6 +105,65 @@ export interface Progress {
   total: number;
 }
 
+export type PanoramaProjection = 'perspective' | 'cylindrical' | 'spherical';
+
+export type PanoramaProjectionMode = 'auto' | PanoramaProjection;
+
+export type MergeKind = 'panorama' | 'hdr' | 'focusStack';
+
+export interface PanoramaSettings {
+  autoCrop: boolean;
+  boundaryWarp: number;
+  exposureCompensation: boolean;
+  projection: PanoramaProjectionMode;
+}
+
+export interface HdrSettings {
+  autoCrop: boolean;
+}
+
+export type FocusStackMethod = 'detail' | 'smooth';
+
+export interface FocusStackSettings {
+  autoCrop: boolean;
+  method: FocusStackMethod;
+}
+
+export interface MergeSettingsByKind {
+  panorama: PanoramaSettings;
+  hdr: HdrSettings;
+  focusStack: FocusStackSettings;
+}
+
+export type MergeSettings = MergeSettingsByKind[MergeKind];
+
+export const DEFAULT_MERGE_SETTINGS: MergeSettingsByKind = {
+  panorama: {
+    autoCrop: true,
+    boundaryWarp: 0,
+    exposureCompensation: true,
+    projection: 'auto',
+  },
+  hdr: {
+    autoCrop: true,
+  },
+  focusStack: {
+    autoCrop: true,
+    method: 'detail',
+  },
+};
+
+export interface MergePreview {
+  base64: string;
+  excludedCount: number;
+  height: number;
+  imageCount: number;
+  overlayBase64: string | null;
+  projection: PanoramaProjection | null;
+  unalignedCount: number;
+  width: number;
+}
+
 export interface CullingSettings {
   similarityThreshold: number;
   blurThreshold: number;

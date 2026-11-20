@@ -3,7 +3,14 @@ import { invoke } from '@tauri-apps/api/core';
 import i18n from 'i18next';
 import { toast } from 'react-toastify';
 import { Invokes } from '../types/invokes';
-import { ImageFile, CullingSuggestions } from '../types/library';
+import {
+  ImageFile,
+  CullingSuggestions,
+  DEFAULT_MERGE_SETTINGS,
+  MergeKind,
+  MergePreview,
+  MergeSettings,
+} from '../types/library';
 import { Panel, UiVisibility, PanelRegion, CollapsibleSectionsState } from '../types/ui';
 import { WorkspaceState } from '../types/settings';
 import { useEditorStore } from './useEditorStore';
@@ -30,33 +37,29 @@ interface CollageModalState {
   sourceImages: Array<Pick<ImageFile, 'path'>>;
 }
 
-interface PanoramaModalState {
+export interface MergeModalState {
   error: string | null;
-  finalImageBase64: string | null;
   isOpen: boolean;
   isProcessing: boolean;
+  isUpdatingPreview: boolean;
+  kind: MergeKind;
+  preview: MergePreview | null;
   progressMessage: string | null;
-  stitchingSourcePaths: Array<string>;
-}
-
-interface FocusStackModalState {
-  error: string | null;
-  finalImageBase64: string | null;
-  depthMapBase64: string | null;
-  isOpen: boolean;
-  isProcessing: boolean;
-  progressMessage: string | null;
+  settings: MergeSettings;
   sourcePaths: Array<string>;
 }
 
-interface HdrModalState {
-  error: string | null;
-  finalImageBase64: string | null;
-  isOpen: boolean;
-  isProcessing: boolean;
-  progressMessage: string | null;
-  stitchingSourcePaths: Array<string>;
-}
+export const CLOSED_MERGE_MODAL_STATE: MergeModalState = {
+  error: null,
+  isOpen: false,
+  isProcessing: false,
+  isUpdatingPreview: false,
+  kind: 'panorama',
+  preview: null,
+  progressMessage: null,
+  settings: DEFAULT_MERGE_SETTINGS.panorama,
+  sourcePaths: [],
+};
 
 interface CullingModalState {
   isOpen: boolean;
@@ -362,9 +365,7 @@ export interface UIState {
   albumActionTarget: string | null;
 
   confirmModalState: ConfirmModalState;
-  panoramaModalState: PanoramaModalState;
-  focusStackModalState: FocusStackModalState;
-  hdrModalState: HdrModalState;
+  mergeModalState: MergeModalState;
   cullingModalState: CullingModalState;
   collageModalState: CollageModalState;
 
@@ -445,31 +446,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   albumActionTarget: null,
 
   confirmModalState: { isOpen: false },
-  panoramaModalState: {
-    error: null,
-    finalImageBase64: null,
-    isOpen: false,
-    isProcessing: false,
-    progressMessage: '',
-    stitchingSourcePaths: [],
-  },
-  focusStackModalState: {
-    error: null,
-    finalImageBase64: null,
-    depthMapBase64: null,
-    isOpen: false,
-    isProcessing: false,
-    progressMessage: '',
-    sourcePaths: [],
-  },
-  hdrModalState: {
-    error: null,
-    finalImageBase64: null,
-    isOpen: false,
-    isProcessing: false,
-    progressMessage: '',
-    stitchingSourcePaths: [],
-  },
+  mergeModalState: CLOSED_MERGE_MODAL_STATE,
   cullingModalState: { isOpen: false, suggestions: null, progress: null, error: null, pathsToCull: [] },
   collageModalState: { isOpen: false, sourceImages: [] },
 
@@ -615,3 +592,20 @@ useUIStore.subscribe((state, prev) => {
     setEditor({ cropSessionSnapshot: null });
   }
 });
+
+export const openMergeModal = (kind: MergeKind, sourcePaths: Array<string>) => {
+  useUIStore.getState().setUI({
+    mergeModalState: {
+      ...CLOSED_MERGE_MODAL_STATE,
+      isOpen: true,
+      kind,
+      settings: DEFAULT_MERGE_SETTINGS[kind],
+      sourcePaths,
+    },
+  });
+};
+
+export const closeMergeModal = () => {
+  useUIStore.getState().setUI({ mergeModalState: CLOSED_MERGE_MODAL_STATE });
+  invoke(Invokes.DiscardMerge).catch((err) => console.error('Failed to discard the merge:', err));
+};

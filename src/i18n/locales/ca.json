@@ -526,11 +526,17 @@
         "backendLabel": "Rerefons d'IA:",
         "builtinDesc": "Ús de la IA integrada bàsica. Seleccioneu Cloud o AI Connector a Configuració per a la substitució generativa.",
         "builtinLabel": "IA integrada:",
+        "cloudLabel": "IA al núvol:",
         "connectorConnectedDesc": "Connectat al rerefons generatiu local.",
         "connectorDisconnectedDesc": "Només està disponible l'inpainting simple. Inicieu el vostre rerefons local.",
         "connectorLabel": "AI Connector:",
+        "loginRequiredDesc": "Inicieu sessió des de Configuració per utilitzar l'IA al núvol.",
+        "monthlyUsage": "Ús mensual",
         "notDetected": "No detectat",
-        "ready": "A punt"
+        "notLoggedIn": "No heu iniciat sessió",
+        "proRequiredDesc": "Cal una subscripció Pro. Actualitzeu a Configuració.",
+        "ready": "A punt",
+        "upgradeRequired": "Cal actualitzar"
       },
       "createNewTitle": "Crear nova edició generativa",
       "createNewTooltip": "Crear nova edició {{name}}",
@@ -943,6 +949,7 @@
       },
       "status": {
         "empty": "Encara no s'ha desat cap ajust preestablert. Creeu el vostre, importeu-ne des d'un fitxer o exploreu els de la comunitat.",
+        "getCommunity": "Obtenir ajustos de la comunitat",
         "loading": "S'estan carregant els ajustos preestablerts..."
       },
       "supports": {
@@ -951,7 +958,11 @@
         "masks": "Màscares"
       },
       "title": "Ajustos preestablerts",
+      "toasts": {
+        "importFailed": "No s'ha pogut importar {{fileName}}: {{error}}"
+      },
       "tooltips": {
+        "explore": "Explorar ajustos de la comunitat",
         "export": "Exportar tots els ajustos preestablerts a un fitxer .rrpreset",
         "import": "Importar ajustos preestablerts des d'un fitxer .rrpreset",
         "saveNew": "Desar com a nou ajust preestablert"
@@ -992,6 +1003,7 @@
         "compare": "Abans / després (B) o modes (clic dret)",
         "focalLength": "Distància focal",
         "fullscreen": "Alternar pantalla completa (F)",
+        "hdr": "Previsualització HDR",
         "iso": "ISO",
         "redo": "Refer (Ctrl+Y) o Historial (Clic dret)",
         "showEdited": "Mostrar editat (B)",
@@ -1053,7 +1065,13 @@
       "selectFolderTitle_other": "Seleccioneu la carpeta per exportar {{count}} imatges"
     },
     "file": {
+      "colorSpace": "Espai de color",
       "dpi": "PPP",
+      "hdr": "Sortida HDR",
+      "hdrJpegHint": "Afegeix un mapa de guany: les pantalles HDR mostren altes llums més brillants i la resta mostra la foto normal.",
+      "hdrJxlHint": "Desa un fitxer HDR real (PQ, Rec. 2020). Necessita un visor compatible amb HDR.",
+      "hdrNoPreview": "Aquesta pantalla no pot mostrar les altes llums HDR. L'exportació les inclourà igualment.",
+      "hdrPreviewOff": "Activa l'HDR a la barra d'eines de l'editor per previsualitzar les altes llums.",
       "quality": "Qualitat",
       "qualityLossless": "Qualitat (Sense pèrdua)",
       "resolution": "Resolució",
@@ -1239,6 +1257,22 @@
       "unprocessed_many": "{{count}} imatges necessiten processament amb IA",
       "unprocessed_other": "{{count}} imatges necessiten processament amb IA",
       "waiting": "Preparant el processament amb IA…"
+    },
+    "community": {
+      "actionSave": "Desar",
+      "actionSaved": "Desat",
+      "actionSaving": "S'està desant...",
+      "fetchingPresets": "S'estan obtenint els ajustos preestablerts des de GitHub...",
+      "footerHeading": "Voleu que el vostre ajust preestablert hi aparegui?",
+      "footerLinkText": "Creeu una incidència (issue) a GitHub",
+      "headerDesc": "Descobriu els ajustos preestablerts creats per la comunitat.",
+      "headerTitle": "Ajustos preestablerts de la comunitat",
+      "presetBy": "per {{creator}}",
+      "searchPlaceholder": "Cercar ajustos preestablerts...",
+      "sortBy": "Ordenar per:",
+      "sortMethods": {
+        "name": "Nom (A-Z)"
+      }
     },
     "culling": {
       "addTagPlaceholder": "Afegir etiqueta...",
@@ -1505,6 +1539,7 @@
       "list": "Llista"
     },
     "tooltips": {
+      "communityPresets": "Ajustos preestablerts de la comunitat",
       "goHome": "Anar a l'inici",
       "importFromAlbum": "Importa des de l'àlbum",
       "importImages": "Importar imatges",
@@ -1720,7 +1755,12 @@
       "descriptionWithCount_other": "Combina {{count}} imatges amb diferents distàncies d'enfocament en una sola imatge perfectament nítida.",
       "failed": "S'ha produït un error en l'apilament d'enfocament",
       "initializing": "Inicialitzant...",
+      "method": "Mètode",
+      "methodDetail": "Detall",
+      "methodHint": "Detall conserva les estructures més fines com pèls i cerres. Suau ofereix transicions més suaus i menys soroll.",
+      "methodSmooth": "Suau",
       "openInEditor": "Obre a l'editor",
+      "processing": "Apilant enfocament",
       "result": "Resultat",
       "save": "Desa",
       "savedSuccess": "L'apilament d'enfocament s'ha desat correctament!",
@@ -1740,6 +1780,7 @@
       "initializing": "S'està inicialitzant...",
       "merging": "S'està fusionant HDR",
       "openInEditor": "Obrir a l'editor",
+      "processing": "S'està fusionant HDR",
       "retry": "Tornar-ho a intentar",
       "save": "Desar",
       "savedSuccess": "HDR desat correctament!",
@@ -1793,6 +1834,28 @@
       "zoomInTooltip": "Apropar",
       "zoomOutTooltip": "Allunyar"
     },
+    "merge": {
+      "autoCrop": "Retall automàtic",
+      "autoCropHint": "Retalla les vores que no cobreixen totes les imatges.",
+      "cancel": "Cancel·lar",
+      "close": "Tancar",
+      "excludedImages": "{{count}} imatges no s'han pogut emparellar i s'han omès",
+      "excludedImages_one": "{{count}} imatge no s'ha pogut emparellar i s'ha omès",
+      "excludedImages_many": "{{count}} d'imatges no s'han pogut emparellar i s'han omès",
+      "excludedImages_other": "{{count}} imatges no s'han pogut emparellar i s'han omès",
+      "initializing": "S'està inicialitzant...",
+      "openInEditor": "Obrir a l'editor",
+      "outputInfo": "{{images}} imatges · {{width}} × {{height}} px",
+      "result": "Resultat",
+      "retry": "Tornar-ho a intentar",
+      "save": "Desar",
+      "saving": "S'està desant…",
+      "speedNotice": "Això pot trigar uns minuts depenent del nombre i la mida de les imatges.",
+      "start": "Iniciar",
+      "unalignedImages_one": "No s'ha pogut alinear {{count}} imatge",
+      "unalignedImages_many": "No s'han pogut alinear {{count}} d'imatges",
+      "unalignedImages_other": "No s'han pogut alinear {{count}} imatges"
+    },
     "negativeConversion": {
       "blueWeight": "Blau (Groc)",
       "cancel": "Cancel·lar",
@@ -1820,6 +1883,9 @@
       "zoomOutTooltip": "Allunyar"
     },
     "panorama": {
+      "autoProjectionUsed": "S'utilitza {{projection}}",
+      "boundaryWarp": "Deformació dels límits",
+      "boundaryWarpHint": "Estira les vores per omplir l'enquadrament en lloc de retallar-les.",
       "cancel": "Cancel·lar",
       "close": "Tancar",
       "descCount": "Combineu {{count}} imatges superposades en un panorama perfecte.",
@@ -1827,9 +1893,23 @@
       "descCount_many": "Combineu {{count}} imatges superposades en un panorama perfecte.",
       "descCount_other": "Combineu {{count}} imatges superposades en un panorama perfecte.",
       "descGeneric": "Combineu les imatges superposades en un panorama perfecte.",
+      "description": "Combineu les imatges superposades en un panorama perfecte.",
+      "descriptionWithCount": "Combineu {{count}} imatges superposades en un panorama perfecte.",
+      "descriptionWithCount_one": "Combineu {{count}} imatge superposada en un panorama perfecte.",
+      "descriptionWithCount_many": "Combineu {{count}} imatges superposades en un panorama perfecte.",
+      "descriptionWithCount_other": "Combineu {{count}} imatges superposades en un panorama perfecte.",
+      "exposureCompensation": "Compensació de l'exposició",
+      "exposureCompensationHint": "Iguala l'exposició, el balanç de blancs i el vinyetatge entre les imatges.",
       "failed": "El panorama ha fallat",
       "initializing": "S'està inicialitzant...",
       "openInEditor": "Obrir a l'editor",
+      "processing": "S'està unint el panorama",
+      "projection": "Projecció",
+      "projectionAuto": "Automàtica",
+      "projectionCylindrical": "Cilíndrica",
+      "projectionFallback": "{{requested}} no cobreix aquest camp de visió, s'utilitza {{projection}}",
+      "projectionPerspective": "Perspectiva",
+      "projectionSpherical": "Esfèrica",
       "retry": "Tornar-ho a intentar",
       "save": "Desar",
       "savedSuccess": "Panorama desat correctament!",
@@ -2206,6 +2286,32 @@
           "feature3": "Una interfície més neta i enfocada",
           "title": "Sense IA"
         },
+        "cloud": {
+          "description": "Per a aquells que desitgin una solució més senzilla, una subscripció opcional ofereix els mateixos resultats d'alta qualitat que l'autoallotjament sense cap molèstia. Aquesta és l'opció més convenient i la millor manera de donar suport al projecte.",
+          "feature1": "Comoditat màxima, sense configuració",
+          "feature2": "Mateixos resultats que l'autoallotjament",
+          "feature3": "No cal maquinari potent",
+          "signedIn": {
+            "active": "Subscripció al núvol Activa",
+            "inactive": "Sense subscripció activa",
+            "logout": "Tancar sessió",
+            "manage": "Gestionar",
+            "usage": "Ús mensual",
+            "usageStats": "{{requests}} / {{limit}} peticions"
+          },
+          "signedOut": {
+            "noAccount": "No teniu compte?",
+            "signup": "Registreu-vos al lloc web",
+            "upgradeBtn": "Actualitzar al lloc web",
+            "upgradeDesc": "Per utilitzar les funcions de la IA al núvol, us cal una subscripció al núvol."
+          },
+          "statuses": {
+            "connecting": "Connectant…",
+            "retry": "Tornar a intentar la connexió",
+            "unsupported": "L'inici de sessió al núvol actualment només està disponible a l'escriptori."
+          },
+          "title": "Servei al núvol"
+        },
         "connector": {
           "address": "Adreça de l'AI Connector",
           "addressDesc": "Introduïu l'adreça i el port de la vostra instància d'AI Connector en execució. Requerit per a les funcions d'IA generativa.",
@@ -2233,6 +2339,7 @@
         "providers": {
           "aiConnector": "AI Connector",
           "aiFree": "Sense IA",
+          "cloud": "Núvol",
           "cpu": "Integrada"
         },
         "title": "IA Generativa"
@@ -2257,6 +2364,24 @@
         "gl": "OpenGL",
         "metal": "Metal",
         "vulkan": "Vulkan"
+      },
+      "colorManagement": {
+        "chooseProfile": "Tria un perfil",
+        "modeAuto": "Automàtic (perfil del sistema)",
+        "modeCustom": "Perfil ICC personalitzat",
+        "modeOff": "Desactivat",
+        "profile": "Perfil del monitor",
+        "profileDesc": "Converteix la previsualització de l'editor al perfil de color del teu monitor perquè els colors es vegin correctament en pantalles calibrades i de gamma àmplia. Les exportacions no es veuen afectades.",
+        "statusInvalid": "No s'ha pogut carregar aquest perfil.",
+        "statusNone": "No s'ha trobat cap perfil de monitor. La previsualització es mostra com a sRGB.",
+        "statusProfile": "S'està utilitzant {{name}}.",
+        "statusSystem": "El sistema operatiu gestiona els colors.",
+        "statusUnavailable": "La gestió del color necessita el renderitzador GPU.",
+        "wideGamut": "Previsualització de gamma àmplia ({{space}}).",
+        "wideGamutHdrNote": "No s'utilitza mentre l'editor mostra HDR.",
+        "wideGamutPreview": "Previsualització de gamma àmplia",
+        "wideGamutPreviewDesc": "Mostra colors més enllà de sRGB en monitors de gamma àmplia. Activa-ho si exportes en Display P3, Adobe RGB o un altre espai de color ampli. Desactivat, veus com quedarà una exportació sRGB.",
+        "wideGamutPreviewEnable": "Mostra colors de gamma àmplia"
       },
       "defaultAdjustments": {
         "addCamera": "Afegir càmera…",
@@ -2283,6 +2408,9 @@
         "sliderResetNeutral": "Valor neutre",
         "title": "Ajustaments per defecte"
       },
+      "display": {
+        "title": "Pantalla"
+      },
       "dynamicDesc": "L'editor renderitza la vista prèvia perquè coincideixi amb la densitat real de píxels de la vostra pantalla. Això assegura que cada detall es representi amb precisió 1:1, proporcionant la màxima claredat a l'hora de fer zoom i comprovar l'enfocament.",
       "editIn": {
         "add": "Afegeix un programa",
@@ -2300,6 +2428,16 @@
         "title": "Edita a"
       },
       "enableLivePreviews": "Activar vistes prèvies en directe",
+      "hdr": {
+        "display": "Pantalla HDR",
+        "displayDesc": "Mostra les altes llums més brillants que el blanc normal en una pantalla HDR. Les ombres i els tons mitjans no canvien i les exportacions estàndard no es veuen afectades.",
+        "enableDisplay": "Utilitza HDR a l'editor",
+        "headroom": "Rang d'altes llums",
+        "headroomDesc": "Fins on poden superar les altes llums el blanc normal. També s'utilitza en les exportacions HDR.",
+        "statusActive": "Aquesta pantalla està en mode HDR.",
+        "statusInactive": "Aquesta pantalla no està en mode HDR. Activa l'HDR a la configuració de pantalla del sistema per veure l'efecte.",
+        "statusUnsupported": "L'HDR necessita el renderitzador per GPU a Windows o macOS."
+      },
       "highDpi": "Renderització High-DPI",
       "highDpiDesc": "Renderitzar vistes prèvies a la resolució nativa de {{dpr}}x píxels de la pantalla. Produeix la vista prèvia més nítida possible, però utilitza molta més memòria.",
       "highDpiDescStandard": "Aquesta configuració només afecta pantalles d'alta densitat (High-DPI). La vostra pantalla actual té una resolució estàndard.",
@@ -2328,7 +2466,7 @@
         "baselineExposure": "Exposició base",
         "baselineExposureAmount": "Quantitat base",
         "baselineExposureAmountDesc": "Exposició afegida als fitxers RAW. darktable utilitza +0,7 EV.",
-        "baselineExposureDesc": "Aclareix els fitxers RAW en una quantitat fixa, més l'etiqueta DNG BaselineExposure si n'hi ha.",
+        "baselineExposureDesc": "Aclareix els fitxers RAW en una quantitat fixa, o en el valor de l'etiqueta DNG BaselineExposure si n'hi ha.",
         "colorNr": "Reducció de soroll de color base",
         "colorNrDesc": "Aplica un filtre bilateral creuat d'hora a la canonada per eliminar el soroll de croma. Valor més alt = Més reducció.",
         "defaultNonRawTonemapper": "Mapejador de tons predeterminat No-RAW",
@@ -2369,6 +2507,13 @@
         "full": "Resolució completa",
         "high": "Alta qualitat",
         "performance": "Rendiment"
+      },
+      "rawDecoding": "Descodificació RAW",
+      "rawDecodingDesc": "Seleccioneu on es descodifiquen els fitxers RAW. 'Auto' utilitza la GPU i canvia a la CPU si no pot gestionar les vostres imatges. 'GPU' sempre prova primer la GPU. 'CPU' és més lenta, però funciona a tots els sistemes.",
+      "rawDecodingOptions": {
+        "auto": "Auto",
+        "cpu": "CPU",
+        "gpu": "GPU"
       },
       "renderScale": "Escala de resolució de renderització",
       "renderScaleDesc": "Escala la resolució de renderització respecte a la vostra pantalla. Valors més baixos milloren el rendiment en pantalles d'alta resolució a canvi d'una mica de pèrdua de nitidesa.",

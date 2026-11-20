@@ -506,11 +506,17 @@
         "backendLabel": "AI Backend:",
         "builtinDesc": "Using basic built-in AI. Select Cloud or AI Connector in settings for generative replace.",
         "builtinLabel": "Built-in AI:",
+        "cloudLabel": "Cloud AI:",
         "connectorConnectedDesc": "Connected to local generative backend.",
         "connectorDisconnectedDesc": "Only simple inpainting available. Start your local backend.",
         "connectorLabel": "AI Connector:",
+        "loginRequiredDesc": "Log in via Settings to use Cloud AI.",
+        "monthlyUsage": "Monthly Usage",
         "notDetected": "Not Detected",
-        "ready": "Ready"
+        "notLoggedIn": "Not Logged In",
+        "proRequiredDesc": "Pro subscription required. Upgrade in Settings.",
+        "ready": "Ready",
+        "upgradeRequired": "Upgrade Required"
       },
       "createNewTitle": "Create New Generative Edit",
       "createNewTooltip": "Create New {{name}} Edit",
@@ -916,6 +922,7 @@
       },
       "status": {
         "empty": "No presets saved yet. Create your own or import one from a file.",
+        "getCommunity": "Get Community Presets",
         "loading": "Loading Presets..."
       },
       "supports": {
@@ -924,7 +931,11 @@
         "masks": "Masks"
       },
       "title": "Presets",
+      "toasts": {
+        "importFailed": "Failed to import {{fileName}}: {{error}}"
+      },
       "tooltips": {
+        "explore": "Explore Community Presets",
         "export": "Export all presets to .rrpreset file",
         "import": "Import presets from .rrpreset file",
         "saveNew": "Save as new preset"
@@ -965,6 +976,7 @@
         "compare": "Before / After (B) or Modes (Right-click)",
         "focalLength": "Focal Length",
         "fullscreen": "Toggle Fullscreen (F)",
+        "hdr": "HDR Preview",
         "iso": "ISO",
         "redo": "Redo (Ctrl+Y) or History (Right-click)",
         "showEdited": "Show Edited (B)",
@@ -1025,7 +1037,13 @@
       "selectFolderTitle_other": "Select Folder to Export {{count}} Images"
     },
     "file": {
+      "colorSpace": "Color space",
       "dpi": "DPI",
+      "hdr": "HDR output",
+      "hdrJpegHint": "Adds a gain map: HDR screens show brighter highlights, everything else shows the normal photo.",
+      "hdrJxlHint": "Saves a true HDR file (PQ, Rec. 2020). Needs an HDR-capable viewer.",
+      "hdrNoPreview": "This display can't show the HDR highlights. The export will still contain them.",
+      "hdrPreviewOff": "Turn on HDR in the editor toolbar to preview the highlights.",
       "quality": "Quality",
       "qualityLossless": "Quality (Lossless)",
       "resolution": "Resolution",
@@ -1209,6 +1227,22 @@
       "unprocessed_one": "{{count}} image needs AI processing",
       "unprocessed_other": "{{count}} images need AI processing",
       "waiting": "Preparing AI processing…"
+    },
+    "community": {
+      "actionSave": "Save",
+      "actionSaved": "Saved",
+      "actionSaving": "Saving...",
+      "fetchingPresets": "Fetching presets from GitHub...",
+      "footerHeading": "Want to get your preset featured?",
+      "footerLinkText": "Create an issue on GitHub",
+      "headerDesc": "Discover presets created by the community.",
+      "headerTitle": "Community Presets",
+      "presetBy": "by {{creator}}",
+      "searchPlaceholder": "Search presets...",
+      "sortBy": "Sort by:",
+      "sortMethods": {
+        "name": "Name (A-Z)"
+      }
     },
     "culling": {
       "addTagPlaceholder": "Add tag...",
@@ -1470,6 +1504,7 @@
       "list": "List"
     },
     "tooltips": {
+      "communityPresets": "Community Presets",
       "goHome": "Go to Home",
       "importFromAlbum": "Import from Album",
       "importImages": "Import Images",
@@ -1682,7 +1717,12 @@
       "descriptionWithCount_other": "Combine {{count}} images with varying focus distances into a single perfectly sharp image.",
       "failed": "Focus Stack Failed",
       "initializing": "Initializing...",
+      "method": "Method",
+      "methodDetail": "Detail",
+      "methodHint": "Detail keeps the finest structures like hairs and bristles. Smooth gives softer transitions and less noise.",
+      "methodSmooth": "Smooth",
       "openInEditor": "Open in Editor",
+      "processing": "Stacking Focus",
       "result": "Result",
       "save": "Save",
       "savedSuccess": "Focus Stack Saved Successfully!",
@@ -1701,6 +1741,7 @@
       "initializing": "Initializing...",
       "merging": "Merging HDR",
       "openInEditor": "Open in Editor",
+      "processing": "Merging HDR",
       "retry": "Retry",
       "save": "Save",
       "savedSuccess": "HDR Saved Successfully!",
@@ -1754,6 +1795,26 @@
       "zoomInTooltip": "Zoom In",
       "zoomOutTooltip": "Zoom Out"
     },
+    "merge": {
+      "autoCrop": "Auto Crop",
+      "autoCropHint": "Crops the edges that aren't covered by every image.",
+      "cancel": "Cancel",
+      "close": "Close",
+      "excludedImages": "{{count}} images couldn't be matched and were left out",
+      "excludedImages_one": "{{count}} image couldn't be matched and was left out",
+      "excludedImages_other": "{{count}} images couldn't be matched and were left out",
+      "initializing": "Initializing...",
+      "openInEditor": "Open in Editor",
+      "outputInfo": "{{images}} images · {{width}} × {{height}} px",
+      "result": "Result",
+      "retry": "Retry",
+      "save": "Save",
+      "saving": "Saving…",
+      "speedNotice": "This may take a few minutes depending on the number and size of images.",
+      "start": "Start",
+      "unalignedImages_one": "{{count}} image couldn't be aligned",
+      "unalignedImages_other": "{{count}} images couldn't be aligned"
+    },
     "negativeConversion": {
       "blueWeight": "Blue (Yellow)",
       "cancel": "Cancel",
@@ -1779,15 +1840,31 @@
       "zoomOutTooltip": "Zoom Out"
     },
     "panorama": {
+      "autoProjectionUsed": "Using {{projection}}",
+      "boundaryWarp": "Boundary Warp",
+      "boundaryWarpHint": "Stretches the edges to fill the frame instead of cropping them away.",
       "cancel": "Cancel",
       "close": "Close",
       "descCount": "Combine {{count}} overlapping images into a seamless panorama.",
       "descCount_one": "Combine {{count}} overlapping image into a seamless panorama.",
       "descCount_other": "Combine {{count}} overlapping images into a seamless panorama.",
       "descGeneric": "Combine your overlapping images into a seamless panorama.",
+      "description": "Combine your overlapping images into a seamless panorama.",
+      "descriptionWithCount": "Combine {{count}} overlapping images into a seamless panorama.",
+      "descriptionWithCount_one": "Combine {{count}} overlapping image into a seamless panorama.",
+      "descriptionWithCount_other": "Combine {{count}} overlapping images into a seamless panorama.",
+      "exposureCompensation": "Exposure Compensation",
+      "exposureCompensationHint": "Evens out exposure, white balance and vignetting between the images.",
       "failed": "Panorama Failed",
       "initializing": "Initializing...",
       "openInEditor": "Open in Editor",
+      "processing": "Stitching Panorama",
+      "projection": "Projection",
+      "projectionAuto": "Auto",
+      "projectionCylindrical": "Cylindrical",
+      "projectionFallback": "{{requested}} can't cover this field of view, using {{projection}}",
+      "projectionPerspective": "Perspective",
+      "projectionSpherical": "Spherical",
       "retry": "Retry",
       "save": "Save",
       "savedSuccess": "Panorama Saved Successfully!",
@@ -2160,6 +2237,32 @@
           "feature3": "A cleaner, more focused interface",
           "title": "AI-Free"
         },
+        "cloud": {
+          "description": "For those who want a simpler solution, an optional subscription provides the same high-quality results as self-hosting without any hassle. This is the most convenient option and the best way to support the project.",
+          "feature1": "Maximum convenience, no setup",
+          "feature2": "Same results as self-hosting",
+          "feature3": "No powerful hardware required",
+          "signedIn": {
+            "active": "Cloud Subscription Active",
+            "inactive": "No Active Subscription",
+            "logout": "Log Out",
+            "manage": "Manage",
+            "usage": "Monthly Usage",
+            "usageStats": "{{requests}} / {{limit}} requests"
+          },
+          "signedOut": {
+            "noAccount": "Don't have an account?",
+            "signup": "Sign up on the website",
+            "upgradeBtn": "Upgrade on Website",
+            "upgradeDesc": "To use Cloud AI features, you need a Cloud subscription."
+          },
+          "statuses": {
+            "connecting": "Connecting…",
+            "retry": "Retry connection",
+            "unsupported": "Cloud sign-in is currently only available on desktop."
+          },
+          "title": "Cloud Service"
+        },
         "connector": {
           "address": "AI Connector Address",
           "addressDesc": "Enter the address and port of your running AI Connector instance. Required for generative AI features.",
@@ -2187,6 +2290,7 @@
         "providers": {
           "aiConnector": "AI Connector",
           "aiFree": "AI-Free",
+          "cloud": "Cloud",
           "cpu": "Built-in"
         },
         "title": "Generative AI"
@@ -2211,6 +2315,24 @@
         "gl": "OpenGL",
         "metal": "Metal",
         "vulkan": "Vulkan"
+      },
+      "colorManagement": {
+        "chooseProfile": "Choose Profile",
+        "modeAuto": "Automatic (system profile)",
+        "modeCustom": "Custom ICC profile",
+        "modeOff": "Off",
+        "profile": "Monitor Profile",
+        "profileDesc": "Converts the editor preview to your monitor's color profile, so colors look right on calibrated and wide gamut displays. Exports are not affected.",
+        "statusInvalid": "This profile could not be loaded.",
+        "statusNone": "No monitor profile found. The preview is shown as sRGB.",
+        "statusProfile": "Using {{name}}.",
+        "statusSystem": "Colors are managed by the operating system.",
+        "statusUnavailable": "Color management needs the GPU renderer.",
+        "wideGamut": "Wide gamut preview ({{space}}).",
+        "wideGamutHdrNote": "Not used while the editor shows HDR.",
+        "wideGamutPreview": "Wide Gamut Preview",
+        "wideGamutPreviewDesc": "Shows colors beyond sRGB on wide gamut monitors. Turn this on when you export in Display P3, Adobe RGB or another wide color space. Leave it off to see what an sRGB export will look like.",
+        "wideGamutPreviewEnable": "Show wide gamut colors"
       },
       "defaultAdjustments": {
         "addCamera": "Add camera…",
@@ -2237,6 +2359,9 @@
         "sliderResetNeutral": "Neutral value",
         "title": "Default Adjustments"
       },
+      "display": {
+        "title": "Display"
+      },
       "dynamicDesc": "The editor renders the preview to match your display's actual pixel density. This ensures that every detail is represented with 1:1 pixel accuracy, providing maximum clarity when zooming and checking focus.",
       "editIn": {
         "add": "Add Program",
@@ -2254,6 +2379,16 @@
         "title": "Edit In"
       },
       "enableLivePreviews": "Enable Live Previews",
+      "hdr": {
+        "display": "HDR Display",
+        "displayDesc": "Shows highlights brighter than normal white on an HDR display. Shadows and midtones stay the same, and standard exports are not affected.",
+        "enableDisplay": "Use HDR in the editor",
+        "headroom": "Highlight Range",
+        "headroomDesc": "How far highlights may rise above normal white. Also used for HDR exports.",
+        "statusActive": "This display is in HDR mode.",
+        "statusInactive": "This display is not in HDR mode. Turn on HDR in the system display settings to see the effect.",
+        "statusUnsupported": "HDR needs the GPU renderer on Windows or macOS."
+      },
       "highDpi": "High-DPI Rendering",
       "highDpiDesc": "Render previews at your screen's native {{dpr}}x physical pixel resolution. Produces the sharpest possible preview but uses significantly more memory.",
       "highDpiDescStandard": "This setting only affects high-DPI displays. Your current display is standard resolution.",
@@ -2282,7 +2417,7 @@
         "baselineExposure": "Baseline Exposure",
         "baselineExposureAmount": "Baseline Amount",
         "baselineExposureAmountDesc": "Exposure added to RAW files. darktable uses +0.7 EV.",
-        "baselineExposureDesc": "Brightens RAW files by a fixed amount, plus the DNG BaselineExposure tag if present.",
+        "baselineExposureDesc": "Brightens RAW files by a fixed amount, or by the DNG BaselineExposure tag instead when present.",
         "colorNr": "Base Color Noise Reduction",
         "colorNrDesc": "Applies a cross-bilateral filter early in the pipeline to remove chroma noise. Higher value = Stronger NR.",
         "defaultNonRawTonemapper": "Default Non-RAW Tonemapper",
@@ -2323,6 +2458,13 @@
         "full": "Full Resolution",
         "high": "High Quality",
         "performance": "Performance"
+      },
+      "rawDecoding": "RAW Decoding",
+      "rawDecodingDesc": "Select where RAW files are decoded. 'Auto' uses the GPU and switches to the CPU if it can't handle your images. 'GPU' always tries the GPU first. 'CPU' is slower but works on every system.",
+      "rawDecodingOptions": {
+        "auto": "Auto",
+        "cpu": "CPU",
+        "gpu": "GPU"
       },
       "renderScale": "Render Resolution Scale",
       "renderScaleDesc": "Scales the render resolution relative to your display. Lower values improve performance on high-resolution screens at the cost of some sharpness.",

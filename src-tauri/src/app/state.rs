@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Condvar, Mutex};
 
@@ -17,8 +17,10 @@ use crate::ai::models::AiState;
 use crate::app::launch_request::ExternalEditSession;
 use crate::decode::as_shot::AsShot;
 use crate::integrations::tethering::CameraSession;
+use crate::merge::MergeSession;
 use crate::render::analytics::AnalyticsFrame;
 use crate::render::cache_utils::{DecodeFlights, DecodedImageCache};
+use crate::render::color_space::OutputColorSpace;
 use crate::render::gpu::context::GpuContext;
 use crate::render::gpu::display::DisplayLayer;
 use crate::render::gpu::processor::GpuProcessor;
@@ -270,6 +272,7 @@ pub struct AnalyticsConfig {
     pub compute_waveform: bool,
     pub active_waveform_channel: Option<String>,
     pub sender: Sender<AnalyticsJob>,
+    pub space: OutputColorSpace,
 }
 
 pub struct ThumbnailProgressTracker {
@@ -341,9 +344,8 @@ pub struct AppState {
     pub ai_init_lock: TokioMutex<()>,
     pub active_ai_tasks: Mutex<HashMap<String, Arc<AiTaskToken>>>,
     pub export_task_token: Arc<Mutex<Option<Arc<AtomicBool>>>>,
-    pub hdr_result: Arc<Mutex<Option<DynamicImage>>>,
-    pub panorama_result: Arc<Mutex<Option<DynamicImage>>>,
-    pub focus_stack_result: Arc<Mutex<Option<DynamicImage>>>,
+    pub merge_session: Arc<Mutex<Option<Box<dyn MergeSession>>>>,
+    pub merge_generation: Arc<AtomicU64>,
     pub indexing_task_handle: Mutex<Option<JoinHandle<()>>>,
     pub lut_cache: Mutex<HashMap<String, Arc<Lut>>>,
     pub initial_file_path: Mutex<Option<String>>,

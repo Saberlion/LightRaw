@@ -506,11 +506,17 @@
         "backendLabel": "AI 백엔드:",
         "builtinDesc": "기본 내장 AI를 사용 중입니다. 생성형 교체를 사용하려면 설정에서 클라우드 또는 AI 커넥터를 선택하세요.",
         "builtinLabel": "내장 AI:",
+        "cloudLabel": "클라우드 AI:",
         "connectorConnectedDesc": "로컬 생성형 백엔드에 연결되었습니다.",
         "connectorDisconnectedDesc": "단순 인페인팅만 사용할 수 있습니다. 로컬 백엔드를 시작하세요.",
         "connectorLabel": "AI 커넥터:",
+        "loginRequiredDesc": "클라우드 AI를 사용하려면 설정에서 로그인하세요.",
+        "monthlyUsage": "월간 사용량",
         "notDetected": "감지되지 않음",
-        "ready": "준비됨"
+        "notLoggedIn": "로그인되지 않음",
+        "proRequiredDesc": "Pro 구독이 필요합니다. 설정에서 업그레이드하세요.",
+        "ready": "준비됨",
+        "upgradeRequired": "업그레이드 필요"
       },
       "createNewTitle": "새 생성형 편집 만들기",
       "createNewTooltip": "새 {{name}} 편집 만들기",
@@ -916,6 +922,7 @@
       },
       "status": {
         "empty": "아직 저장된 프리셋이 없습니다. 직접 만들거나, 파일에서 가져오거나, 커뮤니티 프리셋을 둘러보세요.",
+        "getCommunity": "커뮤니티 프리셋 받기",
         "loading": "프리셋 로딩 중..."
       },
       "supports": {
@@ -924,7 +931,11 @@
         "masks": "마스크"
       },
       "title": "프리셋",
+      "toasts": {
+        "importFailed": "{{fileName}} 가져오기 실패: {{error}}"
+      },
       "tooltips": {
+        "explore": "커뮤니티 프리셋 둘러보기",
         "export": "모든 프리셋을 .rrpreset 파일로 내보내기",
         "import": ".rrpreset 파일에서 프리셋 가져오기",
         "saveNew": "새 프리셋으로 저장"
@@ -965,6 +976,7 @@
         "compare": "전 / 후 (B) 또는 모드 (우클릭)",
         "focalLength": "초점 거리",
         "fullscreen": "전체 화면 전환 (F)",
+        "hdr": "HDR 미리보기",
         "iso": "ISO",
         "redo": "다시 실행 (Ctrl+Y) 또는 기록 (우클릭)",
         "showEdited": "편집본 표시 (B)",
@@ -1025,7 +1037,13 @@
       "selectFolderTitle_other": "이미지 {{count}}개를 내보낼 폴더 선택"
     },
     "file": {
+      "colorSpace": "색 공간",
       "dpi": "DPI",
+      "hdr": "HDR 출력",
+      "hdrJpegHint": "게인 맵을 추가합니다. HDR 화면에서는 하이라이트가 더 밝게 보이고, 그 외에는 일반 사진으로 보입니다.",
+      "hdrJxlHint": "실제 HDR 파일(PQ, Rec. 2020)로 저장합니다. HDR 지원 뷰어가 필요합니다.",
+      "hdrNoPreview": "이 디스플레이에서는 HDR 하이라이트를 표시할 수 없습니다. 내보낸 파일에는 포함됩니다.",
+      "hdrPreviewOff": "하이라이트를 미리 보려면 편집기 도구 모음에서 HDR을 켜세요.",
       "quality": "품질",
       "qualityLossless": "품질 (무손실)",
       "resolution": "해상도",
@@ -1209,6 +1227,22 @@
       "unprocessed_one": "{{count}} image needs AI processing",
       "unprocessed_other": "이미지 {{count}}개에 AI 처리가 필요합니다",
       "waiting": "AI 처리 준비 중…"
+    },
+    "community": {
+      "actionSave": "저장",
+      "actionSaved": "저장됨",
+      "actionSaving": "저장 중...",
+      "fetchingPresets": "GitHub에서 프리셋을 가져오는 중...",
+      "footerHeading": "프리셋을 추천에 올리고 싶으신가요?",
+      "footerLinkText": "GitHub에 이슈 생성",
+      "headerDesc": "커뮤니티가 만든 프리셋을 둘러보세요.",
+      "headerTitle": "커뮤니티 프리셋",
+      "presetBy": "{{creator}} 제작",
+      "searchPlaceholder": "프리셋 검색...",
+      "sortBy": "정렬 기준:",
+      "sortMethods": {
+        "name": "이름 (가나다순)"
+      }
     },
     "culling": {
       "addTagPlaceholder": "태그 추가...",
@@ -1470,6 +1504,7 @@
       "list": "목록"
     },
     "tooltips": {
+      "communityPresets": "커뮤니티 프리셋",
       "goHome": "홈으로 이동",
       "importFromAlbum": "앨범에서 가져오기",
       "importImages": "이미지 가져오기",
@@ -1682,7 +1717,12 @@
       "descriptionWithCount_other": "초점 거리가 다른 {{count}}개의 이미지를 결합하여 완벽하게 선명한 단일 이미지를 만듭니다.",
       "failed": "포커스 스태킹 실패",
       "initializing": "초기화 중...",
+      "method": "방식",
+      "methodDetail": "디테일",
+      "methodHint": "디테일은 털과 강모 같은 가장 미세한 구조를 보존합니다. 부드럽게는 전환이 더 부드럽고 노이즈가 적습니다.",
+      "methodSmooth": "부드럽게",
       "openInEditor": "편집기에서 열기",
+      "processing": "포커스 스태킹 중",
       "result": "결과",
       "save": "저장",
       "savedSuccess": "포커스 스택이 성공적으로 저장되었습니다!",
@@ -1701,6 +1741,7 @@
       "initializing": "초기화 중...",
       "merging": "HDR 병합 중",
       "openInEditor": "편집기에서 열기",
+      "processing": "HDR 병합 중",
       "retry": "다시 시도",
       "save": "저장",
       "savedSuccess": "HDR이 성공적으로 저장되었습니다!",
@@ -1754,6 +1795,26 @@
       "zoomInTooltip": "확대",
       "zoomOutTooltip": "축소"
     },
+    "merge": {
+      "autoCrop": "자동 자르기",
+      "autoCropHint": "모든 이미지로 덮이지 않는 가장자리를 잘라냅니다.",
+      "cancel": "취소",
+      "close": "닫기",
+      "excludedImages": "{{count}}개의 이미지를 일치시킬 수 없어 제외했습니다",
+      "excludedImages_one": "{{count}}개의 이미지를 일치시킬 수 없어 제외했습니다",
+      "excludedImages_other": "{{count}}개의 이미지를 일치시킬 수 없어 제외했습니다",
+      "initializing": "초기화 중...",
+      "openInEditor": "편집기에서 열기",
+      "outputInfo": "이미지 {{images}}개 · {{width}} × {{height}} px",
+      "result": "결과",
+      "retry": "다시 시도",
+      "save": "저장",
+      "saving": "저장 중…",
+      "speedNotice": "이미지의 개수와 크기에 따라 몇 분이 걸릴 수 있습니다.",
+      "start": "시작",
+      "unalignedImages_one": "{{count}}개의 이미지를 정렬하지 못했습니다",
+      "unalignedImages_other": "{{count}}개의 이미지를 정렬하지 못했습니다"
+    },
     "negativeConversion": {
       "blueWeight": "파랑 (노랑)",
       "cancel": "취소",
@@ -1779,15 +1840,31 @@
       "zoomOutTooltip": "축소"
     },
     "panorama": {
+      "autoProjectionUsed": "사용 중: {{projection}}",
+      "boundaryWarp": "경계 변형",
+      "boundaryWarpHint": "가장자리를 잘라내는 대신 늘려서 프레임을 채웁니다.",
       "cancel": "취소",
       "close": "닫기",
       "descCount": "겹치는 이미지 {{count}}개를 매끄러운 파노라마로 결합합니다.",
       "descCount_one": "겹치는 이미지 {{count}}개를 매끄러운 파노라마로 결합합니다.",
       "descCount_other": "겹치는 이미지 {{count}}개를 매끄러운 파노라마로 결합합니다.",
       "descGeneric": "겹치는 이미지를 매끄러운 파노라마로 결합합니다.",
+      "description": "겹치는 이미지를 매끄러운 파노라마로 결합합니다.",
+      "descriptionWithCount": "겹치는 이미지 {{count}}개를 매끄러운 파노라마로 결합합니다.",
+      "descriptionWithCount_one": "겹치는 이미지 {{count}}개를 매끄러운 파노라마로 결합합니다.",
+      "descriptionWithCount_other": "겹치는 이미지 {{count}}개를 매끄러운 파노라마로 결합합니다.",
+      "exposureCompensation": "노출 보정",
+      "exposureCompensationHint": "이미지 간 노출, 화이트 밸런스, 비네팅을 균일하게 맞춥니다.",
       "failed": "파노라마 실패",
       "initializing": "초기화 중...",
       "openInEditor": "편집기에서 열기",
+      "processing": "파노라마 스티칭 중",
+      "projection": "투영",
+      "projectionAuto": "자동",
+      "projectionCylindrical": "원통형",
+      "projectionFallback": "{{requested}}(으)로는 이 화각을 담을 수 없어 {{projection}}을(를) 사용합니다",
+      "projectionPerspective": "원근",
+      "projectionSpherical": "구형",
       "retry": "다시 시도",
       "save": "저장",
       "savedSuccess": "파노라마가 성공적으로 저장되었습니다!",
@@ -2160,6 +2237,32 @@
           "feature3": "더 깔끔하고 집중하기 좋은 인터페이스",
           "title": "AI 없음"
         },
+        "cloud": {
+          "description": "더 간단한 솔루션을 원하는 사용자를 위해, 선택적 구독은 번거로움 없이 셀프 호스팅과 동일한 고품질 결과를 제공합니다. 가장 편리한 옵션이며 프로젝트를 지원하는 가장 좋은 방법입니다.",
+          "feature1": "최대의 편의성, 설정 불필요",
+          "feature2": "셀프 호스팅과 동일한 결과",
+          "feature3": "고성능 하드웨어 불필요",
+          "signedIn": {
+            "active": "클라우드 구독 활성화됨",
+            "inactive": "활성 구독 없음",
+            "logout": "로그아웃",
+            "manage": "관리",
+            "usage": "월간 사용량",
+            "usageStats": "{{requests}} / {{limit}} 요청"
+          },
+          "signedOut": {
+            "noAccount": "계정이 없으신가요?",
+            "signup": "웹사이트에서 가입하기",
+            "upgradeBtn": "웹사이트에서 업그레이드",
+            "upgradeDesc": "클라우드 AI 기능을 사용하려면 클라우드 구독이 필요합니다."
+          },
+          "statuses": {
+            "connecting": "연결 중…",
+            "retry": "연결 재시도",
+            "unsupported": "클라우드 로그인은 현재 데스크톱에서만 사용할 수 있습니다."
+          },
+          "title": "클라우드 서비스"
+        },
         "connector": {
           "address": "AI 커넥터 주소",
           "addressDesc": "실행 중인 AI 커넥터 인스턴스의 주소와 포트를 입력하세요. 생성형 AI 기능에 필요합니다.",
@@ -2187,6 +2290,7 @@
         "providers": {
           "aiConnector": "AI 커넥터",
           "aiFree": "AI 없음",
+          "cloud": "클라우드",
           "cpu": "내장"
         },
         "title": "생성형 AI"
@@ -2211,6 +2315,24 @@
         "gl": "OpenGL",
         "metal": "Metal",
         "vulkan": "Vulkan"
+      },
+      "colorManagement": {
+        "chooseProfile": "프로파일 선택",
+        "modeAuto": "자동(시스템 프로파일)",
+        "modeCustom": "사용자 지정 ICC 프로파일",
+        "modeOff": "끄기",
+        "profile": "모니터 프로파일",
+        "profileDesc": "편집기 미리보기를 모니터의 색상 프로파일로 변환하여 캘리브레이션된 디스플레이와 광색역 디스플레이에서 색을 정확하게 표시합니다. 내보내기에는 영향을 주지 않습니다.",
+        "statusInvalid": "이 프로파일을 불러올 수 없습니다.",
+        "statusNone": "모니터 프로파일을 찾을 수 없습니다. 미리보기는 sRGB로 표시됩니다.",
+        "statusProfile": "{{name}} 사용 중.",
+        "statusSystem": "색상은 운영 체제에서 관리합니다.",
+        "statusUnavailable": "색상 관리를 사용하려면 GPU 렌더러가 필요합니다.",
+        "wideGamut": "광색역 미리보기({{space}}).",
+        "wideGamutHdrNote": "편집기가 HDR로 표시하는 동안에는 사용되지 않습니다.",
+        "wideGamutPreview": "광색역 미리보기",
+        "wideGamutPreviewDesc": "광색역 모니터에서 sRGB를 넘는 색을 표시합니다. Display P3, Adobe RGB 등 넓은 색 공간으로 내보낼 때 켜세요. 끄면 sRGB로 내보낸 결과를 미리 볼 수 있습니다.",
+        "wideGamutPreviewEnable": "광색역 색상 표시"
       },
       "defaultAdjustments": {
         "addCamera": "카메라 추가…",
@@ -2237,6 +2359,9 @@
         "sliderResetNeutral": "중립 값",
         "title": "기본 조정값"
       },
+      "display": {
+        "title": "디스플레이"
+      },
       "dynamicDesc": "편집기는 디스플레이의 실제 픽셀 밀도에 맞춰 미리보기를 렌더링합니다. 이를 통해 모든 디테일이 1:1 픽셀 정확도로 표현되어, 확대하고 초점을 확인할 때 최대의 선명도를 제공합니다.",
       "editIn": {
         "add": "프로그램 추가",
@@ -2254,6 +2379,16 @@
         "title": "다른 프로그램에서 편집"
       },
       "enableLivePreviews": "실시간 미리보기 활성화",
+      "hdr": {
+        "display": "HDR 디스플레이",
+        "displayDesc": "HDR 디스플레이에서 하이라이트를 일반 흰색보다 밝게 표시합니다. 섀도와 중간 톤은 그대로이며 일반 내보내기에는 영향을 주지 않습니다.",
+        "enableDisplay": "편집기에서 HDR 사용",
+        "headroom": "하이라이트 범위",
+        "headroomDesc": "하이라이트가 일반 흰색보다 얼마나 밝아질 수 있는지 정합니다. HDR 내보내기에도 사용됩니다.",
+        "statusActive": "이 디스플레이는 HDR 모드입니다.",
+        "statusInactive": "이 디스플레이는 HDR 모드가 아닙니다. 효과를 보려면 시스템 디스플레이 설정에서 HDR을 켜세요.",
+        "statusUnsupported": "HDR에는 Windows 또는 macOS의 GPU 렌더러가 필요합니다."
+      },
       "highDpi": "고해상도(High-DPI) 렌더링",
       "highDpiDesc": "화면의 네이티브 {{dpr}}배 물리적 픽셀 해상도로 미리보기를 렌더링합니다. 가능한 가장 선명한 미리보기를 제공하지만 메모리를 훨씬 많이 사용합니다.",
       "highDpiDescStandard": "이 설정은 고해상도 디스플레이에만 영향을 줍니다. 현재 디스플레이는 표준 해상도입니다.",
@@ -2282,7 +2417,7 @@
         "baselineExposure": "기본 노출",
         "baselineExposureAmount": "기본량",
         "baselineExposureAmountDesc": "RAW 파일에 더하는 노출입니다. darktable은 +0.7 EV를 사용합니다.",
-        "baselineExposureDesc": "RAW 파일을 일정량 밝힙니다. DNG BaselineExposure 태그가 있으면 그 값도 더합니다.",
+        "baselineExposureDesc": "RAW 파일을 일정량 밝힙니다. DNG BaselineExposure 태그가 있으면 대신 그 값을 사용합니다.",
         "colorNr": "기본 색상 노이즈 감소",
         "colorNrDesc": "파이프라인 초기에 교차 양방향 필터를 적용하여 색차 노이즈를 제거합니다. 값이 높을수록 노이즈 감소가 강해집니다.",
         "defaultNonRawTonemapper": "기본 비RAW 톤매퍼",
@@ -2323,6 +2458,13 @@
         "full": "전체 해상도",
         "high": "고품질",
         "performance": "성능"
+      },
+      "rawDecoding": "RAW 디코딩",
+      "rawDecodingDesc": "RAW 파일을 디코딩할 위치를 선택합니다. 'Auto'는 GPU를 사용하고 GPU가 이미지를 처리할 수 없으면 CPU로 전환합니다. 'GPU'는 항상 GPU를 먼저 시도합니다. 'CPU'는 더 느리지만 모든 시스템에서 작동합니다.",
+      "rawDecodingOptions": {
+        "auto": "Auto",
+        "cpu": "CPU",
+        "gpu": "GPU"
       },
       "renderScale": "렌더 해상도 배율",
       "renderScaleDesc": "디스플레이를 기준으로 렌더 해상도를 조정합니다. 값이 낮을수록 약간의 선명도를 희생하여 고해상도 화면에서 성능이 향상됩니다.",

@@ -1022,6 +1022,9 @@
         "masks": "Kaukes"
       },
       "title": "Išankstiniai nustatymai",
+      "toasts": {
+        "importFailed": "Nepavyko importuoti {{fileName}}: {{error}}"
+      },
       "tooltips": {
         "explore": "Tyrinėti bendruomenės nustatymus",
         "export": "Eksportuoti visus nustatymus į .rrpreset failą",
@@ -1064,6 +1067,7 @@
         "compare": "Prieš / Po (B) arba režimai (dešiniuoju pelės klavišu)",
         "focalLength": "Židinio nuotolis",
         "fullscreen": "Visas ekranas (F)",
+        "hdr": "HDR peržiūra",
         "iso": "ISO",
         "redo": "Pakartoti (Ctrl+Y) arba istorija (dešiniuoju pelės klavišu)",
         "showEdited": "Show Edited (B)",
@@ -1126,7 +1130,13 @@
       "selectFolderTitle_other": "Pasirinkite aplanką eksportuoti {{count}} nuotrauką"
     },
     "file": {
+      "colorSpace": "Spalvų erdvė",
       "dpi": "DPI",
+      "hdr": "HDR išvestis",
+      "hdrJpegHint": "Prideda stiprinimo žemėlapį: HDR ekranai rodo ryškesnes šviesias sritis, visa kita rodo įprastą nuotrauką.",
+      "hdrJxlHint": "Išsaugo tikrą HDR failą (PQ, Rec. 2020). Reikia HDR palaikančios peržiūros programos.",
+      "hdrNoPreview": "Šis ekranas negali parodyti HDR šviesių vietų. Eksportuotame faile jos vis tiek bus.",
+      "hdrPreviewOff": "Įjunkite HDR redaktoriaus įrankių juostoje, kad matytumėte šviesių vietų peržiūrą.",
       "quality": "Kokybė",
       "qualityLossless": "Kokybė (be nuostolių)",
       "resolution": "Raiška",
@@ -1820,7 +1830,12 @@
       "descriptionWithCount_other": "Sujunkite {{count}} skirtingo fokusavimo nuotraukų į vieną idealiai ryškų kadrą.",
       "failed": "Fokusavimo sujungimas nepavyko",
       "initializing": "Inicijuojama...",
+      "method": "Metodas",
+      "methodDetail": "Detalumas",
+      "methodHint": "Detalumas išsaugo smulkiausias struktūras, tokias kaip plaukeliai ir šereliai. Švelnus suteikia sklandesnius perėjimus ir mažiau triukšmo.",
+      "methodSmooth": "Švelnus",
       "openInEditor": "Atidaryti redaktoriuje",
+      "processing": "Sujungiamas fokusavimas",
       "result": "Rezultatas",
       "save": "Išsaugoti",
       "savedSuccess": "Fokusavimo sujungimas sėkmingai išsaugotas!",
@@ -1841,6 +1856,7 @@
       "initializing": "Inicijuojama...",
       "merging": "Sujungiamas HDR",
       "openInEditor": "Atidaryti redaktoriuje",
+      "processing": "Sujungiamas HDR",
       "retry": "Bandyti iš naujo",
       "save": "Išsaugoti",
       "savedSuccess": "HDR sėkmingai išsaugotas!",
@@ -1895,6 +1911,30 @@
       "zoomInTooltip": "Priartinti",
       "zoomOutTooltip": "Nutolinti"
     },
+    "merge": {
+      "autoCrop": "Automatinis apkirpimas",
+      "autoCropHint": "Apkerpa kraštus, kurių nedengia visi vaizdai.",
+      "cancel": "Atšaukti",
+      "close": "Uždaryti",
+      "excludedImages": "{{count}} vaizdų nepavyko suderinti, jie praleisti",
+      "excludedImages_one": "{{count}} vaizdo nepavyko suderinti, jis praleistas",
+      "excludedImages_few": "{{count}} vaizdų nepavyko suderinti, jie praleisti",
+      "excludedImages_many": "{{count}} vaizdo nepavyko suderinti, jie praleisti",
+      "excludedImages_other": "{{count}} vaizdų nepavyko suderinti, jie praleisti",
+      "initializing": "Inicijuojama...",
+      "openInEditor": "Atidaryti redaktoriuje",
+      "outputInfo": "Vaizdai: {{images}} · {{width}} × {{height}} px",
+      "result": "Rezultatas",
+      "retry": "Bandyti iš naujo",
+      "save": "Išsaugoti",
+      "saving": "Išsaugoma…",
+      "speedNotice": "Tai gali užtrukti kelias minutes, priklausomai nuo nuotraukų kiekio ir dydžio.",
+      "start": "Pradėti",
+      "unalignedImages_one": "Nepavyko sulygiuoti {{count}} vaizdo",
+      "unalignedImages_few": "Nepavyko sulygiuoti {{count}} vaizdų",
+      "unalignedImages_many": "Nepavyko sulygiuoti {{count}} vaizdo",
+      "unalignedImages_other": "Nepavyko sulygiuoti {{count}} vaizdų"
+    },
     "negativeConversion": {
       "blueWeight": "Blue (Yellow)",
       "cancel": "Cancel",
@@ -1922,6 +1962,9 @@
       "zoomOutTooltip": "Zoom Out"
     },
     "panorama": {
+      "autoProjectionUsed": "Naudojama: {{projection}}",
+      "boundaryWarp": "Kraštų deformavimas",
+      "boundaryWarpHint": "Ištempia kraštus, kad užpildytų kadrą, užuot juos apkirpus.",
       "cancel": "Atšaukti",
       "close": "Uždaryti",
       "descCount": "Sujunkite {{count}} persidengiančias nuotraukas į vientisą panoramą.",
@@ -1930,9 +1973,24 @@
       "descCount_many": "Sujunkite {{count}} persidengiančių nuotraukų į vientisą panoramą.",
       "descCount_other": "Sujunkite {{count}} persidengiančių nuotraukų į vientisą panoramą.",
       "descGeneric": "Sujunkite persidengiančias nuotraukas į vientisą panoramą.",
+      "description": "Sujunkite persidengiančias nuotraukas į vientisą panoramą.",
+      "descriptionWithCount": "Sujunkite {{count}} persidengiančias nuotraukas į vientisą panoramą.",
+      "descriptionWithCount_one": "Sujunkite {{count}} persidengiančią nuotrauką į vientisą panoramą.",
+      "descriptionWithCount_few": "Sujunkite {{count}} persidengiančias nuotraukas į vientisą panoramą.",
+      "descriptionWithCount_many": "Sujunkite {{count}} persidengiančių nuotraukų į vientisą panoramą.",
+      "descriptionWithCount_other": "Sujunkite {{count}} persidengiančių nuotraukų į vientisą panoramą.",
+      "exposureCompensation": "Ekspozicijos kompensavimas",
+      "exposureCompensationHint": "Suvienodina ekspoziciją, baltos spalvos balansą ir vinjetavimą tarp vaizdų.",
       "failed": "Panoramos sujungimas nepavyko",
       "initializing": "Inicijuojama...",
       "openInEditor": "Atidaryti redaktoriuje",
+      "processing": "Sujungiama panorama",
+      "projection": "Projekcija",
+      "projectionAuto": "Automatinė",
+      "projectionCylindrical": "Cilindrinė",
+      "projectionFallback": "{{requested}} neapima šio matymo lauko, naudojama: {{projection}}",
+      "projectionPerspective": "Perspektyvinė",
+      "projectionSpherical": "Sferinė",
       "retry": "Bandyti iš naujo",
       "save": "Išsaugoti",
       "savedSuccess": "Panorama sėkmingai išsaugota!",
@@ -2392,6 +2450,24 @@
         "metal": "Metal",
         "vulkan": "Vulkan"
       },
+      "colorManagement": {
+        "chooseProfile": "Pasirinkti profilį",
+        "modeAuto": "Automatinis (sistemos profilis)",
+        "modeCustom": "Pasirinktinis ICC profilis",
+        "modeOff": "Išjungta",
+        "profile": "Monitoriaus profilis",
+        "profileDesc": "Konvertuoja redaktoriaus peržiūrą į jūsų monitoriaus spalvų profilį, kad spalvos būtų tikslios kalibruotuose ir plačios gamos ekranuose. Eksportui tai įtakos neturi.",
+        "statusInvalid": "Šio profilio įkelti nepavyko.",
+        "statusNone": "Monitoriaus profilis nerastas. Peržiūra rodoma kaip sRGB.",
+        "statusProfile": "Naudojamas {{name}}.",
+        "statusSystem": "Spalvas valdo operacinė sistema.",
+        "statusUnavailable": "Spalvų valdymui reikalingas GPU atvaizdavimas.",
+        "wideGamut": "Plačios gamos peržiūra ({{space}}).",
+        "wideGamutHdrNote": "Nenaudojama, kol redaktorius rodo HDR.",
+        "wideGamutPreview": "Plačios gamos peržiūra",
+        "wideGamutPreviewDesc": "Plačios gamos monitoriuose rodo spalvas už sRGB ribų. Įjunkite, jei eksportuojate į Display P3, Adobe RGB ar kitą plačią spalvų erdvę. Išjungus matysite, kaip atrodys sRGB eksportas.",
+        "wideGamutPreviewEnable": "Rodyti plačios gamos spalvas"
+      },
       "defaultAdjustments": {
         "addCamera": "Pridėti fotoaparatą…",
         "applyToNonRaw": "Taikyti ir JPEG, TIFF, PNG bei kitiems ne RAW failams",
@@ -2417,6 +2493,9 @@
         "sliderResetNeutral": "Neutrali reikšmė",
         "title": "Numatytieji koregavimai"
       },
+      "display": {
+        "title": "Ekranas"
+      },
       "dynamicDesc": "Redaktorius atvaizduoja peržiūrą pagal tikrąjį jūsų ekrano pikselių tankį. Tai užtikrina 1:1 pikselių tikslumą vertinant fokusavimą ir triukšmą.",
       "editIn": {
         "add": "Pridėti programą",
@@ -2439,6 +2518,16 @@
       "exifLabel": "Skaityti EXIF duomenis",
       "exportQuality": "Eksporto kokybė",
       "exportQualityDesc": "Valdo kokybės ir spartos balansą eksportuojant. „Aukšta kokybė“ naudoja geresnį interpoliavimą.",
+      "hdr": {
+        "display": "HDR ekranas",
+        "displayDesc": "HDR ekrane rodo šviesias sritis ryškesnes už įprastą baltą. Šešėliai ir vidutiniai tonai nesikeičia, o įprasti eksportai lieka tokie patys.",
+        "enableDisplay": "Naudoti HDR redaktoriuje",
+        "headroom": "Šviesių sričių diapazonas",
+        "headroomDesc": "Kiek šviesios sritys gali viršyti įprastą baltą. Taip pat naudojama HDR eksportui.",
+        "statusActive": "Šis ekranas veikia HDR režimu.",
+        "statusInactive": "Šis ekranas neveikia HDR režimu. Įjunkite HDR sistemos ekrano nustatymuose, kad pamatytumėte efektą.",
+        "statusUnsupported": "HDR reikia GPU atvaizdavimo „Windows“ arba „macOS“ sistemoje."
+      },
       "highDpi": "Didelės raiškos (High-DPI) atvaizdavimas",
       "highDpiDesc": "Atvaizduoti peržiūras jūsų ekrano fizine {{dpr}}x raiška. Užtikrina ryškiausią peržiūrą, bet naudoja žymiai daugiau atminties.",
       "highDpiDescStandard": "Šis nustatymas veikia tik didelės raiškos (High-DPI) ekranuose. Jūsų dabartinis ekranas yra standartinės raiškos.",
@@ -2474,7 +2563,7 @@
         "baselineExposure": "Bazinė ekspozicija",
         "baselineExposureAmount": "Bazinė reikšmė",
         "baselineExposureAmountDesc": "RAW failams pridedama ekspozicija. „darktable“ naudoja +0.7 EV.",
-        "baselineExposureDesc": "Pašviesina RAW failus fiksuota reikšme plius DNG BaselineExposure žyma, jei ji yra.",
+        "baselineExposureDesc": "Pašviesina RAW failus fiksuota reikšme arba, jei yra, DNG BaselineExposure žymos reikšme.",
         "colorNr": "Bazinis spalvinio triukšmo slopinimas",
         "colorNrDesc": "Taikomas ankstyvoje eigoje chrominiam triukšmui šalinti. Didesnė reikšmė = stipresnis slopinimas.",
         "defaultNonRawTonemapper": "Numatytasis ne RAW tonų atvaizdavimas",
@@ -2515,6 +2604,13 @@
         "full": "Full Resolution",
         "high": "Aukšta kokybė",
         "performance": "Maksimalus našumas"
+      },
+      "rawDecoding": "RAW dekodavimas",
+      "rawDecodingDesc": "Pasirinkite, kur dekoduojami RAW failai. „Auto“ naudoja GPU ir persijungia į CPU, jei GPU nesusidoroja su jūsų nuotraukomis. „GPU“ visada pirmiausia bando GPU. „CPU“ yra lėtesnis, bet veikia visose sistemose.",
+      "rawDecodingOptions": {
+        "auto": "Automatinis",
+        "cpu": "CPU",
+        "gpu": "GPU"
       },
       "renderScale": "Atvaizdavimo raiškos mastelis",
       "renderScaleDesc": "Pakeičia atvaizdavimo raišką proporcingai jūsų ekranui. Mažesnės reikšmės pagerina našumą didelės raiškos ekranuose šiek tiek paaukojant ryškumą.",

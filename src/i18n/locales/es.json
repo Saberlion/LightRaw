@@ -525,11 +525,17 @@
         "backendLabel": "Backend de IA:",
         "builtinDesc": "Usando la IA integrada básica. Selecciona Cloud o AI Connector en ajustes para relleno generativo.",
         "builtinLabel": "IA integrada:",
+        "cloudLabel": "IA en la nube:",
         "connectorConnectedDesc": "Conectado al backend generativo local.",
         "connectorDisconnectedDesc": "Solo Inpainting básico disponible. Inicia tu backend local.",
         "connectorLabel": "AI Connector:",
+        "loginRequiredDesc": "Inicia sesión a través de Ajustes para usar la IA en la nube.",
+        "monthlyUsage": "Uso mensual",
         "notDetected": "No detectado",
-        "ready": "Listo"
+        "notLoggedIn": "No has iniciado sesión",
+        "proRequiredDesc": "Se requiere suscripción Pro. Mejora en Ajustes.",
+        "ready": "Listo",
+        "upgradeRequired": "Mejora requerida"
       },
       "createNewTitle": "Crear nueva edición generativa",
       "createNewTooltip": "Crear nueva edición {{name}}",
@@ -942,6 +948,7 @@
       },
       "status": {
         "empty": "Aún no hay ajustes guardados. Crea el tuyo, impórtalo desde un archivo o explora los de la comunidad.",
+        "getCommunity": "Obtener ajustes de la comunidad",
         "loading": "Cargando ajustes preestablecidos..."
       },
       "supports": {
@@ -950,7 +957,11 @@
         "masks": "Máscaras"
       },
       "title": "Ajustes preestablecidos",
+      "toasts": {
+        "importFailed": "No se pudo importar {{fileName}}: {{error}}"
+      },
       "tooltips": {
+        "explore": "Explorar ajustes de la comunidad",
         "export": "Exportar todos los ajustes a un archivo .rrpreset",
         "import": "Importar ajustes desde un archivo .rrpreset",
         "saveNew": "Guardar como nuevo ajuste preestablecido"
@@ -991,6 +1002,7 @@
         "compare": "Antes / después (B) o modos (clic derecho)",
         "focalLength": "Distancia focal",
         "fullscreen": "Alternar pantalla completa (F)",
+        "hdr": "Vista previa HDR",
         "iso": "ISO",
         "redo": "Rehacer (Ctrl+Y) o Historial (Clic derecho)",
         "showEdited": "Mostrar editado (B)",
@@ -1052,7 +1064,13 @@
       "selectFolderTitle_other": "Seleccionar carpeta para exportar {{count}} imágenes"
     },
     "file": {
+      "colorSpace": "Espacio de color",
       "dpi": "PPP",
+      "hdr": "Salida HDR",
+      "hdrJpegHint": "Añade un mapa de ganancia: las pantallas HDR muestran iluminaciones más brillantes y el resto muestra la foto normal.",
+      "hdrJxlHint": "Guarda un archivo HDR real (PQ, Rec. 2020). Requiere un visor compatible con HDR.",
+      "hdrNoPreview": "Esta pantalla no puede mostrar las altas luces HDR. La exportación las incluirá igualmente.",
+      "hdrPreviewOff": "Activa HDR en la barra de herramientas del editor para previsualizar las altas luces.",
       "quality": "Calidad",
       "qualityLossless": "Calidad (Sin pérdida)",
       "resolution": "Resolución",
@@ -1238,6 +1256,22 @@
       "unprocessed_many": "{{count}} imágenes necesitan procesamiento con IA",
       "unprocessed_other": "{{count}} imágenes necesitan procesamiento con IA",
       "waiting": "Preparando el procesamiento con IA…"
+    },
+    "community": {
+      "actionSave": "Guardar",
+      "actionSaved": "Guardado",
+      "actionSaving": "Guardando...",
+      "fetchingPresets": "Obteniendo ajustes preestablecidos desde GitHub...",
+      "footerHeading": "¿Quieres que tu ajuste preestablecido aparezca aquí?",
+      "footerLinkText": "Crea un issue en GitHub",
+      "headerDesc": "Descubre ajustes preestablecidos creados por la comunidad.",
+      "headerTitle": "Ajustes de la comunidad",
+      "presetBy": "por {{creator}}",
+      "searchPlaceholder": "Buscar ajustes preestablecidos...",
+      "sortBy": "Ordenar por:",
+      "sortMethods": {
+        "name": "Nombre (A-Z)"
+      }
     },
     "culling": {
       "addTagPlaceholder": "Añadir etiqueta...",
@@ -1504,6 +1538,7 @@
       "list": "Lista"
     },
     "tooltips": {
+      "communityPresets": "Ajustes de la comunidad",
       "goHome": "Ir al Inicio",
       "importFromAlbum": "Importar desde el álbum",
       "importImages": "Importar imágenes",
@@ -1719,7 +1754,12 @@
       "descriptionWithCount_other": "Combina {{count}} imágenes con diferentes distancias de enfoque en una sola imagen perfectamente nítida.",
       "failed": "Error en el apilamiento de enfoque",
       "initializing": "Inicializando...",
+      "method": "Método",
+      "methodDetail": "Detalle",
+      "methodHint": "Detalle conserva las estructuras más finas, como pelos y cerdas. Suave ofrece transiciones más suaves y menos ruido.",
+      "methodSmooth": "Suave",
       "openInEditor": "Abrir en el editor",
+      "processing": "Apilando enfoque",
       "result": "Resultado",
       "save": "Guardar",
       "savedSuccess": "¡Apilamiento de enfoque guardado con éxito!",
@@ -1739,6 +1779,7 @@
       "initializing": "Inicializando...",
       "merging": "Combinando HDR",
       "openInEditor": "Abrir en el editor",
+      "processing": "Combinando HDR",
       "retry": "Reintentar",
       "save": "Guardar",
       "savedSuccess": "¡HDR guardado con éxito!",
@@ -1792,6 +1833,28 @@
       "zoomInTooltip": "Acercar",
       "zoomOutTooltip": "Alejar"
     },
+    "merge": {
+      "autoCrop": "Recorte automático",
+      "autoCropHint": "Recorta los bordes que no cubren todas las imágenes.",
+      "cancel": "Cancelar",
+      "close": "Cerrar",
+      "excludedImages": "{{count}} imágenes no se pudieron emparejar y se omitieron",
+      "excludedImages_one": "{{count}} imagen no se pudo emparejar y se omitió",
+      "excludedImages_many": "{{count}} de imágenes no se pudieron emparejar y se omitieron",
+      "excludedImages_other": "{{count}} imágenes no se pudieron emparejar y se omitieron",
+      "initializing": "Inicializando...",
+      "openInEditor": "Abrir en el editor",
+      "outputInfo": "{{images}} imágenes · {{width}} × {{height}} px",
+      "result": "Resultado",
+      "retry": "Reintentar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "speedNotice": "Esto puede tardar unos minutos dependiendo del número y tamaño de las imágenes.",
+      "start": "Iniciar",
+      "unalignedImages_one": "No se pudo alinear {{count}} imagen",
+      "unalignedImages_many": "No se pudieron alinear {{count}} de imágenes",
+      "unalignedImages_other": "No se pudieron alinear {{count}} imágenes"
+    },
     "negativeConversion": {
       "blueWeight": "Azul (Amarillo)",
       "cancel": "Cancelar",
@@ -1818,6 +1881,9 @@
       "zoomOutTooltip": "Alejar"
     },
     "panorama": {
+      "autoProjectionUsed": "Usando {{projection}}",
+      "boundaryWarp": "Deformación de límites",
+      "boundaryWarpHint": "Estira los bordes para llenar el encuadre en lugar de recortarlos.",
       "cancel": "Cancelar",
       "close": "Cerrar",
       "descCount": "Combina {{count}} imágenes superpuestas en un panorama continuo.",
@@ -1825,9 +1891,23 @@
       "descCount_many": "Combina {{count}} imágenes superpuestas en un panorama continuo.",
       "descCount_other": "Combina {{count}} imágenes superpuestas en un panorama continuo.",
       "descGeneric": "Combina tus imágenes superpuestas en un panorama continuo.",
+      "description": "Combina tus imágenes superpuestas en un panorama continuo.",
+      "descriptionWithCount": "Combina {{count}} imágenes superpuestas en un panorama continuo.",
+      "descriptionWithCount_one": "Combina {{count}} imagen superpuesta en un panorama continuo.",
+      "descriptionWithCount_many": "Combina {{count}} imágenes superpuestas en un panorama continuo.",
+      "descriptionWithCount_other": "Combina {{count}} imágenes superpuestas en un panorama continuo.",
+      "exposureCompensation": "Compensación de exposición",
+      "exposureCompensationHint": "Iguala la exposición, el balance de blancos y el viñeteado entre las imágenes.",
       "failed": "Panorama fallido",
       "initializing": "Inicializando...",
       "openInEditor": "Abrir en el editor",
+      "processing": "Uniendo panorama",
+      "projection": "Proyección",
+      "projectionAuto": "Automática",
+      "projectionCylindrical": "Cilíndrica",
+      "projectionFallback": "{{requested}} no cubre este campo de visión, usando {{projection}}",
+      "projectionPerspective": "Perspectiva",
+      "projectionSpherical": "Esférica",
       "retry": "Reintentar",
       "save": "Guardar",
       "savedSuccess": "¡Panorama guardado con éxito!",
@@ -2204,6 +2284,32 @@
           "feature3": "Una interfaz más limpia y enfocada",
           "title": "Sin IA"
         },
+        "cloud": {
+          "description": "Para aquellos que desean una solución más simple, una suscripción opcional proporciona los mismos resultados de alta calidad que el autoalojamiento sin ninguna molestia. Esta es la opción más conveniente y la mejor manera de apoyar el proyecto.",
+          "feature1": "Máxima comodidad, sin configuración",
+          "feature2": "Mismos resultados que el autoalojamiento",
+          "feature3": "No se requiere hardware potente",
+          "signedIn": {
+            "active": "Suscripción en la nube Activa",
+            "inactive": "Sin suscripción activa",
+            "logout": "Cerrar sesión",
+            "manage": "Gestionar",
+            "usage": "Uso mensual",
+            "usageStats": "{{requests}} / {{limit}} peticiones"
+          },
+          "signedOut": {
+            "noAccount": "¿No tienes cuenta?",
+            "signup": "Regístrate en la página web",
+            "upgradeBtn": "Mejorar en la web",
+            "upgradeDesc": "Para usar las funciones de IA en la nube, necesitas una suscripción Cloud."
+          },
+          "statuses": {
+            "connecting": "Conectando…",
+            "retry": "Reintentar conexión",
+            "unsupported": "El inicio de sesión en la nube actualmente solo está disponible en escritorio."
+          },
+          "title": "Servicio en la nube"
+        },
         "connector": {
           "address": "Dirección de AI Connector",
           "addressDesc": "Introduce la dirección y el puerto de tu instancia en ejecución de AI Connector. Requerido para las funciones de IA generativa.",
@@ -2231,6 +2337,7 @@
         "providers": {
           "aiConnector": "AI Connector",
           "aiFree": "Sin IA",
+          "cloud": "Nube",
           "cpu": "Integrada"
         },
         "title": "IA Generativa"
@@ -2255,6 +2362,24 @@
         "gl": "OpenGL",
         "metal": "Metal",
         "vulkan": "Vulkan"
+      },
+      "colorManagement": {
+        "chooseProfile": "Elegir perfil",
+        "modeAuto": "Automático (perfil del sistema)",
+        "modeCustom": "Perfil ICC personalizado",
+        "modeOff": "Desactivado",
+        "profile": "Perfil del monitor",
+        "profileDesc": "Convierte la vista previa del editor al perfil de color de tu monitor para que los colores se vean correctamente en pantallas calibradas y de gama amplia. Las exportaciones no se ven afectadas.",
+        "statusInvalid": "No se pudo cargar este perfil.",
+        "statusNone": "No se encontró ningún perfil de monitor. La vista previa se muestra como sRGB.",
+        "statusProfile": "Usando {{name}}.",
+        "statusSystem": "El sistema operativo gestiona los colores.",
+        "statusUnavailable": "La gestión del color requiere el renderizador GPU.",
+        "wideGamut": "Vista previa de gama amplia ({{space}}).",
+        "wideGamutHdrNote": "No se usa mientras el editor muestra HDR.",
+        "wideGamutPreview": "Vista previa de gama amplia",
+        "wideGamutPreviewDesc": "Muestra colores más allá de sRGB en monitores de gama amplia. Actívalo si exportas en Display P3, Adobe RGB u otro espacio de color amplio. Desactivado, verás cómo quedará una exportación sRGB.",
+        "wideGamutPreviewEnable": "Mostrar colores de gama amplia"
       },
       "defaultAdjustments": {
         "addCamera": "Añadir cámara…",
@@ -2281,6 +2406,9 @@
         "sliderResetNeutral": "Valor neutro",
         "title": "Ajustes predeterminados"
       },
+      "display": {
+        "title": "Pantalla"
+      },
       "dynamicDesc": "El editor renderiza la vista previa para que coincida con la densidad real de píxeles de tu pantalla. Esto garantiza que cada detalle se represente con precisión de 1:1 píxeles, proporcionando la máxima claridad al hacer zoom y verificar el enfoque.",
       "editIn": {
         "add": "Añadir programa",
@@ -2298,6 +2426,16 @@
         "title": "Editar en"
       },
       "enableLivePreviews": "Activar vistas previas en vivo",
+      "hdr": {
+        "display": "Pantalla HDR",
+        "displayDesc": "Muestra las iluminaciones más brillantes que el blanco normal en una pantalla HDR. Las sombras y los medios tonos no cambian y las exportaciones estándar no se ven afectadas.",
+        "enableDisplay": "Usar HDR en el editor",
+        "headroom": "Rango de iluminaciones",
+        "headroomDesc": "Hasta dónde pueden superar las iluminaciones el blanco normal. También se usa en las exportaciones HDR.",
+        "statusActive": "Esta pantalla está en modo HDR.",
+        "statusInactive": "Esta pantalla no está en modo HDR. Activa HDR en los ajustes de pantalla del sistema para ver el efecto.",
+        "statusUnsupported": "HDR requiere el renderizador por GPU en Windows o macOS."
+      },
       "highDpi": "Renderizado de alto DPI",
       "highDpiDesc": "Renderizar vistas previas en la resolución de píxeles físicos nativa de {{dpr}}x de tu pantalla. Produce la vista previa más nítida posible, pero utiliza mucha más memoria.",
       "highDpiDescStandard": "Este ajuste solo afecta a las pantallas de alto DPI. Tu pantalla actual tiene resolución estándar.",
@@ -2326,7 +2464,7 @@
         "baselineExposure": "Exposición base",
         "baselineExposureAmount": "Cantidad base",
         "baselineExposureAmountDesc": "Exposición añadida a los archivos RAW. darktable usa +0,7 EV.",
-        "baselineExposureDesc": "Aclara los archivos RAW en una cantidad fija, más la etiqueta DNG BaselineExposure si existe.",
+        "baselineExposureDesc": "Aclara los archivos RAW en una cantidad fija, o en el valor de la etiqueta DNG BaselineExposure si existe.",
         "colorNr": "Reducción base del ruido de color",
         "colorNrDesc": "Aplica un filtro bilateral cruzado temprano en el pipeline para eliminar el ruido de croma. Valor más alto = mayor reducción.",
         "defaultNonRawTonemapper": "Mapeador de tonos predeterminado no RAW",
@@ -2367,6 +2505,13 @@
         "full": "Resolución completa",
         "high": "Alta calidad",
         "performance": "Rendimiento"
+      },
+      "rawDecoding": "Decodificación RAW",
+      "rawDecodingDesc": "Selecciona dónde se decodifican los archivos RAW. 'Auto' usa la GPU y cambia a la CPU si no puede con tus imágenes. 'GPU' siempre prueba primero la GPU. 'CPU' es más lenta, pero funciona en todos los sistemas.",
+      "rawDecodingOptions": {
+        "auto": "Auto",
+        "cpu": "CPU",
+        "gpu": "GPU"
       },
       "renderScale": "Escala de resolución de renderizado",
       "renderScaleDesc": "Escala la resolución de renderizado en relación con tu pantalla. Valores más bajos mejoran el rendimiento en pantallas de alta resolución a costa de cierta nitidez.",

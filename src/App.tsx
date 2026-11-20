@@ -485,15 +485,8 @@ function App() {
     sortedImageList,
   );
 
-  const {
-    handleStartPanorama,
-    handleSavePanorama,
-    handleStartHdr,
-    handleSaveHdr,
-    handleSaveCollage,
-    handleStartFocusStack,
-    handleSaveFocusStack,
-  } = useProductivityActions(handleLibraryRefresh);
+  const { handleMergeSettingsChange, handleSaveCollage, handleSaveMerge, handleStartMerge } =
+    useProductivityActions(handleLibraryRefresh);
 
   const {
     handleEditorContextMenu,
@@ -1169,12 +1162,9 @@ function App() {
         </div>
         <AppModals
           handleImageSelect={handleImageSelect}
-          handleSavePanorama={handleSavePanorama}
-          handleStartPanorama={handleStartPanorama}
-          handleStartFocusStack={handleStartFocusStack}
-          handleSaveFocusStack={handleSaveFocusStack}
-          handleSaveHdr={handleSaveHdr}
-          handleStartHdr={handleStartHdr}
+          handleMergeSettingsChange={handleMergeSettingsChange}
+          handleSaveMerge={handleSaveMerge}
+          handleStartMerge={handleStartMerge}
           handleCreateFolder={handleCreateFolder}
           handleRenameFolder={handleRenameFolder}
           handleSaveRename={handleSaveRename}

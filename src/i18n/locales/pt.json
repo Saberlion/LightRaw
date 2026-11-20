@@ -525,11 +525,17 @@
         "backendLabel": "Backend de IA:",
         "builtinDesc": "Usando a IA integrada básica. Selecione Nuvem ou AI Connector nas configurações para substituição generativa.",
         "builtinLabel": "IA Integrada:",
+        "cloudLabel": "IA na Nuvem:",
         "connectorConnectedDesc": "Conectado ao backend generativo local.",
         "connectorDisconnectedDesc": "Apenas preenchimento simples disponível. Inicie seu backend local.",
         "connectorLabel": "AI Connector:",
+        "loginRequiredDesc": "Faça login em Configurações para usar IA na Nuvem.",
+        "monthlyUsage": "Uso Mensal",
         "notDetected": "Não Detectado",
-        "ready": "Pronto"
+        "notLoggedIn": "Não Conectado",
+        "proRequiredDesc": "Assinatura Pro necessária. Atualize em Configurações.",
+        "ready": "Pronto",
+        "upgradeRequired": "Atualização Necessária"
       },
       "createNewTitle": "Criar Nova Edição Generativa",
       "createNewTooltip": "Criar Nova Edição de {{name}}",
@@ -942,6 +948,7 @@
       },
       "status": {
         "empty": "Nenhuma predefinição salva ainda. Crie a sua própria, importe de um arquivo ou explore as predefinições da comunidade.",
+        "getCommunity": "Obter Predefinições da Comunidade",
         "loading": "Carregando Predefinições..."
       },
       "supports": {
@@ -950,7 +957,11 @@
         "masks": "Máscaras"
       },
       "title": "Predefinições",
+      "toasts": {
+        "importFailed": "Falha ao importar {{fileName}}: {{error}}"
+      },
       "tooltips": {
+        "explore": "Explorar Predefinições da Comunidade",
         "export": "Exportar todas as predefinições para arquivo .rrpreset",
         "import": "Importar predefinições do arquivo .rrpreset",
         "saveNew": "Salvar como nova predefinição"
@@ -991,6 +1002,7 @@
         "compare": "Antes / depois (B) ou modos (clique direito)",
         "focalLength": "Distância Focal",
         "fullscreen": "Alternar Tela Cheia (F)",
+        "hdr": "Pré-visualização HDR",
         "iso": "ISO",
         "redo": "Refazer (Ctrl+Y) ou Histórico (Botão Direito)",
         "showEdited": "Mostrar Editado (B)",
@@ -1052,7 +1064,13 @@
       "selectFolderTitle_other": "Selecionar Pasta para Exportar {{count}} Imagens"
     },
     "file": {
+      "colorSpace": "Espaço de cor",
       "dpi": "DPI",
+      "hdr": "Saída HDR",
+      "hdrJpegHint": "Adiciona um mapa de ganho: telas HDR mostram realces mais brilhantes e o restante mostra a foto normal.",
+      "hdrJxlHint": "Salva um arquivo HDR real (PQ, Rec. 2020). Requer um visualizador compatível com HDR.",
+      "hdrNoPreview": "Este ecrã não consegue mostrar os realces HDR. A exportação irá contê-los na mesma.",
+      "hdrPreviewOff": "Ative o HDR na barra de ferramentas do editor para pré-visualizar os realces.",
       "quality": "Qualidade",
       "qualityLossless": "Qualidade (Sem Perdas)",
       "resolution": "Resolução",
@@ -1238,6 +1256,22 @@
       "unprocessed_many": "{{count}} imagens precisam de processamento com IA",
       "unprocessed_other": "{{count}} imagens precisam de processamento com IA",
       "waiting": "Preparando o processamento com IA…"
+    },
+    "community": {
+      "actionSave": "Salvar",
+      "actionSaved": "Salvo",
+      "actionSaving": "Salvando...",
+      "fetchingPresets": "Buscando predefinições do GitHub...",
+      "footerHeading": "Deseja ver sua predefinição em destaque?",
+      "footerLinkText": "Crie uma issue no GitHub",
+      "headerDesc": "Descubra predefinições criadas pela comunidade.",
+      "headerTitle": "Predefinições da Comunidade",
+      "presetBy": "por {{creator}}",
+      "searchPlaceholder": "Pesquisar predefinições...",
+      "sortBy": "Ordenar por:",
+      "sortMethods": {
+        "name": "Nome (A-Z)"
+      }
     },
     "culling": {
       "addTagPlaceholder": "Adicionar tag...",
@@ -1504,6 +1538,7 @@
       "list": "Lista"
     },
     "tooltips": {
+      "communityPresets": "Predefinições da Comunidade",
       "goHome": "Ir para Início",
       "importFromAlbum": "Importar do álbum",
       "importImages": "Importar Imagens",
@@ -1719,7 +1754,12 @@
       "descriptionWithCount_other": "Combine {{count}} imagens com diferentes distâncias de foco em uma única imagem perfeitamente nítida.",
       "failed": "Falha no Empilhamento de Foco",
       "initializing": "Inicializando...",
+      "method": "Método",
+      "methodDetail": "Detalhe",
+      "methodHint": "Detalhe preserva as estruturas mais finas, como pelos e cerdas. Suave oferece transições mais suaves e menos ruído.",
+      "methodSmooth": "Suave",
       "openInEditor": "Abrir no Editor",
+      "processing": "Empilhando Foco",
       "result": "Resultado",
       "save": "Salvar",
       "savedSuccess": "Empilhamento de foco salvo com sucesso!",
@@ -1739,6 +1779,7 @@
       "initializing": "Inicializando...",
       "merging": "Mesclando HDR",
       "openInEditor": "Abrir no Editor",
+      "processing": "Mesclando HDR",
       "retry": "Tentar Novamente",
       "save": "Salvar",
       "savedSuccess": "HDR Salvo com Sucesso!",
@@ -1792,6 +1833,28 @@
       "zoomInTooltip": "Mais Zoom",
       "zoomOutTooltip": "Menos Zoom"
     },
+    "merge": {
+      "autoCrop": "Corte automático",
+      "autoCropHint": "Recorta as bordas que não são cobertas por todas as imagens.",
+      "cancel": "Cancelar",
+      "close": "Fechar",
+      "excludedImages": "{{count}} imagens não puderam ser correspondidas e foram deixadas de fora",
+      "excludedImages_one": "{{count}} imagem não pôde ser correspondida e foi deixada de fora",
+      "excludedImages_many": "{{count}} de imagens não puderam ser correspondidas e foram deixadas de fora",
+      "excludedImages_other": "{{count}} imagens não puderam ser correspondidas e foram deixadas de fora",
+      "initializing": "Inicializando...",
+      "openInEditor": "Abrir no Editor",
+      "outputInfo": "{{images}} imagens · {{width}} × {{height}} px",
+      "result": "Resultado",
+      "retry": "Tentar Novamente",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "speedNotice": "Isso pode levar alguns minutos dependendo do número e tamanho das imagens.",
+      "start": "Iniciar",
+      "unalignedImages_one": "Não foi possível alinhar {{count}} imagem",
+      "unalignedImages_many": "Não foi possível alinhar {{count}} de imagens",
+      "unalignedImages_other": "Não foi possível alinhar {{count}} imagens"
+    },
     "negativeConversion": {
       "blueWeight": "Azul (Amarelo)",
       "cancel": "Cancelar",
@@ -1818,6 +1881,9 @@
       "zoomOutTooltip": "Menos Zoom"
     },
     "panorama": {
+      "autoProjectionUsed": "Usando {{projection}}",
+      "boundaryWarp": "Deformação de limites",
+      "boundaryWarpHint": "Estica as bordas para preencher o quadro em vez de cortá-las.",
       "cancel": "Cancelar",
       "close": "Fechar",
       "descCount": "Combine {{count}} imagens sobrepostas em um panorama contínuo.",
@@ -1825,9 +1891,23 @@
       "descCount_many": "Combine {{count}} imagens sobrepostas em um panorama contínuo.",
       "descCount_other": "Combine {{count}} imagens sobrepostas em um panorama contínuo.",
       "descGeneric": "Combine suas imagens sobrepostas em um panorama contínuo.",
+      "description": "Combine suas imagens sobrepostas em um panorama contínuo.",
+      "descriptionWithCount": "Combine {{count}} imagens sobrepostas em um panorama contínuo.",
+      "descriptionWithCount_one": "Combine {{count}} imagem sobreposta em um panorama contínuo.",
+      "descriptionWithCount_many": "Combine {{count}} imagens sobrepostas em um panorama contínuo.",
+      "descriptionWithCount_other": "Combine {{count}} imagens sobrepostas em um panorama contínuo.",
+      "exposureCompensation": "Compensação de exposição",
+      "exposureCompensationHint": "Equaliza a exposição, o balanço de brancos e a vinheta entre as imagens.",
       "failed": "O Panorama Falhou",
       "initializing": "Inicializando...",
       "openInEditor": "Abrir no Editor",
+      "processing": "Montando Panorama",
+      "projection": "Projeção",
+      "projectionAuto": "Automática",
+      "projectionCylindrical": "Cilíndrica",
+      "projectionFallback": "{{requested}} não cobre este campo de visão, usando {{projection}}",
+      "projectionPerspective": "Perspectiva",
+      "projectionSpherical": "Esférica",
       "retry": "Tentar Novamente",
       "save": "Salvar",
       "savedSuccess": "Panorama Salvo com Sucesso!",
@@ -2204,6 +2284,32 @@
           "feature3": "Uma interface mais limpa e focada",
           "title": "Sem IA"
         },
+        "cloud": {
+          "description": "Para aqueles que desejam uma solução mais simples, uma assinatura opcional oferece os mesmos resultados de alta qualidade da hospedagem própria, sem nenhum trabalho. Esta é a opção mais conveniente e a melhor maneira de apoiar o projeto.",
+          "feature1": "Máxima conveniência, sem configuração",
+          "feature2": "Mesmos resultados da auto-hospedagem",
+          "feature3": "Não é necessário hardware potente",
+          "signedIn": {
+            "active": "Assinatura na Nuvem Ativa",
+            "inactive": "Nenhuma Assinatura Ativa",
+            "logout": "Sair",
+            "manage": "Gerenciar",
+            "usage": "Uso Mensal",
+            "usageStats": "{{requests}} / {{limit}} solicitações"
+          },
+          "signedOut": {
+            "noAccount": "Não tem uma conta?",
+            "signup": "Inscreva-se no site",
+            "upgradeBtn": "Fazer Upgrade no Site",
+            "upgradeDesc": "Para usar recursos de IA na Nuvem, você precisa de uma assinatura na Nuvem."
+          },
+          "statuses": {
+            "connecting": "Conectando…",
+            "retry": "Tentar conexão novamente",
+            "unsupported": "O login na nuvem está atualmente disponível apenas no desktop."
+          },
+          "title": "Serviço na Nuvem"
+        },
         "connector": {
           "address": "Endereço do AI Connector",
           "addressDesc": "Insira o endereço e a porta da sua instância do AI Connector em execução. Necessário para recursos de IA generativa.",
@@ -2231,6 +2337,7 @@
         "providers": {
           "aiConnector": "AI Connector",
           "aiFree": "Sem IA",
+          "cloud": "Nuvem",
           "cpu": "Integrada"
         },
         "title": "IA Generativa"
@@ -2255,6 +2362,24 @@
         "gl": "OpenGL",
         "metal": "Metal",
         "vulkan": "Vulkan"
+      },
+      "colorManagement": {
+        "chooseProfile": "Escolher perfil",
+        "modeAuto": "Automático (perfil do sistema)",
+        "modeCustom": "Perfil ICC personalizado",
+        "modeOff": "Desativado",
+        "profile": "Perfil do monitor",
+        "profileDesc": "Converte a pré-visualização do editor para o perfil de cores do seu monitor, para que as cores fiquem corretas em ecrãs calibrados e de gama ampla. As exportações não são afetadas.",
+        "statusInvalid": "Não foi possível carregar este perfil.",
+        "statusNone": "Nenhum perfil de monitor encontrado. A pré-visualização é mostrada como sRGB.",
+        "statusProfile": "A usar {{name}}.",
+        "statusSystem": "As cores são geridas pelo sistema operativo.",
+        "statusUnavailable": "A gestão de cores requer o renderizador GPU.",
+        "wideGamut": "Pré-visualização de gama ampla ({{space}}).",
+        "wideGamutHdrNote": "Não é usado enquanto o editor mostra HDR.",
+        "wideGamutPreview": "Pré-visualização de gama ampla",
+        "wideGamutPreviewDesc": "Mostra cores além do sRGB em monitores de gama ampla. Ative ao exportar em Display P3, Adobe RGB ou outro espaço de cor amplo. Desativado, vê como ficará uma exportação sRGB.",
+        "wideGamutPreviewEnable": "Mostrar cores de gama ampla"
       },
       "defaultAdjustments": {
         "addCamera": "Adicionar câmara…",
@@ -2281,6 +2406,9 @@
         "sliderResetNeutral": "Valor neutro",
         "title": "Ajustes padrão"
       },
+      "display": {
+        "title": "Ecrã"
+      },
       "dynamicDesc": "O editor renderiza a visualização para corresponder à densidade real de pixels da sua tela. Isso garante que cada detalhe seja representado com precisão de 1:1 pixel, fornecendo clareza máxima ao aumentar o zoom e verificar o foco.",
       "editIn": {
         "add": "Adicionar programa",
@@ -2298,6 +2426,16 @@
         "title": "Editar em"
       },
       "enableLivePreviews": "Ativar Visualizações ao Vivo",
+      "hdr": {
+        "display": "Tela HDR",
+        "displayDesc": "Mostra os realces mais brilhantes que o branco normal em uma tela HDR. Sombras e meios-tons permanecem iguais e as exportações padrão não são afetadas.",
+        "enableDisplay": "Usar HDR no editor",
+        "headroom": "Faixa de realces",
+        "headroomDesc": "Até onde os realces podem ultrapassar o branco normal. Também é usada nas exportações HDR.",
+        "statusActive": "Esta tela está em modo HDR.",
+        "statusInactive": "Esta tela não está em modo HDR. Ative o HDR nas configurações de tela do sistema para ver o efeito.",
+        "statusUnsupported": "O HDR requer o renderizador por GPU no Windows ou macOS."
+      },
       "highDpi": "Renderização de Alto DPI",
       "highDpiDesc": "Renderizar visualizações na resolução de pixel físico nativa {{dpr}}x da tela. Produz a visualização mais nítida possível, mas usa significativamente mais memória.",
       "highDpiDescStandard": "Esta configuração afeta apenas telas de alto DPI. Sua tela atual tem resolução padrão.",
@@ -2326,7 +2464,7 @@
         "baselineExposure": "Exposição base",
         "baselineExposureAmount": "Valor base",
         "baselineExposureAmountDesc": "Exposição adicionada aos arquivos RAW. O darktable usa +0,7 EV.",
-        "baselineExposureDesc": "Clareia os arquivos RAW em um valor fixo, mais a etiqueta DNG BaselineExposure quando presente.",
+        "baselineExposureDesc": "Clareia os arquivos RAW em um valor fixo, ou pelo valor da etiqueta DNG BaselineExposure quando presente.",
         "colorNr": "Redução Base de Ruído de Cor",
         "colorNrDesc": "Aplica um filtro bilateral cruzado no início do pipeline para remover o ruído de croma. Valor mais alto = Redução mais forte.",
         "defaultNonRawTonemapper": "Mapeador de Tons Padrão Não-RAW",
@@ -2367,6 +2505,13 @@
         "full": "Resolução Total",
         "high": "Alta Qualidade",
         "performance": "Desempenho"
+      },
+      "rawDecoding": "Decodificação RAW",
+      "rawDecodingDesc": "Selecione onde os arquivos RAW são decodificados. 'Auto' usa a GPU e muda para a CPU se ela não der conta das suas imagens. 'GPU' sempre tenta a GPU primeiro. 'CPU' é mais lenta, mas funciona em qualquer sistema.",
+      "rawDecodingOptions": {
+        "auto": "Auto",
+        "cpu": "CPU",
+        "gpu": "GPU"
       },
       "renderScale": "Escala de Resolução de Renderização",
       "renderScaleDesc": "Dimensiona a resolução de renderização em relação à sua tela. Valores mais baixos melhoram o desempenho em telas de alta resolução ao custo de alguma nitidez.",

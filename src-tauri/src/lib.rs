@@ -45,7 +45,7 @@ mod retouch;
 use std::collections::HashMap;
 #[cfg(target_os = "macos")]
 use std::sync::atomic::Ordering;
-use std::sync::atomic::{AtomicBool, AtomicUsize};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize};
 
 use std::sync::{Arc, Mutex};
 #[cfg(not(any(target_os = "android", target_os = "ios", target_env = "ohos")))]
@@ -212,6 +212,11 @@ pub fn run() {
                 if window.label() == platform::viewer_window::VIEWER_LABEL {
                     platform::viewer_window::handle_viewer_resized(window, *size);
                 }
+            }
+            tauri::WindowEvent::Moved(_)
+            | tauri::WindowEvent::Focused(true)
+            | tauri::WindowEvent::ScaleFactorChanged { .. } => {
+                render::gpu::display::request_display_refresh(window.app_handle());
             }
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 platform::viewer_window::handle_close_requested(window, api)
@@ -709,9 +714,8 @@ pub fn run() {
             ai_init_lock: TokioMutex::new(()),
             active_ai_tasks: Mutex::new(HashMap::new()),
             export_task_token: Arc::new(Mutex::new(None)),
-            hdr_result: Arc::new(Mutex::new(None)),
-            panorama_result: Arc::new(Mutex::new(None)),
-            focus_stack_result: Arc::new(Mutex::new(None)),
+            merge_session: Arc::new(Mutex::new(None)),
+            merge_generation: Arc::new(AtomicU64::new(0)),
             indexing_task_handle: Mutex::new(None),
             lut_cache: Mutex::new(HashMap::new()),
             initial_file_path: Mutex::new(None),
@@ -755,8 +759,10 @@ pub fn run() {
             app::logging::get_log_file_path,
             app::logging::frontend_log,
             merge::save_collage,
-            merge::hdr::merge_hdr,
-            merge::hdr::save_hdr,
+            merge::start_merge,
+            merge::update_merge_preview,
+            merge::save_merge,
+            merge::discard_merge,
             adjustments::lut_processing::load_and_parse_lut,
             adjustments::lut_processing::list_luts,
             adjustments::lut_processing::import_luts,
@@ -782,6 +788,7 @@ pub fn run() {
             app::settings::set_ui_scale,
             app::settings::is_tethering_supported,
             app::settings::is_wgpu_renderer_supported,
+            app::settings::get_display_status,
             ai::commands::generate_ai_subject_mask,
             ai::commands::precompute_ai_subject_mask,
             ai::commands::generate_ai_foreground_mask,
@@ -808,14 +815,11 @@ pub fn run() {
             retouch::inpainting::generate_manual_cleanup_patch,
             retouch::inpainting::generate_liquify_patch,
             retouch::inpainting::generate_retouch_patch,
-            merge::focus_stacking::stitch_focus_stack,
-            merge::focus_stacking::save_focus_stack,
             decode::image_loader::load_image,
             decode::image_loader::is_image_cached,
             decode::image_preload::preload_images,
-            merge::panorama::stitch_panorama,
-            merge::panorama::save_panorama,
             export::export_images,
+            export::resolve_export_file_stem,
             export::tasks::cancel_export,
             export::size_estimate::estimate_export_sizes,
             integrations::edit_in::edit_in_app,

@@ -16,7 +16,7 @@ use crate::render::gpu::pipelines::{
     ALL_SHADER_FEATURES, GpuPipelines, HighPrecisionPipeline, high_precision_shader_source,
     shader_features,
 };
-use crate::render::uniforms::{AllAdjustments, MAX_MASKS, MaskAdjustments};
+use crate::render::uniforms::{AllAdjustments, MAX_MASKS};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Roi {
@@ -31,6 +31,21 @@ pub enum RenderOutputPrecision {
     #[default]
     EightBit,
     SixteenBit,
+    Float,
+}
+
+impl RenderOutputPrecision {
+    pub fn is_high(self) -> bool {
+        self != Self::EightBit
+    }
+
+    pub fn texture_format(self) -> wgpu::TextureFormat {
+        if self.is_high() {
+            wgpu::TextureFormat::Rgba16Float
+        } else {
+            wgpu::TextureFormat::Rgba8Unorm
+        }
+    }
 }
 
 pub struct RenderRequest<'a> {
@@ -191,13 +206,12 @@ pub struct GpuProcessor {
     lut_cache: std::sync::Mutex<Option<LutCache>>,
     ping_pong_view: wgpu::TextureView,
     sharpness_blur_view: wgpu::TextureView,
-    tonal_blur_view: wgpu::TextureView,
-    blur_sources: std::sync::Mutex<[Option<(u64, BlurParams)>; 2]>,
+    blur_source: std::sync::Mutex<Option<(u64, BlurParams)>>,
 
     pub tile_output_texture: wgpu::Texture,
     pub tile_output_texture_view: wgpu::TextureView,
     full_image_size: wgpu::Extent3d,
-    display_textures: std::sync::OnceLock<DisplayTextures>,
+    display_textures: std::sync::Mutex<Option<Arc<DisplayTextures>>>,
     pub readback_pool: ReadbackPool,
 }
 
@@ -248,6 +262,8 @@ pub struct AnalyticsReadback {
     pub width: u32,
     pub height: u32,
     pub row_stride: usize,
+    pub half_float: bool,
+    pub peak: f32,
 }
 
 pub fn analytics_readback_sender() -> &'static std::sync::mpsc::Sender<AnalyticsReadback> {
@@ -289,17 +305,34 @@ fn complete_analytics_readback(readback: AnalyticsReadback) {
 
     if let Ok(Ok(())) = rx.recv() {
         let analytics = readback.analytics;
+        let mapped = PooledReadback {
+            view: Some(readback.buffer.slice(..).get_mapped_range()),
+            buffer: readback.buffer,
+            pool: readback.pool,
+        };
+        let (data, row_stride) = if readback.half_float {
+            let row_samples = readback.width as usize * 4;
+            let pixels = mapped
+                .chunks(readback.row_stride)
+                .take(readback.height as usize)
+                .flat_map(|row| bytemuck::cast_slice::<u8, f16>(&row[..row_samples * 2]))
+                .map(|sample| {
+                    ((sample.to_f32() / readback.peak).clamp(0.0, 1.0) * 255.0).round() as u8
+                })
+                .collect();
+            (AnalyticsPixels::Owned(pixels), row_samples)
+        } else {
+            (AnalyticsPixels::Mapped(mapped), readback.row_stride)
+        };
         let _ = analytics.sender.send(AnalyticsJob {
             path: analytics.path,
             frame: AnalyticsFrame {
-                data: AnalyticsPixels::Mapped(PooledReadback {
-                    view: Some(readback.buffer.slice(..).get_mapped_range()),
-                    buffer: readback.buffer,
-                    pool: readback.pool,
-                }),
+                data,
                 width: readback.width,
                 height: readback.height,
-                row_stride: readback.row_stride,
+                row_stride,
+                peak: readback.peak,
+                space: analytics.space,
             },
             compute_waveform: analytics.compute_waveform,
             active_waveform_channel: analytics.active_waveform_channel,
@@ -422,12 +455,6 @@ impl GpuProcessor {
         });
         let sharpness_blur_view = sharpness_blur_texture.create_view(&Default::default());
 
-        let tonal_blur_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Tonal Blur Texture"),
-            ..reusable_texture_desc
-        });
-        let tonal_blur_view = tonal_blur_texture.create_view(&Default::default());
-
         let tile_output_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Tile Output Texture"),
             size: clamped_tile_size,
@@ -457,12 +484,11 @@ impl GpuProcessor {
             lut_cache: std::sync::Mutex::new(None),
             ping_pong_view,
             sharpness_blur_view,
-            tonal_blur_view,
-            blur_sources: std::sync::Mutex::new([None; 2]),
+            blur_source: std::sync::Mutex::new(None),
             tile_output_texture,
             tile_output_texture_view,
             full_image_size,
-            display_textures: std::sync::OnceLock::new(),
+            display_textures: std::sync::Mutex::new(None),
             readback_pool: Arc::new(std::sync::Mutex::new(Vec::new())),
         })
     }
@@ -895,10 +921,26 @@ impl GpuProcessor {
             &params_tb_broad,
             fine,
         );
+        pass(
+            &self.pipelines.sh_level_pipeline,
+            input_view,
+            input_view,
+            &tmp,
+            &params_tonal,
+            fine,
+        );
+        pass(
+            &self.pipelines.sh_band_pipeline,
+            &tmp,
+            &blurred,
+            &ab,
+            &params_tonal,
+            fine,
+        );
 
         queue.submit(Some(encoder.finish()));
         GuidedTextures {
-            coeffs: blurred,
+            coeffs: ab,
             tone_base: moments,
             haze,
             airlight,
@@ -1164,7 +1206,7 @@ impl GpuProcessor {
                 &self.pipelines.main_pipeline_layout,
             )
         };
-        if features == ALL_SHADER_FEATURES {
+        if features == ALL_SHADER_FEATURES || self.context.shares_one_gl_context() {
             return generic.clone();
         }
 
@@ -1227,30 +1269,39 @@ impl GpuProcessor {
         })
     }
 
-    pub fn display_textures(&self) -> &DisplayTextures {
-        self.display_textures.get_or_init(|| {
-            let descriptor = |label| wgpu::TextureDescriptor {
-                label: Some(label),
-                size: self.full_image_size,
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8Unorm,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING
-                    | wgpu::TextureUsages::COPY_DST
-                    | wgpu::TextureUsages::COPY_SRC,
-                view_formats: &[],
-            };
-            let device = &self.context.device;
-            let working_texture = device.create_texture(&descriptor("Working Output Texture"));
-            let output_texture = device.create_texture(&descriptor("Full Output Texture"));
-            let output_texture_view = output_texture.create_view(&Default::default());
-            DisplayTextures {
-                working_texture,
-                output_texture,
-                output_texture_view,
-            }
-        })
+    pub fn display_textures(&self, format: wgpu::TextureFormat) -> Arc<DisplayTextures> {
+        let mut textures = self
+            .display_textures
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if let Some(existing) = textures.as_ref().filter(|t| t.format == format) {
+            return Arc::clone(existing);
+        }
+        let descriptor = |label| wgpu::TextureDescriptor {
+            label: Some(label),
+            size: self.full_image_size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        };
+        let device = &self.context.device;
+        let working_texture = device.create_texture(&descriptor("Working Output Texture"));
+        let output_texture = device.create_texture(&descriptor("Full Output Texture"));
+        let output_texture_view = output_texture.create_view(&Default::default());
+        let created = Arc::new(DisplayTextures {
+            edited_frame_ready: std::sync::atomic::AtomicBool::new(false),
+            format,
+            working_texture,
+            output_texture,
+            output_texture_view,
+        });
+        *textures = Some(Arc::clone(&created));
+        created
     }
 
     fn high_precision_pipeline(&self) -> &HighPrecisionPipeline {
@@ -1355,10 +1406,13 @@ impl GpuProcessor {
         &self,
         input: &GpuImageEntry,
         mask_texture_view: &wgpu::TextureView,
-        request: RenderRequest,
+        mut request: RenderRequest,
         output_to_display: bool,
         output_precision: RenderOutputPrecision,
     ) -> Result<(RenderedPixels, u32, u32, u32, u32), String> {
+        if request.lut.is_none() {
+            request.adjustments.global.has_lut = 0;
+        }
         let input_texture_view = &input.texture_view;
         let gf_coeffs_view = &input.gf_coeffs_view;
         let tone_base_view = &input.tone_base_view;
@@ -1370,17 +1424,12 @@ impl GpuProcessor {
         let scale = (width.min(height) as f32) / 1080.0;
         const MAX_MASK_BINDINGS: u32 = 1;
 
-        if output_precision == RenderOutputPrecision::SixteenBit && output_to_display {
-            return Err(
-                "High-precision GPU output is only supported for CPU-readback renders.".to_string(),
-            );
-        }
+        let display_textures =
+            output_to_display.then(|| self.display_textures(output_precision.texture_format()));
 
-        let high_precision_tile = if output_precision == RenderOutputPrecision::SixteenBit {
-            Some(self.high_precision_tile())
-        } else {
-            None
-        };
+        let high_precision_tile = output_precision
+            .is_high()
+            .then(|| self.high_precision_tile());
         let output_pipeline = if request.hsl_probe {
             self.hsl_probe_pipeline().clone()
         } else {
@@ -1442,9 +1491,10 @@ impl GpuProcessor {
         } else {
             (out_width * out_height * 4) as usize
         };
-        let mut final_pixels = match output_precision {
-            RenderOutputPrecision::EightBit => RenderedPixels::U8(vec![0u8; output_len]),
-            RenderOutputPrecision::SixteenBit => RenderedPixels::U16(vec![0u16; output_len]),
+        let mut final_pixels = if output_precision.is_high() {
+            RenderedPixels::U16(vec![0u16; output_len])
+        } else {
+            RenderedPixels::U8(vec![0u8; output_len])
         };
 
         let start_tile_x = bounds.x / self.tile_size;
@@ -1476,10 +1526,7 @@ impl GpuProcessor {
                 let input_width = input_x_end - input_x_start;
                 let input_height = input_y_end - input_y_start;
 
-                let run_blur = |slot: usize,
-                                base_radius: f32,
-                                output_view: &wgpu::TextureView|
-                 -> bool {
+                let run_blur = |base_radius: f32, output_view: &wgpu::TextureView| -> bool {
                     let radius = (base_radius * scale).ceil().max(1.0) as u32;
                     if radius == 0 {
                         return false;
@@ -1497,7 +1544,7 @@ impl GpuProcessor {
                     };
 
                     let source = Some((input.id, params));
-                    if self.blur_sources.lock().unwrap_or_else(|e| e.into_inner())[slot] == source {
+                    if *self.blur_source.lock().unwrap_or_else(|e| e.into_inner()) == source {
                         return true;
                     }
 
@@ -1577,25 +1624,20 @@ impl GpuProcessor {
                     }
 
                     queue.submit(Some(blur_encoder.finish()));
-                    self.blur_sources.lock().unwrap_or_else(|e| e.into_inner())[slot] = source;
+                    *self.blur_source.lock().unwrap_or_else(|e| e.into_inner()) = source;
                     true
                 };
 
-                let active_masks = adjustments
-                    .mask_adjustments
-                    .iter()
-                    .take(adjustments.mask_count as usize);
-                let any_term =
-                    |global: f32, pick: &dyn Fn(&MaskAdjustments) -> f32, positive: bool| {
-                        let hit = |v: f32| if positive { v > 0.0 } else { v != 0.0 };
-                        hit(global) || active_masks.clone().any(|m| hit(pick(m)))
-                    };
-                let need_sharpen = any_term(adjustments.global.sharpness, &|m| m.sharpness, false);
+                let need_sharpen = adjustments.global.sharpness != 0.0
+                    || adjustments
+                        .mask_adjustments
+                        .iter()
+                        .take(adjustments.mask_count as usize)
+                        .any(|m| m.sharpness != 0.0);
 
                 let need_grain_softness = adjustments.global.grain_softness > 0.0;
                 let did_create_sharpness_blur = (need_sharpen || need_grain_softness)
-                    && run_blur(0, 1.0, &self.sharpness_blur_view);
-                let did_create_tonal_blur = need_sharpen && run_blur(1, 3.5, &self.tonal_blur_view);
+                    && run_blur(1.0, &self.sharpness_blur_view);
 
                 let mut main_encoder = device.create_command_encoder(&Default::default());
 
@@ -1639,14 +1681,6 @@ impl GpuProcessor {
                     binding: 5 + MAX_MASK_BINDINGS,
                     resource: wgpu::BindingResource::TextureView(if did_create_sharpness_blur {
                         &self.sharpness_blur_view
-                    } else {
-                        &self.pipelines.dummy_blur_view
-                    }),
-                });
-                bind_group_entries.push(wgpu::BindGroupEntry {
-                    binding: 6 + MAX_MASK_BINDINGS,
-                    resource: wgpu::BindingResource::TextureView(if did_create_tonal_blur {
-                        &self.tonal_blur_view
                     } else {
                         &self.pipelines.dummy_blur_view
                     }),
@@ -1704,10 +1738,10 @@ impl GpuProcessor {
                 let crop_x_start = x_start - input_x_start;
                 let crop_y_start = y_start - input_y_start;
 
-                if output_to_display {
+                if let Some(display_textures) = &display_textures {
                     main_encoder.copy_texture_to_texture(
                         wgpu::TexelCopyTextureInfo {
-                            texture: &self.tile_output_texture,
+                            texture: output_tile_texture,
                             mip_level: 0,
                             origin: wgpu::Origin3d {
                                 x: crop_x_start,
@@ -1717,7 +1751,7 @@ impl GpuProcessor {
                             aspect: wgpu::TextureAspect::All,
                         },
                         wgpu::TexelCopyTextureInfo {
-                            texture: &self.display_textures().working_texture,
+                            texture: &display_textures.working_texture,
                             mip_level: 0,
                             origin: wgpu::Origin3d {
                                 x: x_start,
@@ -1795,7 +1829,19 @@ impl GpuProcessor {
     }
 }
 
+impl DisplayTextures {
+    pub fn has_edited_frame(&self) -> bool {
+        self.edited_frame_ready.load(Ordering::Acquire)
+    }
+
+    pub fn mark_edited_frame(&self) {
+        self.edited_frame_ready.store(true, Ordering::Release);
+    }
+}
+
 pub struct DisplayTextures {
+    edited_frame_ready: std::sync::atomic::AtomicBool,
+    pub format: wgpu::TextureFormat,
     pub working_texture: wgpu::Texture,
     pub output_texture: wgpu::Texture,
     pub output_texture_view: wgpu::TextureView,

@@ -18,6 +18,7 @@ import ca from './locales/ca.json';
 import nl from './locales/nl.json';
 import cs from './locales/cs.json';
 import lt from './locales/lt.json';
+import sv from './locales/sv.json';
 
 /** Locale ids shipped in `src/i18n/locales/` and offered in Settings. */
 export const SUPPORTED_LANGUAGES = [
@@ -99,6 +100,7 @@ i18n.use(initReactI18next).init({
     nl: { translation: nl },
     cs: { translation: cs },
     lt: { translation: lt },
+    sv: { translation: sv },
   },
   lng: detectSystemLanguage(),
   supportedLngs: [...SUPPORTED_LANGUAGES],

@@ -16,6 +16,7 @@ dependencies = [
  "crc32fast",
  "fern",
  "filetime",
+ "flate2",
  "futures",
  "fuzzy-matcher",
  "glam 0.33.5",
@@ -24,7 +25,6 @@ dependencies = [
  "half",
  "hex",
  "image",
- "image-hdr",
  "image_hasher",
  "imageproc",
  "imgref",
@@ -54,12 +54,12 @@ dependencies = [
  "objc2-core-graphics",
  "objc2-core-image",
  "objc2-foundation",
+ "objc2-quartz-core",
  "once_cell",
  "ort",
  "png 0.18.1",
  "pollster",
  "quick-xml 0.41.0",
- "rand 0.10.2",
  "rawler",
  "rayon",
  "regex",
@@ -95,6 +95,7 @@ dependencies = [
  "wgpu",
  "windows 0.62.2",
  "windows-native-keyring-store",
+ "zbus",
  "zbus-secret-service-keyring-store",
  "zip",
  "zstd",
@@ -2930,19 +2931,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "image-hdr"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f401958e284ad5c7a124aa8cbd83e8072e91f7c04ca48c77e1f55d9b660206d"
-dependencies = [
- "image",
- "kamadak-exif",
- "ndarray",
- "rayon",
- "thiserror 2.0.20",
-]
-
-[[package]]
 name = "image-webp"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4180,7 +4168,6 @@ dependencies = [
  "portable-atomic",
  "portable-atomic-util",
  "rawpointer",
- "rayon",
 ]
 
 [[package]]
@@ -4618,6 +4605,7 @@ dependencies = [
  "bitflags 2.13.1",
  "objc2",
  "objc2-core-foundation",
+ "objc2-core-graphics",
  "objc2-foundation",
  "objc2-metal",
 ]
