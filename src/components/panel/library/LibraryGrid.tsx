@@ -174,13 +174,21 @@ export const groupImagesByDate = (images: ImageFile[], exifByPath: Record<string
   for (const img of images) {
     const exifDate = exifByPath[img.path]?.DateTimeOriginal || img.exif?.DateTimeOriginal;
     const dayPart = exifDate ? exifDate.split(' ')[0] : '';
-    let timestamp = img.modified;
+    // `modified` arrives as seconds since the epoch (Rust `modified_secs`),
+    // while `new Date()` needs milliseconds - mixing them up renders the
+    // fallback as 1970-01-22 instead of the real capture day.
+    const rawModified = img.modified ?? 0;
+    const modifiedMs = rawModified > 1e11 ? rawModified : rawModified * 1000;
+    let timestamp = modifiedMs;
     let dayKey: string;
-    if (/^\d{4}:\d{2}:\d{2}$/.test(dayPart)) {
-      dayKey = `${dayPart.slice(0, 4)}-${dayPart.slice(5, 7)}-${dayPart.slice(8, 10)}`;
+    // The Rust side normalises EXIF dates to "YYYY-MM-DD HH:MM:SS", while raw
+    // EXIF (and anything that failed to parse there) keeps the "YYYY:MM:DD"
+    // colon form - accept both.
+    if (/^\d{4}[-:]\d{2}[-:]\d{2}$/.test(dayPart)) {
+      dayKey = dayPart.replace(/:/g, '-');
       timestamp = new Date(`${dayKey}T00:00:00`).getTime();
     } else {
-      dayKey = dayKeyFromTimestamp(img.modified);
+      dayKey = dayKeyFromTimestamp(modifiedMs);
     }
 
     const last = groups[groups.length - 1];
@@ -408,9 +416,13 @@ export default function LibraryGrid(props: any) {
     const minThumbWidth = thumbnailSizeOptions.find((o: any) => o.id === thumbnailSize)?.size || 240;
 
     const availableWidth = gridSize.width - OUTER_PADDING * 2;
-    const columnCount = isListView
-      ? 1
-      : Math.max(1, Math.floor((availableWidth + ITEM_GAP) / (minThumbWidth + ITEM_GAP)));
+    const naturalColumns = Math.max(1, Math.floor((availableWidth + ITEM_GAP) / (minThumbWidth + ITEM_GAP)));
+    // Phone gallery (HARMONYOS_PHONE_LAYOUT §3.3) is a two-column grid at the
+    // Small step. The 366 CSS phone width lands a few pixels short of the
+    // natural breakpoint (342 available vs 332 needed), so pin the minimum
+    // instead of letting the grid collapse to one column.
+    const minColumns = groupByDate && minThumbWidth <= 200 ? 2 : 1;
+    const columnCount = isListView ? 1 : Math.max(minColumns, naturalColumns);
     const itemWidth = isListView ? availableWidth : (availableWidth - ITEM_GAP * (columnCount - 1)) / columnCount;
 
     const totalBase =
