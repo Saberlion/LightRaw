@@ -746,7 +746,13 @@ function App() {
   useEffect(() => {
     const appWindow = getCurrentWindow();
     const checkFullscreen = async () => {
-      setUI({ isWindowFullScreen: await appWindow.isFullscreen() });
+      try {
+        setUI({ isWindowFullScreen: await appWindow.isFullscreen() });
+      } catch {
+        // OpenHarmony has no window-state bridge for this query (the tao port
+        // stubs it), so every resize poll would otherwise dump a rejection
+        // stack into app.log; fullscreen is driven by the system there.
+      }
     };
     checkFullscreen();
     const unlistenPromise = appWindow.onResized(checkFullscreen);
