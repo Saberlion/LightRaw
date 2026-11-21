@@ -158,6 +158,26 @@ if (-not $NoTethering) {
   $env:GPHOTO2_INCLUDE_DIR = "$repo\src-tauri\target\gphoto-ohos\$Target\prefix\include"
 }
 
+# ---------- 2.9 sync the store manifest version ----------
+# `gen/ohos` is generated once by `tauri ohos init` and never refreshed, so the
+# AppScope version otherwise stays at whatever that first init wrote (1.6.7 /
+# 10607) while the app itself ships 1.7.0. tauri.conf.json is the authoritative
+# version here - package.json carries none.
+$appJson5 = "$repo\src-tauri\gen\ohos\AppScope\app.json5"
+$tauriConf = "$repo\src-tauri\tauri.conf.json"
+if ((Test-Path $appJson5) -and (Test-Path $tauriConf) -and -not $SkipBuild) {
+  $appVersion = (Get-Content $tauriConf -Raw | ConvertFrom-Json).version
+  if ($appVersion -match '^(\d+)\.(\d+)\.(\d+)') {
+    $vName = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
+    $vCode = [int]$Matches[1] * 10000 + [int]$Matches[2] * 100 + [int]$Matches[3]
+    $appText = [System.IO.File]::ReadAllText($appJson5)
+    $appText = $appText -replace '"versionCode"\s*:\s*\d+', "`"versionCode`": $vCode"
+    $appText = $appText -replace '"versionName"\s*:\s*"[^"]*"', "`"versionName`": `"$vName`""
+    [System.IO.File]::WriteAllText($appJson5, $appText, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "AppScope version synced from tauri.conf.json: $vName ($vCode)"
+  }
+}
+
 # ---------- 3. build (single cargo stage; cargo/ohrs/hvigor failures all surface via exit code) ----------
 if (-not $SkipBuild) {
   # Release needs the runner passthrough: the tauri CLI's own cargo stage
