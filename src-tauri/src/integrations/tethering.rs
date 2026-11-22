@@ -241,6 +241,24 @@ mod usb_manager {
             .collect()
     }
 
+    /// Drop a grant whose fd no longer works (camera unplugged or dropped into
+    /// power-save: the usbfs fd stays open after a dup but every ioctl on it
+    /// fails with ENODEV, so libusb_wrap_sys_device returns IO and the probe
+    /// finds nothing). Without this the dead entry is retried by every panel
+    /// poll and connect attempt - the retry storm that exhausted libusb's
+    /// pthread keys and aborted the process (SIGABRT, MOR-M1 2026-11-22
+    /// 17:22). After forget() the next connect finds GRANTED empty, raises the
+    /// want flag and gets a fresh grant (new device name -> new system dialog,
+    /// or a silent re-connect when the right is still valid).
+    pub fn forget(name: &str) {
+        let mut devices = granted_guard();
+        let before = devices.len();
+        devices.retain(|d| d.name != name);
+        if devices.len() != before {
+            log::info!("[tether-ohos] dropped dead grant {name}");
+        }
+    }
+
     pub fn raise_want() {
         // Clear any stale verdict (e.g. the silent startup probe reporting
         // "no camera") so the interactive wait below is not aborted by it.
@@ -389,7 +407,13 @@ fn list_cameras_blocking() -> Result<Vec<String>, String> {
                     out.push(format!("{} ({})", camera.model, device.name));
                 }
             }
-            Err(e) => log::warn!("[tether-ohos] probe {} failed: {e}", device.name),
+            Err(e) => {
+                log::warn!("[tether-ohos] probe {} failed: {e}", device.name);
+                // A grant that cannot be probed is dead (device gone behind
+                // the fd). Drop it so the poll stops retrying it; the next
+                // connect re-requests a fresh grant instead.
+                usb_manager::forget(&device.name);
+            }
         }
     }
 
@@ -488,7 +512,13 @@ pub async fn tether_connect(app_handle: tauri::AppHandle) -> Result<String, Stri
                                 break;
                             }
                         }
-                        Err(e) => log::warn!("[tether-ohos] probe {}: {e}", device.name),
+                        Err(e) => {
+                            log::warn!("[tether-ohos] probe {}: {e}", device.name);
+                            // Dead fd (camera unplugged/power-save): drop the
+                            // grant so the next attempt re-requests a fresh
+                            // one instead of reusing this corpse.
+                            usb_manager::forget(&device.name);
+                        }
                     }
                 }
                 let (camera, device) = found.ok_or(
