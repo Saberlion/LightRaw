@@ -16,6 +16,10 @@ pub enum WideGamut {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+// Managed/Profile are only constructed by the desktop platform probes; the
+// OHOS platform query always reports Unmanaged, so the variants read as dead
+// there (same allow as WideGamut above).
+#[allow(dead_code)]
 pub enum SystemColor {
     Unmanaged,
     Managed(WideGamut),

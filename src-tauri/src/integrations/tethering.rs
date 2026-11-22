@@ -24,6 +24,11 @@ pub struct CameraSession {
     /// OHOS; dropped on the next connect, which closes the node.
     #[cfg(all(target_os = "linux", target_env = "ohos"))]
     pub usb_fd: Option<std::os::fd::OwnedFd>,
+    /// usbManager `USBDevice.name` (e.g. "1-3") this session is connected
+    /// through on OHOS. A hotplug detach matches the session against the
+    /// device that left the bus, so unrelated devices cannot tear it down.
+    #[cfg(all(target_os = "linux", target_env = "ohos"))]
+    pub usb_device_name: Option<String>,
 }
 
 #[cfg(not(feature = "tethering"))]
@@ -38,6 +43,8 @@ impl CameraSession {
                 camera: None,
                 #[cfg(all(target_os = "linux", target_env = "ohos"))]
                 usb_fd: None,
+                #[cfg(all(target_os = "linux", target_env = "ohos"))]
+                usb_device_name: None,
             }
         }
         #[cfg(not(feature = "tethering"))]
@@ -354,6 +361,7 @@ mod usb_manager {
         // and "the camera actually answers". Logging it makes a bad fd or an
         // unsupported transfer mode show up in app.log without the user having
         // to open the tethering panel first.
+        let mut model = None;
         if let Ok(dup_fd) = granted_guard()
             .iter()
             .find(|d| d.name == name)
@@ -362,7 +370,7 @@ mod usb_manager {
         {
             match crate::integrations::tethering::ohos_usb::probe_node(&name, &dup_fd) {
                 Ok(cameras) if !cameras.is_empty() => {
-                    for camera in cameras {
+                    for camera in &cameras {
                         log::info!(
                             "[tether-ohos] fd probe OK: {} on {} ({})",
                             camera.model,
@@ -370,6 +378,7 @@ mod usb_manager {
                             camera.port
                         );
                     }
+                    model = Some(cameras[0].model.clone());
                 }
                 Ok(_) => {
                     log::warn!("[tether-ohos] fd probe: {name} answered but reported no camera")
@@ -377,6 +386,57 @@ mod usb_manager {
                 Err(e) => log::warn!("[tether-ohos] fd probe failed on {name}: {e}"),
             }
         }
+        // Tell the webview a (potential) camera arrived, so the panel refreshes
+        // its camera list right away instead of waiting for its next poll.
+        crate::ohos_integration::emit_to_webview(
+            "tether-usb-changed",
+            serde_json::json!({ "event": "attached", "name": name, "model": model }),
+        );
+        Ok(())
+    }
+
+    /// NAPI export (ArkTS: `notifyOhosTetherUsbDetached`). EntryAbility forwards
+    /// the system COMMON_EVENT_USB_DEVICE_DETACHED common event (reconciled
+    /// against getDevices, since the event does not say which device left):
+    /// this device dropped off the bus - unplugged, power-save
+    /// re-enumeration, cable wiggle.
+    ///
+    /// Three resources must go, timely:
+    /// 1. the grant entry (its fd is a corpse - probing it again is the retry
+    ///    storm `forget` was written to stop);
+    /// 2. the camera session when it belongs to this device (the webview gets
+    ///    the `tether-usb-changed` event and disconnects immediately, instead
+    ///    of three seconds later through the poll);
+    /// 3. the ArkTS pipe, closed by the caller before this is invoked.
+    #[napi_derive_ohos::napi]
+    pub fn notify_ohos_tether_usb_detached(name: String) -> NapiResult<()> {
+        log::info!("[tether-ohos] usbManager device detached: {name}");
+        forget(&name);
+        crate::ohos_integration::emit_to_webview(
+            "tether-usb-changed",
+            serde_json::json!({ "event": "detached", "name": name }),
+        );
+        // The session teardown runs off the ArkTS main thread: this NAPI
+        // callback is on the UI thread, and camera_session is held for whole
+        // operations (a capture can hold it for seconds) - blocking here
+        // would freeze the app. Dropping the Camera may also talk to the
+        // (dead) device once more; in spawn_blocking that costs a thread,
+        // not the UI.
+        tauri::async_runtime::spawn_blocking(move || {
+            use tauri::Manager;
+            crate::ohos_integration::with_app_handle(|handle| {
+                let state = handle.state::<crate::app::state::AppState>();
+                let mut session = state.camera_session.lock().unwrap();
+                if session.usb_device_name.as_deref() == Some(name.as_str()) {
+                    log::info!("[tether-ohos] dropping session of detached device {name}");
+                    session.camera = None;
+                    // Closes the dup; the ArkTS pipe behind the grant is
+                    // closed by the caller.
+                    session.usb_fd = None;
+                    session.usb_device_name = None;
+                }
+            });
+        });
         Ok(())
     }
 
@@ -478,6 +538,7 @@ pub async fn tether_connect(app_handle: tauri::AppHandle) -> Result<String, Stri
                 #[cfg(all(target_os = "linux", target_env = "ohos"))]
                 {
                     session.usb_fd = None;
+                    session.usb_device_name = None;
                 }
             }
 
@@ -531,6 +592,7 @@ pub async fn tether_connect(app_handle: tauri::AppHandle) -> Result<String, Stri
                     // Keep the fd (and the ArkTS pipe behind it) alive for the
                     // whole session; dropping it here would close the device.
                     session.usb_fd = Some(device.fd);
+                    session.usb_device_name = Some(device.name.clone());
                 }
                 camera
             };

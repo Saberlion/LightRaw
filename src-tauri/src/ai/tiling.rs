@@ -459,7 +459,7 @@ fn run_tiled_upscale_om(
             // Per-tile diagnostics, same sampling policy as the denoise OM
             // path: every 8th tile, or any tile over the 5s stall threshold
             // (D-27/D-28) so a hung NPU call pinpoints in the log.
-            if done % 8 == 0 || tile_t0.elapsed() > std::time::Duration::from_secs(5) {
+            if done.is_multiple_of(8) || tile_t0.elapsed() > std::time::Duration::from_secs(5) {
                 log::info!(
                     "[upscale-tile:om] {}/{} at ({},{}) took {:?}",
                     done + 1,

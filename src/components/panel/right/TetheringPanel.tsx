@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
@@ -347,6 +348,44 @@ export default function TetheringPanel({ onLibraryRefresh, onImageSelect }: Teth
     },
     [setTethering, isConnected, handleDisconnect, t],
   );
+
+  // USB hotplug (OHOS: the backend forwards usbManager attach/detach as
+  // `tether-usb-changed`; desktop has no such event and keeps its polls).
+  // Detach disconnects right away when the connected camera is the device
+  // that left the bus - instead of waiting for the 3 s poll to notice -
+  // and otherwise just refreshes the camera list; attach refreshes the list
+  // so a newly plugged camera appears without the 5 s poll delay. The
+  // system USB permission dialog is signal enough on attach, so no toast.
+  useEffect(() => {
+    let active = true;
+    let unlisten: (() => void) | undefined;
+
+    listen<{ event: string; name?: string; model?: string }>('tether-usb-changed', (e) => {
+      if (!active) return;
+      const { event, name } = e.payload ?? { event: '', name: undefined };
+      if (event === 'detached') {
+        const isOurs = !name || (selectedCamera ?? '').endsWith(`(${name})`);
+        if (isConnected && isOurs) {
+          handleDisconnect(t('tethering.toasts.cameraDisconnected'));
+        } else {
+          detectCameras(true);
+        }
+      } else if (event === 'attached' && !isConnected) {
+        detectCameras(true);
+      }
+    }).then((fn) => {
+      if (active) {
+        unlisten = fn;
+      } else {
+        fn();
+      }
+    });
+
+    return () => {
+      active = false;
+      unlisten?.();
+    };
+  }, [isConnected, selectedCamera, handleDisconnect, detectCameras, t]);
 
   const fetchSettings = useCallback(async () => {
     try {

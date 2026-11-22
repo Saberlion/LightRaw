@@ -259,6 +259,7 @@ export default class EntryAbility extends RustAbility {
       // subscription pushes through notifyOhosPrivacyChanged below.
       this.subscribePrivacyEvents();
       this.startTetherUsbBridge();
+      this.subscribeUsbHotplug();
       console.info('[RapidRAW] OHOS window controller registered');
     } catch (e) {
       console.error(`[RapidRAW] window-controller registration failed: ${JSON.stringify(e)}`);
@@ -275,8 +276,14 @@ export default class EntryAbility extends RustAbility {
   // src-tauri/src/integrations/tethering.rs). Rust raises a flag through
   // ohosTetherUsbWanted(); this poller answers it.
   private tetherTimer: number = -1;
-  private tetherPipes: Array<ESObject> = [];
+  // One live pipe per granted device (key: usbManager device name, e.g.
+  // "1-3"). The pipe keeps the fd open for Rust; replacing an entry closes
+  // the previous pipe so repeated grants cannot leak, and the detach
+  // reconcile closes exactly the pipe whose device left the bus.
+  private tetherPipes: Map<string, ESObject> = new Map();
   private tetherGranting: boolean = false;
+  private tetherAttachBusy: boolean = false;
+  private tetherUsbSubscriber: commonEventManager.CommonEventSubscriber | null = null;
 
   // Sony/Canon/Nikon/Fuji/Panasonic/Hasselblad/Leica/Olympus PTP vendors.
   private static readonly CAMERA_VIDS: Array<number> = [
@@ -393,11 +400,131 @@ export default class EntryAbility extends RustAbility {
     const accept: ESObject =
       mod.notifyOhosTetherUsbDevice ?? mod.default?.notifyOhosTetherUsbDevice;
     const pipe: ESObject = usbManager.connectDevice(device);
-    // Keep the pipe alive: the fd is only valid while it is open.
-    this.tetherPipes.push(pipe);
+    // Keep the pipe alive: the fd is only valid while it is open. Close any
+    // pipe we already hold for this device first - Rust dups the fd, so the
+    // moment a fresh grant lands the previous pipe is redundant.
+    const previous: ESObject | undefined = this.tetherPipes.get(name);
+    if (previous !== undefined) {
+      try {
+        usbManager.closePipe(previous);
+      } catch (e) {
+        // The device may have dropped off the bus between the two grants; a
+        // stale pipe dies with it, nothing left to clean up.
+      }
+    }
+    this.tetherPipes.set(name, pipe);
     const fd: number = usbManager.getFileDescriptor(pipe);
     console.info(`[RapidRAW] tether: ${name} fd=${fd}`);
     accept?.call(mod, name, Number(device.vendorId), Number(device.productId), fd);
+  }
+
+  // ---- USB hotplug (system common events) ----------------------------------
+  //
+  // usbManager has no on('attach'/'detach') on this API level; the sanctioned
+  // source is the COMMON_EVENT_USB_DEVICE_ATTACHED / DETACHED system common
+  // events (no subscriber permission required, API 9). The DETACHED leg is
+  // what makes unplugging timely: without it the first sign of a dead camera
+  // is a failed probe poll up to three seconds later, and the grant's fd,
+  // the ArkTS pipe and the Rust camera session all linger until then.
+  //
+  // Caveat: dynamic common events are not delivered while the app is
+  // backgrounded - the Rust-side poll paths remain the fallback there.
+  private subscribeUsbHotplug(): void {
+    if (this.tetherUsbSubscriber !== null) {
+      return;
+    }
+    const subscribeInfo: commonEventManager.CommonEventSubscribeInfo = {
+      events: [
+        'usual.event.hardware.usb.action.USB_DEVICE_ATTACHED',
+        'usual.event.hardware.usb.action.USB_DEVICE_DETACHED',
+      ],
+    };
+    commonEventManager.createSubscriber(subscribeInfo)
+      .then((subscriber: commonEventManager.CommonEventSubscriber) => {
+        this.tetherUsbSubscriber = subscriber;
+        try {
+          commonEventManager.subscribe(subscriber, (err: BusinessError, data: commonEventManager.CommonEventData) => {
+            if (err) {
+              console.error(`[RapidRAW] USB hotplug callback failed: ${JSON.stringify(err)}`);
+              return;
+            }
+            const event: string = data?.event ?? '';
+            if (event === 'usual.event.hardware.usb.action.USB_DEVICE_ATTACHED') {
+              this.onUsbDeviceAttached();
+            } else if (event === 'usual.event.hardware.usb.action.USB_DEVICE_DETACHED') {
+              this.onUsbDeviceDetached();
+            }
+          });
+          console.info('[RapidRAW] subscribed to USB hotplug events');
+        } catch (error) {
+          console.error(`[RapidRAW] USB hotplug subscribe threw: ${JSON.stringify(error)}`);
+        }
+      })
+      .catch((error: BusinessError) => {
+        console.error(`[RapidRAW] createSubscriber for USB hotplug failed: ${JSON.stringify(error)}`);
+      });
+  }
+
+  // A device landed on the bus: run the same interactive grant flow as the
+  // startup probe, so a camera plugged in while the app runs gets the USB
+  // permission dialog right away (grantTetherCameras filters out
+  // non-camera vendors - plugging in a mouse must not pop anything).
+  private onUsbDeviceAttached(): void {
+    const mod: ESObject | null = this.rapidrawModule;
+    if (mod === null || this.tetherAttachBusy || this.tetherGranting) {
+      return;
+    }
+    this.tetherAttachBusy = true;
+    this.grantTetherCameras(mod, true).then(() => {
+      this.tetherAttachBusy = false;
+    }).catch((e: BusinessError) => {
+      this.tetherAttachBusy = false;
+      console.error(`[RapidRAW] tether USB attach grant failed: ${JSON.stringify(e)}`);
+    });
+  }
+
+  // A device left the bus. The event does not say WHICH device, so reconcile
+  // against getDevices(): any pipe we hold whose device name is gone is dead -
+  // close its pipe, drop it from the map, and tell Rust (which drops the grant
+  // and the camera session and notifies the webview). The short delay lets
+  // the USB service settle its device list before we read it.
+  private onUsbDeviceDetached(): void {
+    if (this.tetherPipes.size === 0) {
+      return;
+    }
+    const mod: ESObject | null = this.rapidrawModule;
+    const detached: ESObject = mod !== null
+      ? (mod.notifyOhosTetherUsbDetached ?? mod.default?.notifyOhosTetherUsbDetached)
+      : null;
+    setTimeout(() => {
+      let devices: Array<ESObject> = [];
+      try {
+        devices = usbManager.getDevices() as Array<ESObject>;
+      } catch (e) {
+        console.error(`[RapidRAW] tether detach reconcile: getDevices failed: ${JSON.stringify(e)}`);
+        return;
+      }
+      const present: Set<string> = new Set(devices.map((d: ESObject) => String(d.name)));
+      this.tetherPipes.forEach((pipe: ESObject, name: string) => {
+        if (present.has(name)) {
+          return;
+        }
+        this.tetherPipes.delete(name);
+        try {
+          usbManager.closePipe(pipe);
+        } catch (e) {
+          // The pipe died with the device; closing is best-effort.
+        }
+        console.info(`[RapidRAW] tether: device ${name} detached - pipe closed, notifying Rust`);
+        if (typeof detached === 'function') {
+          try {
+            detached.call(mod, name);
+          } catch (e) {
+            console.error(`[RapidRAW] notifyOhosTetherUsbDetached failed: ${JSON.stringify(e)}`);
+          }
+        }
+      });
+    }, 500);
   }
 
   onConfigurationUpdate(newConfig: Configuration): void {

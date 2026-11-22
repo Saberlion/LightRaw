@@ -319,6 +319,29 @@ mod system_bridge {
         }
         Ok(())
     }
+
+    /// Hand the parked AppHandle to a NAPI callback that needs it (the
+    /// tethering hotplug bridge reaches AppState through this). `None` until
+    /// the tauri runtime is up.
+    pub(super) fn with_handle<R>(f: impl FnOnce(&tauri::AppHandle) -> R) -> Option<R> {
+        APP_HANDLE.get().map(f)
+    }
+}
+
+/// Emit a tauri event to the webview from a NAPI callback, where no AppHandle
+/// is in scope (shared with sibling OHOS bridge modules - the tethering
+/// usb_manager uses it for USB hotplug notifications).
+#[cfg(target_env = "ohos")]
+pub fn emit_to_webview(event: &str, payload: serde_json::Value) {
+    system_bridge::emit(event, payload);
+}
+
+/// Run `f` with the AppHandle parked by the tauri runtime, if it is up yet
+/// (see [`system_bridge::with_handle`]). The tethering hotplug cleanup uses
+/// this to reach AppState from a NAPI callback.
+#[cfg(target_env = "ohos")]
+pub fn with_app_handle<R>(f: impl FnOnce(&tauri::AppHandle) -> R) -> Option<R> {
+    system_bridge::with_handle(f)
 }
 
 /// Latest OHOS system color mode reported by the ArkTS side, or `None` when
