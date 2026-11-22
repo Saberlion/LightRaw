@@ -100,16 +100,23 @@ foreach ($pair in @(
   @{ src = $vendorLibusb; dst = "$srcDir\libusb" }
 )) {
   if ($Clean -and (Test-Path $pair.dst)) { Remove-Item -Recurse -Force $pair.dst }
-  if (-not (Test-Path "$($pair.dst)\configure.ac")) {
-    Write-Host "==> staging $($pair.src) -> $($pair.dst)"
-    & robocopy $pair.src $pair.dst /E /XD .git /NFL /NDL /NJH /NJS | Out-Null
-    if ($LASTEXITCODE -ge 8) { Fail "robocopy failed for $($pair.src)" }
-  }
+  # Always re-sync rather than only staging when configure.ac is missing: edits to
+  # the vendored pins (e.g. scripts/patches/*.patch applied to libusb) otherwise
+  # never reach the compiler, and the build silently reuses the old objects.
+  # robocopy without /MIR only copies new/changed files, so generated files
+  # (configure, Makefile) in the staged tree survive.
+  Write-Host "==> staging $($pair.src) -> $($pair.dst)"
+  & robocopy $pair.src $pair.dst /E /XD .git /NFL /NDL /NJH /NJS | Out-Null
+  if ($LASTEXITCODE -ge 8) { Fail "robocopy failed for $($pair.src)" }
 }
 # robocopy sets nonzero exit codes for success; reset so $ErrorActionPreference stays quiet
 $global:LASTEXITCODE = 0
 
 if ($Clean -and (Test-Path "$root\build")) { Remove-Item -Recurse -Force "$root\build" }
+# -Clean must also drop the installed prefix: gphoto-build-inner.sh caches libltdl
+# and libusb by testing for prefix/lib/*.a, so keeping prefix means a -Clean run
+# still links the previously installed libusb.
+if ($Clean -and (Test-Path "$root\prefix")) { Remove-Item -Recurse -Force "$root\prefix" }
 New-Item -ItemType Directory -Force -Path "$root\build", "$root\prefix" | Out-Null
 
 # ---------- MSYS path conversion ----------

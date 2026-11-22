@@ -63,6 +63,42 @@ mod ohos_usb {
 
     const USBFS_ROOT: &str = "/dev/bus/usb";
 
+    /// Install libgphoto2's own log forwarding exactly once.
+    ///
+    /// libgphoto2 reports the interesting failures at GP_LOG_DEBUG - including
+    /// the ones that decide whether tethering can work at all:
+    /// `Could not load '<iolib>': '<reason>'` and `No iolibs found in '<dir>'`
+    /// (the usb1 driver deciding it cannot serve), plus libusb's own messages.
+    /// Without this bridge `Camera::autodetect` only surfaces a bare
+    /// `GP_ERROR_LIBRARY (-4)` and the call that actually failed is invisible.
+    fn ensure_gphoto_logging() {
+        use std::sync::Mutex;
+
+        static HANDLER: Mutex<Option<gphoto2::log_bridge::LogHandler>> = Mutex::new(None);
+
+        // libusb reads LIBUSB_DEBUG itself (libusb_init_context -> getenv) and
+        // writes its internal trace to stderr, i.e. hilog on OHOS. libgphoto2's
+        // bridge above only covers libgphoto2's own messages, and the calls that
+        // decide whether the wrapped fd works (libusb_init, wrap_sys_device,
+        // claim_interface) are libusb's - so turn on its trace too.
+        // SAFETY: called once, before any gphoto2/libusb call on this process.
+        if std::env::var_os("LIBUSB_DEBUG").is_none() {
+            unsafe { std::env::set_var("LIBUSB_DEBUG", "4") };
+        }
+
+        let mut guard = HANDLER.lock().unwrap_or_else(|e| e.into_inner());
+        if guard.is_some() {
+            return;
+        }
+        match gphoto2::log_bridge::forward_to_log(gphoto2::log_bridge::LogLevel::Debug) {
+            Ok(handler) => {
+                log::info!("[tether-ohos] libgphoto2 debug logging enabled");
+                *guard = Some(handler);
+            }
+            Err(e) => log::warn!("[tether-ohos] could not enable libgphoto2 logging: {e}"),
+        }
+    }
+
     /// All usbfs device nodes as "BBB/DDD" (bus/dev, zero padded), sorted.
     pub fn scan_nodes() -> Vec<String> {
         let mut nodes = Vec::new();
@@ -102,6 +138,7 @@ mod ohos_usb {
     /// Hand an already-opened, authorized fd to libgphoto2. From here the
     /// usb1 io driver only ever sees this one device.
     pub fn wrap_sys_device(fd: &OwnedFd) -> Result<(), String> {
+        ensure_gphoto_logging();
         // SAFETY: gp_port_usb_set_sys_device stores the fd in a static; the
         // fd stays valid for as long as the caller keeps the OwnedFd alive.
         let rc = unsafe { gphoto2_sys::gp_port_usb_set_sys_device(fd.as_raw_fd()) };
@@ -114,16 +151,38 @@ mod ohos_usb {
 
     /// Wrap + probe one node: returns the cameras autodetected on it (with
     /// the port names libgphoto2 synthesized for the wrapped device).
+    ///
+    /// This mirrors the known-good HarmonyOS libusb sequence
+    /// (`libusb_set_option(NO_DEVICE_DISCOVERY)` -> `libusb_init` ->
+    /// `libusb_wrap_sys_device(fd)`); libgphoto2's usb1 driver performs it
+    /// internally once `gp_port_usb_set_sys_device` published the fd, so the
+    /// steps below just record which stage the stack got to.
     pub fn probe_node(
         relative: &str,
         fd: &OwnedFd,
     ) -> Result<Vec<gphoto2::camera::CameraDescriptor>, String> {
-        wrap_sys_device(fd)?;
+        wrap_sys_device(fd).inspect_err(|e| log::warn!("[tether-ohos] {relative}: {e}"))?;
+        log::info!(
+            "[tether-ohos] {relative}: fd {} handed to gp_port_usb_set_sys_device",
+            fd.as_raw_fd()
+        );
         let context = gphoto2::Context::new()
             .map_err(|e| format!("Failed to create gphoto2 context: {e}"))?;
-        let cameras = gphoto2::Camera::autodetect(&context).map_err(|e| e.to_string())?;
-        let _ = relative;
-        Ok(cameras)
+        match gphoto2::Camera::autodetect(&context) {
+            Ok(cameras) => {
+                log::info!(
+                    "[tether-ohos] {relative}: autodetect -> {} camera(s)",
+                    cameras.len()
+                );
+                Ok(cameras)
+            }
+            Err(e) => {
+                log::warn!(
+                    "[tether-ohos] {relative}: autodetect failed: {e} (see gphoto2:* lines above for the failing io driver / libusb call)"
+                );
+                Err(e.to_string())
+            }
+        }
     }
 }
 

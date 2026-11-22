@@ -36,8 +36,18 @@ pub fn setup_logging(app_handle: &tauri::AppHandle) {
                 message
             ))
         })
-        .level(level.max(log::LevelFilter::Warn))
+        // Coarse gate has to admit Debug so the libgphoto2 bridge below can be
+        // forwarded while everything else stays at the configured level.
+        .level(log::LevelFilter::Debug)
         .filter(move |metadata| {
+            // libgphoto2 reports the useful diagnostics ("Could not load ...",
+            // "No iolibs found in ...", libusb errors) at GP_LOG_DEBUG, which the
+            // gphoto2 `log` feature forwards as log::Debug on target "gphoto2".
+            // Those are exactly what we need when the tethering stack misbehaves,
+            // so keep them regardless of RUST_LOG.
+            if metadata.target() == "gphoto2" {
+                return true;
+            }
             !crate::decode::raw_processing::swallow_prefix_log(metadata)
                 && metadata.level() <= level
         })

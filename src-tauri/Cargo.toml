@@ -111,7 +111,11 @@ gphoto2 = { git = "https://github.com/CyberTimon/libgphoto2-rs", optional = true
 # gphoto2-sys is a direct dep only for gp_port_usb_set_sys_device (the
 # authorized-fd wrap for USB devices; not re-exported by the wrapper crate).
 [target.'cfg(all(target_os = "linux", target_env = "ohos"))'.dependencies]
-gphoto2 = { git = "https://github.com/CyberTimon/libgphoto2-rs", optional = true, default-features = false }
+# `log` enables gphoto2::log_bridge, which forwards libgphoto2's own diagnostics
+# (GP_LOG_DEBUG: "Could not load <iolib>", "No iolibs found in <dir>", libusb
+# errors) into app.log. Without it the tethering stack fails silently - see
+# src-tauri/src/integrations/tethering.rs.
+gphoto2 = { git = "https://github.com/CyberTimon/libgphoto2-rs", optional = true, default-features = false, features = ["log"] }
 gphoto2-sys = { git = "https://github.com/CyberTimon/libgphoto2-rs", optional = true, default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
