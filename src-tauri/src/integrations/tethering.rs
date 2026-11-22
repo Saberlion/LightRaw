@@ -127,33 +127,228 @@ mod ohos_usb {
     }
 }
 
+/// Bridge to the ArkTS side for `@ohos.usbManager` (docs/OHOS_USB_TETHERING_PLAN.md).
+///
+/// HarmonyOS labels `/dev/bus/usb` as SELinux `dev_bus_usb_file` and denies app
+/// domains `read`/`getattr` on it, so scanning usbfs yields nothing however the
+/// camera is attached (measured on MOR-M1 with a Sony ILCE-6700: the node is
+/// there, the app sees an empty directory). The sanctioned route is
+/// `getDevices` -> `requestRight` (system dialog) -> `connectDevice` ->
+/// `getFileDescriptor`; that fd is what libgphoto2's usb1 driver consumes.
+///
+/// ArkTS polls [`ohos_tether_usb_wanted`]; the Rust side raises the flag when it
+/// needs the grant, waits briefly, and receives the result through
+/// [`notify_ohos_tether_usb_device`] / [`notify_ohos_tether_usb_error`].
 #[cfg(all(feature = "tethering", target_os = "linux", target_env = "ohos"))]
-fn list_cameras_blocking() -> Result<Vec<String>, String> {
-    let nodes = ohos_usb::scan_nodes();
-    if nodes.is_empty() {
-        log::info!("[tether-ohos] no usbfs device nodes under /dev/bus/usb");
-        return Ok(Vec::new());
+mod usb_manager {
+    use std::os::fd::{FromRawFd, OwnedFd};
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::{Mutex, MutexGuard};
+    use std::time::{Duration, Instant};
+
+    use napi_ohos::bindgen_prelude::Result as NapiResult;
+
+    pub struct GrantedDevice {
+        pub name: String,
+        pub vendor_id: u32,
+        pub product_id: u32,
+        pub fd: OwnedFd,
     }
-    let mut out = Vec::new();
-    for node in &nodes {
-        match ohos_usb::open_node(node) {
-            Ok(fd) => {
-                log::info!("[tether-ohos] usbfs node {node} opened, probing");
-                match ohos_usb::probe_node(node, &fd) {
-                    Ok(cameras) => {
-                        for camera in cameras {
-                            out.push(format!("{} (usbfs:{})", camera.model, node));
-                        }
-                    }
-                    Err(e) => log::warn!("[tether-ohos] probe on {node} failed: {e}"),
-                }
-                // OwnedFd drop closes the node.
+
+    static GRANTED: Mutex<Vec<GrantedDevice>> = Mutex::new(Vec::new());
+    static WANTED: AtomicBool = AtomicBool::new(false);
+    static LAST_ERROR: Mutex<Option<String>> = Mutex::new(None);
+
+    unsafe extern "C" {
+        fn dup(fd: i32) -> i32;
+    }
+
+    fn granted_guard() -> MutexGuard<'static, Vec<GrantedDevice>> {
+        GRANTED.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Independent dups so probing never steals the session's fds.
+    pub fn snapshot() -> Vec<GrantedDevice> {
+        granted_guard()
+            .iter()
+            .filter_map(|device| {
+                device.fd.try_clone().ok().map(|fd| GrantedDevice {
+                    name: device.name.clone(),
+                    vendor_id: device.vendor_id,
+                    product_id: device.product_id,
+                    fd,
+                })
+            })
+            .collect()
+    }
+
+    pub fn raise_want() {
+        // Clear any stale verdict (e.g. the silent startup probe reporting
+        // "no camera") so the interactive wait below is not aborted by it.
+        *LAST_ERROR.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        WANTED.store(true, Ordering::SeqCst);
+    }
+
+    pub fn take_error() -> Option<String> {
+        LAST_ERROR.lock().unwrap_or_else(|e| e.into_inner()).take()
+    }
+
+    fn has_error() -> bool {
+        LAST_ERROR
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_some()
+    }
+
+    /// Wait up to `timeout` for ArkTS to complete the permission flow. Bails
+    /// out as soon as ArkTS reports a definitive answer (no camera attached,
+    /// user denied) so the UI is not stuck behind the full timeout.
+    pub fn wait_for_grant(timeout: Duration) -> Vec<GrantedDevice> {
+        let current = snapshot();
+        if !current.is_empty() {
+            return current;
+        }
+        raise_want();
+        log::info!("[tether-ohos] asking ArkTS for USB manager access");
+        let deadline = Instant::now() + timeout;
+        loop {
+            std::thread::sleep(Duration::from_millis(120));
+            let devices = snapshot();
+            if !devices.is_empty() {
+                log::info!(
+                    "[tether-ohos] usbManager granted {} device(s)",
+                    devices.len()
+                );
+                return devices;
             }
-            Err(e) => {
-                log::warn!("[tether-ohos] cannot open {node} (needs USB authorization?): {e}")
+            if has_error() || Instant::now() >= deadline {
+                return Vec::new();
             }
         }
     }
+
+    /// NAPI export (ArkTS: `ohosTetherUsbWanted`). True once per request so the
+    /// poller does not repeat the permission dialog.
+    #[napi_derive_ohos::napi]
+    pub fn ohos_tether_usb_wanted() -> bool {
+        WANTED.swap(false, Ordering::SeqCst)
+    }
+
+    /// NAPI export (ArkTS: `notifyOhosTetherUsbDevice`). Called after
+    /// `requestRight` + `connectDevice` + `getFileDescriptor`.
+    #[napi_derive_ohos::napi]
+    pub fn notify_ohos_tether_usb_device(
+        name: String,
+        vendor_id: u32,
+        product_id: u32,
+        fd: i32,
+    ) -> NapiResult<()> {
+        if fd < 0 {
+            return Err(napi_ohos::Error::from_reason(format!(
+                "invalid fd {fd} for {name}"
+            )));
+        }
+        // SAFETY: `dup` on a live fd owned by the ArkTS pipe. The policy here
+        // is to keep the duplicate and open the pipe exclusively from it, so
+        // ArkTS closing the pipe never pulls the descriptor out from under us.
+        let dup_fd = unsafe { dup(fd) };
+        if dup_fd < 0 {
+            return Err(napi_ohos::Error::from_reason(format!(
+                "dup({fd}) failed for {name}"
+            )));
+        }
+        // SAFETY: dup_fd is a fresh descriptor owned by us from here on.
+        let owned = unsafe { OwnedFd::from_raw_fd(dup_fd) };
+        log::info!(
+            "[tether-ohos] usbManager device {name} vid={vendor_id:04x} pid={product_id:04x} fd={dup_fd}"
+        );
+        let mut devices = granted_guard();
+        devices.retain(|d| d.name != name);
+        devices.push(GrantedDevice {
+            name: name.clone(),
+            vendor_id,
+            product_id,
+            fd: owned,
+        });
+        drop(devices);
+
+        // Probe once, right here: this is the first moment libgphoto2 can talk
+        // to the device, and it is the difference between "USB plumbing works"
+        // and "the camera actually answers". Logging it makes a bad fd or an
+        // unsupported transfer mode show up in app.log without the user having
+        // to open the tethering panel first.
+        if let Ok(dup_fd) = granted_guard()
+            .iter()
+            .find(|d| d.name == name)
+            .and_then(|d| d.fd.try_clone().ok())
+            .ok_or(())
+        {
+            match crate::integrations::tethering::ohos_usb::probe_node(&name, &dup_fd) {
+                Ok(cameras) if !cameras.is_empty() => {
+                    for camera in cameras {
+                        log::info!(
+                            "[tether-ohos] fd probe OK: {} on {} ({})",
+                            camera.model,
+                            name,
+                            camera.port
+                        );
+                    }
+                }
+                Ok(_) => {
+                    log::warn!("[tether-ohos] fd probe: {name} answered but reported no camera")
+                }
+                Err(e) => log::warn!("[tether-ohos] fd probe failed on {name}: {e}"),
+            }
+        }
+        Ok(())
+    }
+
+    /// NAPI export (ArkTS: `notifyOhosTetherUsbError`).
+    #[napi_derive_ohos::napi]
+    pub fn notify_ohos_tether_usb_error(reason: String) -> NapiResult<()> {
+        log::warn!("[tether-ohos] usbManager reported: {reason}");
+        *LAST_ERROR.lock().unwrap_or_else(|e| e.into_inner()) = Some(reason);
+        Ok(())
+    }
+}
+
+#[cfg(all(feature = "tethering", target_os = "linux", target_env = "ohos"))]
+const USB_GRANT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
+
+#[cfg(all(feature = "tethering", target_os = "linux", target_env = "ohos"))]
+fn list_cameras_blocking() -> Result<Vec<String>, String> {
+    let mut out = Vec::new();
+
+    // 1) Devices already authorized through the system dialog. Read-only: the
+    //    panel polls this every few seconds, so it must neither block on the
+    //    permission flow nor trigger the requestRight dialog - only an
+    //    explicit tether_connect does that (via wait_for_grant).
+    for device in usb_manager::snapshot() {
+        match ohos_usb::probe_node(&device.name, &device.fd) {
+            Ok(cameras) => {
+                for camera in cameras {
+                    out.push(format!("{} ({})", camera.model, device.name));
+                }
+            }
+            Err(e) => log::warn!("[tether-ohos] probe {} failed: {e}", device.name),
+        }
+    }
+
+    // 2) Legacy usbfs fallback for platforms that still expose the nodes.
+    for node in ohos_usb::scan_nodes() {
+        let Ok(fd) = ohos_usb::open_node(&node) else {
+            continue;
+        };
+        match ohos_usb::probe_node(&node, &fd) {
+            Ok(cameras) => {
+                for camera in cameras {
+                    out.push(format!("{} (usbfs:{})", camera.model, node));
+                }
+            }
+            Err(e) => log::warn!("[tether-ohos] probe on {node} failed: {e}"),
+        }
+    }
+
     Ok(out)
 }
 
@@ -213,40 +408,40 @@ pub async fn tether_connect(app_handle: tauri::AppHandle) -> Result<String, Stri
                 // OHOS: wrap the first usbfs node that opens and reports a
                 // camera (docs/OHOS_USB_TETHERING_PLAN.md §3.1). The fd lives
                 // in CameraSession for the whole session.
-                let mut found: Option<(gphoto2::camera::CameraDescriptor, std::os::fd::OwnedFd)> =
+                let mut found: Option<(gphoto2::camera::CameraDescriptor, usb_manager::GrantedDevice)> =
                     None;
-                let nodes = ohos_usb::scan_nodes();
-                if nodes.is_empty() {
-                    return Err("No USB devices found under /dev/bus/usb - connect the camera with an OTG cable and set its USB mode to PC/Webcam/PTP.".into());
+                let devices = usb_manager::wait_for_grant(USB_GRANT_TIMEOUT);
+                if devices.is_empty() {
+                    return Err(usb_manager::take_error().unwrap_or_else(|| {
+                        "No camera authorized. Connect it with an OTG cable, allow the system USB access dialog, and set the camera's USB mode to PC Remote/PTP.".to_string()
+                    }));
                 }
-                for node in nodes {
-                    match ohos_usb::open_node(&node) {
-                        Ok(fd) => match ohos_usb::probe_node(&node, &fd) {
-                            Ok(cameras) => {
-                                if let Some(camera) = cameras.into_iter().next() {
-                                    log::info!(
-                                        "[tether-ohos] connecting to {} ({}) via usbfs:{node}",
-                                        camera.model,
-                                        camera.port
-                                    );
-                                    found = Some((camera, fd));
-                                    break;
-                                }
+                for device in devices {
+                    match ohos_usb::probe_node(&device.name, &device.fd) {
+                        Ok(cameras) => {
+                            if let Some(camera) = cameras.into_iter().next() {
+                                log::info!(
+                                    "[tether-ohos] connecting to {} ({}) via usbManager",
+                                    camera.model,
+                                    device.name
+                                );
+                                found = Some((camera, device));
+                                break;
                             }
-                            Err(e) => log::warn!("[tether-ohos] probe {node}: {e}"),
-                        },
-                        Err(e) => {
-                            return Err(format!("Cannot open USB device {node} ({e}). Grant USB access to the camera in system settings, then retry."))
                         }
+                        Err(e) => log::warn!("[tether-ohos] probe {}: {e}", device.name),
                     }
                 }
-                let (camera, fd) =
-                    found.ok_or("No camera found on the connected USB devices")?;
-                ohos_usb::wrap_sys_device(&fd)
+                let (camera, device) = found.ok_or(
+                    "The authorized USB device did not report as a camera - set its USB mode to PC Remote/PTP and retry.",
+                )?;
+                ohos_usb::wrap_sys_device(&device.fd)
                     .map_err(|e| format!("Failed to hand USB device to libgphoto2: {e}"))?;
                 {
                     let mut session = state.camera_session.lock().unwrap();
-                    session.usb_fd = Some(fd);
+                    // Keep the fd (and the ArkTS pipe behind it) alive for the
+                    // whole session; dropping it here would close the device.
+                    session.usb_fd = Some(device.fd);
                 }
                 camera
             };

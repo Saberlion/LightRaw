@@ -1,4 +1,4 @@
-﻿import { RustAbility } from '@ohos-rs/ability'
+import { RustAbility } from '@ohos-rs/ability'
 import Want from '@ohos.app.ability.Want'
 import { AbilityConstant, Configuration, ConfigurationConstant, common } from '@kit.AbilityKit';
 import { BusinessError, commonEventManager } from '@kit.BasicServicesKit';
@@ -11,6 +11,7 @@ import { fileShare } from '@kit.CoreFileKit';
 import deviceInfo from '@ohos.deviceInfo';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { privacyManager } from '@kit.AppGalleryKit';
+import usbManager from '@ohos.usbManager';
 
 export default class EntryAbility extends RustAbility {
   // change to dynamic library name
@@ -107,6 +108,29 @@ export default class EntryAbility extends RustAbility {
     this.registerRapidrawWindowController(win);
     super.onWindowStageCreate(windowStage);
     await windowStage.loadContent('pages/Index');
+    // Window-level back interception (D-25): the AppGallery privacy
+    // UIExtension otherwise consumes the gesture and disposes itself, which
+    // takes the app window down with it. Register a window handler first so
+    // the gesture is forwarded to the webview chain instead.
+    try {
+      const winWithHandler: ESObject = win as ESObject;
+      if (typeof winWithHandler.setBackPressedHandler === 'function') {
+        winWithHandler.setBackPressedHandler((): void => {
+          const mod: ESObject = this.rapidrawModule;
+          const notify: ESObject =
+            mod?.notifyOhosBackPressed ?? mod?.default?.notifyOhosBackPressed;
+          console.info(`[RapidRAW] window back handler fired, notify=${typeof notify}`);
+          if (typeof notify === 'function') {
+            notify();
+          }
+        });
+        console.info('[RapidRAW] window.setBackPressedHandler registered');
+      } else {
+        console.warn('[RapidRAW] window.setBackPressedHandler unavailable on this API level');
+      }
+    } catch (e) {
+      console.error(`[RapidRAW] setBackPressedHandler failed: ${JSON.stringify(e)}`);
+    }
     // Deterministic keyboard avoidance: RESIZE shrinks the layout so the
     // webview's visualViewport handlers reflow the UI above the IME, the
     // same effect as the Android insets padding in MainActivity.kt. Since
@@ -234,10 +258,146 @@ export default class EntryAbility extends RustAbility {
       // Subscribe only now that the module handle exists: the consent
       // subscription pushes through notifyOhosPrivacyChanged below.
       this.subscribePrivacyEvents();
+      this.startTetherUsbBridge();
       console.info('[RapidRAW] OHOS window controller registered');
     } catch (e) {
       console.error(`[RapidRAW] window-controller registration failed: ${JSON.stringify(e)}`);
     }
+  }
+
+  // ---- USB tethering bridge (@ohos.usbManager) -----------------------------
+  //
+  // HarmonyOS keeps /dev/bus/usb closed to app domains (SELinux
+  // dev_bus_usb_file), so libgphoto2 can never open the camera by path. The
+  // sanctioned route is usbManager: getDevices -> requestRight (system dialog)
+  // -> connectDevice -> getFileDescriptor, and that fd is handed to the Rust
+  // side, which wraps it with gp_port_usb_set_sys_device (see
+  // src-tauri/src/integrations/tethering.rs). Rust raises a flag through
+  // ohosTetherUsbWanted(); this poller answers it.
+  private tetherTimer: number = -1;
+  private tetherPipes: Array<ESObject> = [];
+  private tetherGranting: boolean = false;
+
+  // Sony/Canon/Nikon/Fuji/Panasonic/Hasselblad/Leica/Olympus PTP vendors.
+  private static readonly CAMERA_VIDS: Array<number> = [
+    0x04a9, 0x054c, 0x04b0, 0x04cb, 0x04da, 0x1a98, 0x1a93, 0x07b4, 0x33b9,
+  ];
+
+  private startTetherUsbBridge(): void {
+    if (this.tetherTimer !== -1) {
+      return;
+    }
+    this.tetherTimer = setInterval(() => {
+      this.pumpTetherUsb();
+    }, 700);
+    // One-shot probe shortly after startup. `true` = interactive: an attached
+    // camera that has not been authorized yet gets the system USB permission
+    // dialog right away, so tethering is usable without opening the panel
+    // first. (The panel's own poll stays silent - see grantTetherCameras.)
+    setTimeout(() => {
+      const mod: ESObject | null = this.rapidrawModule;
+      if (mod === null) {
+        return;
+      }
+      this.grantTetherCameras(mod, true).catch((e: BusinessError) => {
+        console.error(`[RapidRAW] tether startup probe failed: ${JSON.stringify(e)}`);
+      });
+    }, 4000);
+  }
+
+  private pumpTetherUsb(): void {
+    const mod: ESObject | null = this.rapidrawModule;
+    if (mod === null || this.tetherGranting) {
+      return;
+    }
+    const wanted: ESObject = mod.ohosTetherUsbWanted ?? mod.default?.ohosTetherUsbWanted;
+    if (typeof wanted !== 'function') {
+      return;
+    }
+    let request: boolean = false;
+    try {
+      request = wanted.call(mod) as boolean;
+    } catch (e) {
+      return;
+    }
+    if (request) {
+      this.tetherGranting = true;
+      this.grantTetherCameras(mod, true).then(() => {
+        this.tetherGranting = false;
+      }).catch((e: BusinessError) => {
+        this.tetherGranting = false;
+        console.error(`[RapidRAW] tether USB grant failed: ${JSON.stringify(e)}`);
+      });
+    }
+  }
+
+  private async grantTetherCameras(mod: ESObject, interactive: boolean): Promise<void> {
+    const report: ESObject =
+      mod.notifyOhosTetherUsbError ?? mod.default?.notifyOhosTetherUsbError;
+    const accept: ESObject =
+      mod.notifyOhosTetherUsbDevice ?? mod.default?.notifyOhosTetherUsbDevice;
+    if (typeof accept !== 'function') {
+      return;
+    }
+    let devices: Array<ESObject> = [];
+    try {
+      devices = usbManager.getDevices() as Array<ESObject>;
+    } catch (e) {
+      report?.call(mod, `getDevices failed: ${JSON.stringify(e)}`);
+      return;
+    }
+    const cameras: Array<ESObject> = devices.filter((d: ESObject) => {
+      const vid: number = Number(d.vendorId);
+      return EntryAbility.CAMERA_VIDS.indexOf(vid) >= 0;
+    });
+    console.info(`[RapidRAW] tether${interactive ? '' : ' (probe)'}: ${devices.length} USB device(s), ${cameras.length} camera candidate(s)`);
+    if (cameras.length === 0) {
+      if (interactive) {
+        const names: string = devices.map((d: ESObject) => `${Number(d.vendorId).toString(16)}:${Number(d.productId).toString(16)}`)
+          .join(',');
+        report?.call(mod, `no camera VID among [${names}]`);
+      }
+      return;
+    }
+    for (let i = 0; i < cameras.length; i++) {
+      const device: ESObject = cameras[i];
+      const name: string = String(device.name);
+      try {
+        if (usbManager.hasRight(name)) {
+          // Already authorized (earlier grant or the silent probe): hand the
+          // fd over without popping the dialog again.
+          this.connectTetherDevice(mod, device, name);
+          continue;
+        }
+        if (!interactive) {
+          // Silent probe: an unauthorized camera stays untouched here; the
+          // dialog belongs to the explicit connect request.
+          console.info(`[RapidRAW] tether (probe): ${name} not authorized yet, skipping`);
+          continue;
+        }
+        const granted: boolean = await usbManager.requestRight(name);
+        if (!granted) {
+          report?.call(mod, `user denied USB access for ${name}`);
+          continue;
+        }
+        this.connectTetherDevice(mod, device, name);
+      } catch (e) {
+        report?.call(mod, `${name}: ${JSON.stringify(e)}`);
+      }
+    }
+  }
+
+  private connectTetherDevice(mod: ESObject, device: ESObject, name: string): void {
+    const report: ESObject =
+      mod.notifyOhosTetherUsbError ?? mod.default?.notifyOhosTetherUsbError;
+    const accept: ESObject =
+      mod.notifyOhosTetherUsbDevice ?? mod.default?.notifyOhosTetherUsbDevice;
+    const pipe: ESObject = usbManager.connectDevice(device);
+    // Keep the pipe alive: the fd is only valid while it is open.
+    this.tetherPipes.push(pipe);
+    const fd: number = usbManager.getFileDescriptor(pipe);
+    console.info(`[RapidRAW] tether: ${name} fd=${fd}`);
+    accept?.call(mod, name, Number(device.vendorId), Number(device.productId), fd);
   }
 
   onConfigurationUpdate(newConfig: Configuration): void {
