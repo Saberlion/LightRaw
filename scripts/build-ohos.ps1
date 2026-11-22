@@ -33,11 +33,20 @@ param(
   [switch]$SkipBuild,            # skip the cargo stage; only inject ORT + report (HAP must already exist)
   [switch]$SkipOrtBuild,         # do not build ONNX Runtime from source (use an existing libs/ohos/<abi>/libonnxruntime.so)
   [switch]$RebuildOrt,           # force a clean ONNX Runtime source build
+  [switch]$ResetHvigor,          # kill hvigor daemons first; default is to REUSE the warm daemon (~20-25 s faster per build). Use when a build hangs on a stale daemon.
   [switch]$NoTethering           # build without the tethering feature (default ON since the phone Connect tab needs it; docs/OHOS_USB_TETHERING_PLAN.md)
 )
 $ErrorActionPreference = 'Stop'
 $repo = (Split-Path -Parent $PSScriptRoot)
 $logDir = "$env:TEMP\opencode"
+# Canonical name is kept for humans grepping the "latest" build log, but stages
+# never redirect into it directly: the hvigor daemons that cargo-tauri spawns
+# INHERIT the redirect handle and keep it open forever, so the next build's `>`
+# hits a sharing violation, silently skips the whole command, and cmd still
+# exits 0 - the stage "succeeds" in ~11 s having built nothing (measured
+# 2026-11-22, twice, caught by the log check in Invoke-Stage). Each stage run
+# therefore writes its own timestamped log; the canonical file is refreshed
+# afterwards as a plain copy.
 $log = "$logDir\ohos-build-auto.log"
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 
@@ -47,9 +56,14 @@ function Fail([string]$msg) { Write-Host "!! $msg" -ForegroundColor Red; exit 1 
 function Invoke-Stage {
   param([string]$Name, [string]$Cmd, [int]$StageTimeoutSec)
   $runner = "$logDir\stage-$Name.cmd"
-  $body = "@echo off`r`ncd /d ""$repo""`r`n$Cmd > ""$log"" 2>&1`r`nexit /b %ERRORLEVEL%"
+  # Unique log per invocation: see the note at $log above. Long-lived daemon
+  # children inherit this handle, and a reused name would be locked the next
+  # time around - the direct cause of the silent-skip bug.
+  $runLog = "$logDir\ohos-build-$Name-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+  $body = "@echo off`r`ncd /d ""$repo""`r`n$Cmd > ""$runLog"" 2>&1`r`nexit /b %ERRORLEVEL%"
   Set-Content -Path $runner -Value $body -Encoding ASCII
-  Write-Host "==> [$Name] started (watchdog ${StageTimeoutSec}s)"
+  Write-Host "==> [$Name] started (watchdog ${StageTimeoutSec}s, log $runLog)"
+  $startedAt = Get-Date
   $p = Start-Process -FilePath $runner -PassThru -WindowStyle Hidden
   $deadline = (Get-Date).AddSeconds($StageTimeoutSec)
   $lastLen = -1
@@ -57,25 +71,51 @@ function Invoke-Stage {
     if ((Get-Date) -gt $deadline) {
       Write-Host "!! [$Name] TIMEOUT after ${StageTimeoutSec}s — killing process tree" -ForegroundColor Red
       taskkill /T /F /PID $p.Id 2>$null | Out-Null
-      Get-Content $log -Tail 30 -ErrorAction SilentlyContinue | Write-Host
+      Get-Content $runLog -Tail 30 -ErrorAction SilentlyContinue | Write-Host
       exit 124
     }
     Start-Sleep -Seconds 10
-    $len = (Get-Item $log -ErrorAction SilentlyContinue).Length
+    $len = (Get-Item $runLog -ErrorAction SilentlyContinue).Length
     if ($len -and $len -ne $lastLen) { Write-Host "    [$Name] ... in progress, log $([math]::Round($len/1KB)) KB"; $lastLen = $len }
   }
   if ($p.ExitCode -ne 0) {
     Write-Host "!! [$Name] FAILED exit=$($p.ExitCode) — last 45 log lines:" -ForegroundColor Red
-    Get-Content $log -Tail 45 -ErrorAction SilentlyContinue | Write-Host
+    Get-Content $runLog -Tail 45 -ErrorAction SilentlyContinue | Write-Host
     exit $p.ExitCode
   }
+  # Lie detector: the cmd redirects ALL stage output into $runLog with `>`, so
+  # that file must exist and be fresh. If it does not, the command body never
+  # ran (observed 2026-11-22: a locked log made the stage "succeed" in 11 s
+  # without cargo writing a single byte). A skipped build must never look green.
+  $logItem = Get-Item $runLog -ErrorAction SilentlyContinue
+  if (-not $logItem -or $logItem.LastWriteTime -lt $startedAt.AddSeconds(-2)) {
+    Write-Host "!! [$Name] STAGE LIE DETECTED: exit code 0 but $runLog was not written" -ForegroundColor Red
+    Write-Host "   Probable cause: an orphaned build still holds locks (check Get-Process cargo,rustc and the hvigor node/java daemons), or the redirect target is unwritable." -ForegroundColor Red
+    exit 130
+  }
+  # Refresh the canonical "latest" log for humans/tools grepping it. The daemons
+  # hold handles to PREVIOUS run logs, not this one, so the copy normally
+  # succeeds; if something still locks the target, the timestamped log above
+  # remains authoritative.
+  try { Copy-Item $runLog $log -Force -ErrorAction Stop } catch { Write-Host "    (could not refresh $log : $($_.Exception.Message))" -ForegroundColor DarkGray }
+  # Retention: the per-run logs add up (~25 KB each); keep the newest 20.
+  Get-ChildItem $logDir -Filter 'ohos-build-*.log' -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending | Select-Object -Skip 20 |
+    Remove-Item -Force -ErrorAction SilentlyContinue
   Write-Host "OK  [$Name]"
 }
 
-# ---------- 0. hygiene: kill stale hvigor daemons (porting doc 6.3) ----------
-Get-CimInstance Win32_Process -Filter "name='node.exe' or name='java.exe'" -ErrorAction SilentlyContinue |
-  Where-Object { $_.CommandLine -match 'hvigor' } |
-  ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host "killed stale hvigor daemon PID $($_.ProcessId)" }
+# ---------- 0. hygiene: hvigor daemon ----------
+# Reusing a warm hvigor daemon saves ~20-25 s per build (daemon start-up was a
+# third of a no-change run). The old default killed every hvigor node/java
+# process unconditionally, which was a workaround for a stale-daemon hang
+# (porting doc 6.3) - keep that available via -ResetHvigor instead of paying the
+# cost on every build.
+if ($ResetHvigor) {
+  Get-CimInstance Win32_Process -Filter "name='node.exe' or name='java.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -match 'hvigor' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host "killed stale hvigor daemon PID $($_.ProcessId)" }
+}
 
 # ---------- 1. environment (self-contained; mirrors porting doc section 8) ----------
 $dev = 'C:\Program Files\Huawei\DevEco Studio'
