@@ -649,7 +649,15 @@ pub async fn tether_get_settings(
                 ),
                 (
                     "meteringmode",
-                    &["meteringmode", "metering-mode", "exposuremeteringmode"],
+                    &[
+                        "meteringmode",
+                        "metering-mode",
+                        "exposuremeteringmode",
+                        // ptp2 registers PTP_DPC_ExposureMeteringMode under
+                        // "exposuremetermode" (camlibs/ptp2/config.c menus
+                        // table); the extra "ing" spelling never matches.
+                        "exposuremetermode",
+                    ],
                 ),
             ];
 
@@ -762,7 +770,13 @@ pub async fn tether_set_setting(
                     "shootingmode",
                     "exposure-program",
                 ],
-                "meteringmode" => &["meteringmode", "metering-mode", "exposuremeteringmode"],
+                "meteringmode" => &[
+                    "meteringmode",
+                    "metering-mode",
+                    "exposuremeteringmode",
+                    // matches the ptp2 widget name for PTP_DPC_ExposureMeteringMode
+                    "exposuremetermode",
+                ],
                 _ => &[],
             };
 
