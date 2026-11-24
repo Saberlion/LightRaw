@@ -124,43 +124,41 @@ The interface ships in 15 languages, including English, Simplified Chinese, Trad
 > 2. **AI 蒙版（AI 主体 / 天空 / 前景）**：自动识别并生成主体、天空、前景蒙版，推理在设备本地完成（本地 ONNX 模型；设备端 NPU 可用时同样支持本地 NPU 推理）。
 > 3. **AI 深度蒙版（Depth Anything V2）**：在设备本地生成单目深度图，用于按景深选择区域。
 > 4. **AI 自动标签（CLIP）**：可选功能，默认关闭；启用后在设备本地对图像生成关键词标签并写入本应用的 `.rrdata` 侧车文件，用于图库搜索。
-> 5. **本地图像修复 / 内容感知填充（LaMa）**：在设备本地 CPU 上运行，用于移除小型杂物、填充选区；不会上传图像。
-> 6. **生成式替换（可选，需用户自行配置后端）**：当用户主动连接**自托管的生成式后端（AI 连接器 / ComfyUI）**时，所选的图像区域、蒙版与提示词会被发送到该用户自行配置的后端进行处理。本功能不默认开启，不依赖本应用服务器。
-> 7. **AI 镜头模糊（散景）**：基于本地深度估计在设备上生成散景效果。
+> 5. **本地图像修复 / 内容感知填充（LaMa）**：在设备本地运行（CPU 推理；支持的设备自动启用设备端 NPU 加速，模型文件随应用包内置），用于移除小型杂物、填充选区；不会上传图像。
+> 6. **AI 镜头模糊（散景）**：基于本地深度估计在设备上生成散景效果。
 >
 > **数据处理说明：**
 >
-> - 上述第 1–5、7 项在设备本地完成推理，推理过程不上传用户照片；
+> - 上述各项均在设备本地完成推理，推理过程不上传用户照片；
 > - AI 模型文件在首次使用时从网络下载到应用数据目录（`app_data_dir()/models/`），此为应用联网的主要用途之一；
-> - 仅第 6 项在用户主动配置生成式后端后，才会把待处理图像数据发送到用户自己的后端；
 > - 应用不收集人脸等生物特征数据，不进行云端训练。
 
-<sub>事实依据：README「AI Roadmap」——内置 AI 工具「run entirely on your computer」；自托管 ComfyUI 为用户自有服务器；`ai_processing.rs` 中模型均自 `hf-mirror.com` 下载到本地（models：SAM / U2Net / DepthAnything V2 / CLIP / LaMa / NIND）；`zh-CN.json` 中 `settings.processing.aiDenoiseBackendDesc`（「NPU 在设备端 NPU 芯片上运行……自动回退 CPU（ONNX Runtime）」）；docs §6.16（CANN `.om` NPU 全链路在应用进程内、设备端完成）。
-> 仓库中**可选云端生成式服务**在 README 的 AI 路线图状态表中标注为 **Coming Soon**（$TBD / 月订阅），故本声明未把「云端 AI」列为已上线能力；若提审版本已启用云端服务，需据实补充说明。
-> 说明：README 中 `Camera Tethering`（联机拍摄）与 `headless CLI batch export` 为桌面（macOS / Linux）专属，不属鸿蒙版本能力，未在此声明中列出。</sub>
+<sub>事实依据：README「AI Roadmap」——内置 AI 工具「run entirely on your computer」；`ai_processing.rs` 中模型均自 `hf-mirror.com` 下载到本地（models：SAM / U2Net / DepthAnything V2 / CLIP / LaMa / NIND）；`zh-CN.json` 中 `settings.processing.aiDenoiseBackendDesc`（「NPU 在设备端 NPU 芯片上运行……自动回退 CPU（ONNX Runtime）」）；docs §6.16（CANN `.om` NPU 全链路在应用进程内、设备端完成）。
+> 说明：README 中 `Camera Tethering`（联机拍摄）、`headless CLI batch export` 与**生成式替换（自托管 AI 连接器 / ComfyUI 后端）**为桌面（macOS / Linux / Windows）专属，鸿蒙版已在前端门控移除（App.tsx / AIPanel.tsx / SettingsPanel.tsx，docs §6.32），均不属鸿蒙版本能力，未在此声明中列出；同此先例，自定义 LUT 导入亦为鸿蒙隐藏项。
+> 仓库中**可选云端生成式服务**在 README 的 AI 路线图状态表中标注为 **Coming Soon**（$TBD / 月订阅），故本声明未把「云端 AI」列为已上线能力；若提审版本已启用云端服务，需据实补充说明。</sub>
 
 ---
 
 ## 6. 权限使用理由（AGC：权限使用理由）
 
-以下为 `src-tauri/gen/ohos/entry/src/main/module.json5` 中**实际声明**的全部权限，「用途说明」基于包内 `reason` 字符串（`resources/base/element/string.json` 的 `$string:perm_*`）并作必要中文化，与 AGC 权限一致性检测逐项对应。
+以下为 `src-tauri/gen/ohos/entry/src/main/module.json5` 中**实际声明**的全部权限（2026-11-23 方案 C 定版：回加 5 项 user_grant 与托管声明逐项一致，整改沿革见 `store-listing/AGC权限一致性整改.md` §9）：
 
 | 权限名 | 用途说明 |
 | --- | --- |
-| `ohos.permission.INTERNET` | 用于下载 AI 模型文件（SAM / U2Net / DepthAnything / CLIP / LaMa / NIND 等）以及连接用户自行配置的生成式 AI 后端。（包内未配置 reason 字符串） |
-| `ohos.permission.FILE_ACCESS_PERSIST` | 持久化保存用户通过系统文件选择器授予的文件夹授权，使应用重启后仍可访问用户指定的图片文件夹。（包内未配置 reason 字符串） |
-| `ohos.permission.WRITE_IMAGEVIDEO` | 将编辑后的照片与导出的图片保存到系统媒体库（相册）。 |
-| `ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY` | 浏览 Download 文件夹中的照片，并将导出的图片保存到该文件夹。 |
-| `ohos.permission.READ_WRITE_DOCUMENTS_DIRECTORY` | 浏览 Documents 文件夹中的照片，并将导出的图片保存到该文件夹。 |
-| `ohos.permission.READ_WRITE_DESKTOP_DIRECTORY` | 浏览 Desktop 文件夹中的照片，并将导出的图片保存到该文件夹。 |
-| `ohos.permission.MEDIA_LOCATION` | 读取照片中内嵌的位置信息，并在元数据面板中展示。 |
+| `ohos.permission.INTERNET` | 用于下载 AI 模型文件（SAM / U2Net / DepthAnything / CLIP / LaMa / NIND 等）以及连接用户自行配置的生成式 AI 后端。（system_grant；包内未配置 reason 字符串） |
+| `ohos.permission.FILE_ACCESS_PERSIST` | 持久化保存用户通过系统文件选择器授予的文件夹授权，使应用重启后仍可访问用户指定的图片文件夹。（system_grant + ACL；包内未配置 reason 字符串） |
+| `ohos.permission.WRITE_IMAGEVIDEO` | 将编辑后的照片与导出图像保存到系统媒体库。（user_grant + ACL；reason=`$string:perm_write_imagevideo`） |
+| `ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY` | 浏览「下载」目录中的照片并将导出照片保存到该目录。（user_grant + ACL；reason=`$string:perm_download_dir`） |
+| `ohos.permission.READ_WRITE_DOCUMENTS_DIRECTORY` | 浏览「文档」目录中的照片并将导出照片保存到该目录。（user_grant + ACL；reason=`$string:perm_documents_dir`） |
+| `ohos.permission.READ_WRITE_DESKTOP_DIRECTORY` | 浏览「桌面」目录中的照片并将导出照片保存到该目录。（user_grant + ACL；reason=`$string:perm_desktop_dir`） |
+| `ohos.permission.MEDIA_LOCATION` | 读取照片中嵌入的位置信息，用于在元数据面板展示拍摄地点。（user_grant；reason=`$string:perm_media_location`） |
 
-- 声明总数：**7 项**（2 项非 user_grant：`INTERNET`、`FILE_ACCESS_PERSIST`；5 项 user_grant 权限，均带 `reason` + `usedScene`，`when = inuse`，作用范围 `EntryAbility`）。
-- ACL 受限权限（`WRITE_IMAGEVIDEO`、`READ_WRITE_*_DIRECTORY`、`FILE_ACCESS_PERSIST`）需在 release Profile 的 `allowed-acls` 中覆盖，否则安装 / 上传期被拦截（§6.15）。
+- 声明总数：**7 项**：2 项 system_grant + **5 项 user_grant**，与 AGC 托管隐私声明（agreementId `2068880948149116608`）申报的 user_grant 集合**逐项一致**（方案 C 反向对齐，2026-11-23）。
+- 4 项 ACL 受限权限（`WRITE_IMAGEVIDEO`、3×`READ_WRITE_*_DIRECTORY`）已由 release Profile 的 `allowed-acls` 覆盖（p7b 解码实证共 5 条，含 `FILE_ACCESS_PERSIST`，2026-11-23 复核）。
 - AGC 会逐项比对「包内 user_grant 权限」与「隐私声明中申报的权限」，任一方向多出即被拒（§6.15）。
 
-<sub>脚注 1（权限数量矛盾）：§6.15 与 §6.17 提审包 v2 均记录 **8 项**权限（含 `ohos.permission.READ_IMAGEVIDEO`）。§6.17 提审包 v3（2026-10-11 16:10）已依审核意见**移除** `READ_IMAGEVIDEO`（应用经系统选择器访问图片，代码零引用），收敛为 **7 项**定版；当前 `module.json5` 亦即 7 项。本表以 7 项为最新事实。
-脚注 2：包内 `string.json` 仍保留未被引用的 `perm_read_imagevideo` 字符串资源（§6.17 记为「闲置保留，无引用，无害」），它不对应任何已声明权限，不应填入 AGC 权限表单。</sub>
+<sub>脚注 1（权限收敛沿革）：§6.15/§6.17 提审包 v2 为 8 项（含 `READ_IMAGEVIDEO`）；v3（2026-10-11）依审核意见移除 `READ_IMAGEVIDEO` 收敛为 7 项；2026-11-22 方案 B 曾删 5 项 user_grant 与零消费的 `KEEP_BACKGROUND_RUNNING` 收敛至 2 项；因托管声明侧始终未同步清空而两轮驳回（第一轮 4 项、第二轮 5 项 +`MEDIA_LOCATION`），**2026-11-23 方案 C 方向反转：包侧回加 5 项 user_grant 反向对齐声明，定版 7 项**（`store-listing/AGC权限一致性整改.md` §9）。`KEEP_BACKGROUND_RUNNING` 声明侧从未申报，不再回加。
+脚注 2：包内 `string.json` 的 `perm_write_imagevideo` / `perm_download_dir` / `perm_documents_dir` / `perm_desktop_dir` / `perm_media_location` 字符串资源自 2026-11-23 起重新作为 5 项 user_grant 权限的 reason 被引用（`perm_read_imagevideo` 仍闲置，不对应任何已声明权限，不应填入 AGC 权限表单）。</sub>
 
 ---
 

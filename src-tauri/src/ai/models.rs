@@ -131,6 +131,15 @@ pub const DENOISE_OM_FILENAME: &str = "nind_v2.om";
 /// 1.8× over the default 2; transformer/FFC graphs keep 2).
 #[cfg(target_env = "ohos")]
 const OM_PERF_MODE_CNN: i32 = 4;
+/// CANN (.om) LaMa inpainting build, sideloaded per SoC: fp32 weights
+/// (the fp16-weight variant fails NPU runtime Init — partition overflow —
+/// docs/LAMA_CANN_NPU_ANALYSIS.md §4).
+#[cfg(target_env = "ohos")]
+pub const LAMA_OM_FILENAME: &str = "lama_fp32w.om";
+/// Static input side of the LaMa `.om` graph; the ORT path keeps variable
+/// 32-aligned sizes (docs/LAMA_CANN_NPU_ANALYSIS.md §3).
+#[cfg(target_env = "ohos")]
+pub const LAMA_OM_SIDE: usize = 768;
 
 const UPSCALE_URL: &str = "https://hf-mirror.com/CyberTimon/RapidRAW-Models/resolve/main/2xBHI_small_span_rapidraw.onnx?download=true";
 
@@ -1234,6 +1243,28 @@ fn denoise_om_contract_matches(model: &crate::ohos_integration::om::OmModel) -> 
             .is_some_and(|o| o.dims == [1, 3, 504, 504] && o.byte_size == expected_bytes)
 }
 
+/// The LaMa `.om` is converted from the same ONNX with its inputs pinned to a
+/// static 768x768 (docs/LAMA_CANN_NPU_ANALYSIS.md §3): fp32 NCHW I/O, two
+/// inputs in omg topological first-use order (image 3ch, then mask 1ch).
+#[cfg(target_env = "ohos")]
+fn lama_om_contract_matches(model: &crate::ohos_integration::om::OmModel) -> bool {
+    let side = LAMA_OM_SIDE;
+    let img_bytes = 3 * side * side * std::mem::size_of::<f32>();
+    let msk_bytes = side * side * std::mem::size_of::<f32>();
+    let side = side as i32;
+    model.input_count() == 2
+        && model.output_count() == 1
+        && model
+            .input_info(0)
+            .is_some_and(|i| i.dims == [1, 3, side, side] && i.byte_size == img_bytes)
+        && model
+            .input_info(1)
+            .is_some_and(|i| i.dims == [1, 1, side, side] && i.byte_size == msk_bytes)
+        && model
+            .output_info(0)
+            .is_some_and(|o| o.dims == [1, 3, side, side] && o.byte_size == img_bytes)
+}
+
 /// The RapidRes `.om` is converted from the same ONNX with its tile input
 /// pinned to the upscale tile size (544x544, overlap 16) and must upscale
 /// exactly 2x (docs/RAPIDRES_NPU_FEASIBILITY.md §1).
@@ -1449,7 +1480,7 @@ pub async fn get_or_init_lama_model(
     app_handle: &tauri::AppHandle,
     ai_state_mutex: &Mutex<Option<AiState>>,
     ai_init_lock: &TokioMutex<()>,
-) -> Result<Arc<Mutex<Session>>> {
+) -> Result<Arc<LamaSession>> {
     if let Some(lama_model) = cached_ai_state(ai_state_mutex, |state| state.lama_model.clone()) {
         return Ok(lama_model);
     }
@@ -1461,12 +1492,66 @@ pub async fn get_or_init_lama_model(
     }
 
     let models_dir = get_models_dir(app_handle)?;
+
+    // OpenHarmony NPU path, mirroring the denoise selection: the shared NPU
+    // backend setting gates it and a side-loaded SoC-specific `.om` provides
+    // the graph (fp32 weights, static 768x768 — docs/LAMA_CANN_NPU_ANALYSIS.md).
+    // Any problem falls back to the ORT model.
+    #[cfg(target_env = "ohos")]
+    {
+        let npu_selected = crate::app::settings::load_settings(app_handle.clone())
+            .unwrap_or_default()
+            .ai_denoise_backend
+            .as_deref()
+            .is_some_and(|backend| backend == "npu");
+        if npu_selected {
+            let om_path = match provision_bundled_model(app_handle, LAMA_OM_FILENAME) {
+                Ok(Some(path)) => path,
+                Ok(None) => models_dir.join(LAMA_OM_FILENAME),
+                Err(e) => {
+                    log::warn!(
+                        "NPU mode: bundled {} extraction failed ({e}), trying ORT fallback.",
+                        LAMA_OM_FILENAME
+                    );
+                    models_dir.join(LAMA_OM_FILENAME)
+                }
+            };
+            if om_path.exists() {
+                // FFC-dense graph: keep the vendor default perf mode — mode 4
+                // is the small-op-dense CNN optimum and is NOT validated for
+                // this model; the fp32w .om is device-proven with the default
+                // (docs/LAMA_CANN_NPU_ANALYSIS.md §3 chain C).
+                match crate::ohos_integration::om::OmModel::new(&om_path, -1) {
+                    Ok(model) if lama_om_contract_matches(&model) => {
+                        log::info!("NPU mode: using CANN .om LaMa inpainting model.");
+                        let lama_model = Arc::new(LamaSession::Cann(Mutex::new(model)));
+                        crate::register_exit_handler();
+                        ai_state_mutex
+                            .lock()
+                            .unwrap()
+                            .get_or_insert_with(AiState::default)
+                            .lama_model = Some(lama_model.clone());
+                        return Ok(lama_model);
+                    }
+                    Ok(_) => log::warn!(
+                        "NPU mode: {} IO contract mismatch, falling back to ORT LaMa.",
+                        LAMA_OM_FILENAME
+                    ),
+                    Err(e) => log::warn!(
+                        "NPU mode: {} init failed ({e}), falling back to ORT LaMa.",
+                        LAMA_OM_FILENAME
+                    ),
+                }
+            }
+        }
+    }
+
     download_and_verify_model(app_handle, &models_dir, &LAMA_ASSET).await?;
 
     let _ = ort::init().with_name("AI-Inpainting").commit();
     let source = ModelSource::resolve(LAMA_FILENAME, &models_dir);
     let session = build_session(&source, SessionKind::OneShot, false, None)?;
-    let lama_model = Arc::new(Mutex::new(session));
+    let lama_model = Arc::new(LamaSession::Ort(Mutex::new(session)));
 
     crate::register_exit_handler();
 
@@ -1542,6 +1627,17 @@ pub enum DenoiseSession {
     Cann(Mutex<crate::ohos_integration::om::OmModel>),
 }
 
+/// LaMa inpainting model backend — the same NPU selection story as
+/// `DenoiseSession` (the shared `ai_denoise_backend` setting gates the whole
+/// NPU stack). The `.om` variant is compiled with a static 768x768 input;
+/// the ORT path keeps variable 32-aligned sizes (docs/LAMA_CANN_NPU_ANALYSIS.md).
+pub enum LamaSession {
+    Ort(Mutex<Session>),
+    /// CANN/HIAI (.om model, fp32 weights, 768x768 static I/O).
+    #[cfg(target_env = "ohos")]
+    Cann(Mutex<crate::ohos_integration::om::OmModel>),
+}
+
 /// RapidRes upscale model backend — the same NPU selection story as
 /// `DenoiseSession` (the `ai_denoise_backend` setting governs the whole NPU
 /// pipeline). ORT is the default; a side-loaded
@@ -1560,7 +1656,7 @@ pub struct AiState {
     pub denoise_model: Option<Arc<DenoiseSession>>,
     pub upscale_model: Option<Arc<UpscaleSession>>,
     pub clip_models: Option<Arc<ClipModels>>,
-    pub lama_model: Option<Arc<Mutex<Session>>>,
+    pub lama_model: Option<Arc<LamaSession>>,
     pub normal_model: Option<Arc<Mutex<Session>>>,
     pub embeddings: Option<ImageEmbeddings>,
     pub esam3_features: Option<Arc<Esam3Features>>,

@@ -2,10 +2,10 @@ use anyhow::Result;
 use image::imageops::{self, FilterType};
 use image::{DynamicImage, GenericImageView, GrayImage, RgbaImage};
 use ndarray::Array;
-use ort::session::Session;
 use ort::value::Tensor;
 use rayon::prelude::*;
-use std::sync::Mutex;
+
+use super::models;
 
 const LAMA_PIXEL_BUDGET: f32 = 768.0 * 768.0;
 
@@ -197,7 +197,7 @@ fn lama_patch_match(
 pub fn run_lama_inpainting(
     image: &DynamicImage,
     mask: &GrayImage,
-    lama_session: &Mutex<Session>,
+    lama_session: &models::LamaSession,
 ) -> Result<(RgbaImage, u32, u32)> {
     let (w, h) = image.dimensions();
 
@@ -252,9 +252,47 @@ pub fn run_lama_inpainting(
         (cropped_img.clone(), cropped_mask.clone())
     };
 
-    let align = 32u32;
-    let tensor_w = fw.div_ceil(align) * align;
-    let tensor_h = fh.div_ceil(align) * align;
+    // Tensor layout per backend: ORT keeps the variable 32-aligned size; the
+    // CANN `.om` graph is compiled with a static 768x768 input
+    // (docs/LAMA_CANN_NPU_ANALYSIS.md §3), so the NPU path always pads to the
+    // fixed side and the shared decode below crops back to (fw, fh). Extreme
+    // aspect ratios can still exceed the budget on one axis; clamp both sides
+    // there (rare; slightly lower resolution, still correct, and PatchMatch
+    // detail re-transfer engages via needs_nnf).
+    let (tensor_w, tensor_h, inf_img, inf_mask, fw, fh, needs_nnf) = match lama_session {
+        models::LamaSession::Ort(_) => {
+            let align = 32u32;
+            (
+                fw.div_ceil(align) * align,
+                fh.div_ceil(align) * align,
+                inf_img,
+                inf_mask,
+                fw,
+                fh,
+                needs_downscale,
+            )
+        }
+        #[cfg(target_env = "ohos")]
+        models::LamaSession::Cann(_) => {
+            const SIDE: u32 = models::LAMA_OM_SIDE as u32;
+            if fw > SIDE || fh > SIDE {
+                let s = (SIDE as f32 / fw.max(fh) as f32).min(1.0);
+                let w2 = ((fw as f32 * s).round() as u32).max(1);
+                let h2 = ((fh as f32 * s).round() as u32).max(1);
+                (
+                    SIDE,
+                    SIDE,
+                    imageops::resize(&inf_img, w2, h2, FilterType::Lanczos3),
+                    imageops::resize(&inf_mask, w2, h2, FilterType::Triangle),
+                    w2,
+                    h2,
+                    true,
+                )
+            } else {
+                (SIDE, SIDE, inf_img, inf_mask, fw, fh, needs_downscale)
+            }
+        }
+    };
 
     let mut img_tensor = Array::<f32, _>::zeros((1, 3, tensor_h as usize, tensor_w as usize));
     let mut msk_tensor = Array::<f32, _>::zeros((1, 1, tensor_h as usize, tensor_w as usize));
@@ -272,14 +310,82 @@ pub fn run_lama_inpainting(
         }
     }
 
-    let t_img = Tensor::from_array(img_tensor.into_dyn().as_standard_layout().into_owned())?;
-    let t_msk = Tensor::from_array(msk_tensor.into_dyn().as_standard_layout().into_owned())?;
-
-    let output_tensor = {
-        let mut session = lama_session.lock().unwrap();
-        let outputs = session.run(ort::inputs!["image" => t_img, "mask" => t_msk])?;
-        outputs[0].try_extract_array::<f32>()?.to_owned()
+    let output_tensor = match lama_session {
+        models::LamaSession::Ort(session) => {
+            let t_img =
+                Tensor::from_array(img_tensor.into_dyn().as_standard_layout().into_owned())?;
+            let t_msk =
+                Tensor::from_array(msk_tensor.into_dyn().as_standard_layout().into_owned())?;
+            let mut session = session.lock().unwrap();
+            let outputs = session.run(ort::inputs!["image" => t_img, "mask" => t_msk])?;
+            outputs[0].try_extract_array::<f32>()?.to_owned()
+        }
+        #[cfg(target_env = "ohos")]
+        models::LamaSession::Cann(model) => {
+            let mut model = model.lock().unwrap();
+            model.write_input_f32(
+                0,
+                img_tensor
+                    .as_slice()
+                    .ok_or_else(|| anyhow::anyhow!("LaMa image tensor is not contiguous"))?,
+            )?;
+            model.write_input_f32(
+                1,
+                msk_tensor
+                    .as_slice()
+                    .ok_or_else(|| anyhow::anyhow!("LaMa mask tensor is not contiguous"))?,
+            )?;
+            model.run()?;
+            let out = model.read_output_f32(0)?;
+            ndarray::Array::from_shape_vec((1, 3, tensor_h as usize, tensor_w as usize), out)
+                .map_err(|e| anyhow::anyhow!("LaMa NPU output reshape failed: {e}"))?
+                .into_dyn()
+        }
     };
+
+    // BUG-2026-11-23-01 diagnostics + guard: log the raw output tensor stats
+    // so a "black patch" report can be attributed to the model output (all-zero /
+    // NaN / wrong scale) instead of the downstream compositing, and fail loudly
+    // when the output is NaN-poisoned: clamping NaN silently yields a black
+    // patch (`NaN as u8` = 0) that looks like a compositing bug. Keep in sync
+    // with the /255.0 decode below: an output in [0,1] instead of [0,255]
+    // collapses to near-black here.
+    {
+        let (mut mn, mut mx, mut nan, mut sum, mut n) =
+            (f32::INFINITY, f32::NEG_INFINITY, 0u64, 0f64, 0u64);
+        for v in output_tensor.iter() {
+            if v.is_nan() {
+                nan += 1;
+                continue;
+            }
+            mn = mn.min(*v);
+            mx = mx.max(*v);
+            sum += f64::from(*v);
+            n += 1;
+        }
+        let total = n + nan;
+        log::info!(
+            "[lama] output stats: min={:.4} max={:.4} mean={:.4} nan={} / {} (dims {:?}, input {}x{})",
+            mn,
+            mx,
+            sum / n.max(1) as f64,
+            nan,
+            total,
+            output_tensor.shape(),
+            tensor_w,
+            tensor_h
+        );
+        if nan > 0 && nan * 100 > total {
+            return Err(anyhow::anyhow!(
+                "LaMa inference returned NaN for {}/{} output values - the inpainted \
+                 patch was discarded instead of compositing a black block. This \
+                 indicates an fp16 kernel issue in this build's ONNX Runtime, not \
+                 an image problem. Try updating the app.",
+                nan,
+                total
+            ));
+        }
+    }
 
     let (iw, ih) = (fw as usize, fh as usize);
     let target: Vec<[f32; 3]> = (0..iw * ih)
@@ -299,7 +405,7 @@ pub fn run_lama_inpainting(
         })
         .collect();
 
-    let nnf = if needs_downscale {
+    let nnf = if needs_nnf {
         let hole: Vec<bool> = inf_mask.pixels().map(|p| p[0] > 0).collect();
         let is_target = dilate_mask(&hole, iw, ih, 1);
         let blocked = dilate_mask(&hole, iw, ih, LAMA_PATCH_RADIUS as usize + 2);
