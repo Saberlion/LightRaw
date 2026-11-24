@@ -1169,7 +1169,14 @@ export default class EntryAbility extends RustAbility {
         const name: string = this.galleryAssetName(uri, i);
         const dot: number = name.lastIndexOf('.');
         const extension: string = dot >= 0 ? name.substring(dot).toLowerCase() : '';
-        if (wanted.size > 0 && !wanted.has(extension)) {
+        // AGC review defect: photo picker URIs on newer HarmonyOS builds
+        // (e.g. "file://media/photo/12") carry no filename extension, so
+        // the whitelist filter silently dropped every selected image and
+        // the import chain returned zero files. The picker already
+        // guarantees IMAGE_TYPE, so an empty extension is always safe to
+        // pass through; only reject files that have a *recognizable*
+        // extension that is explicitly not in the whitelist.
+        if (wanted.size > 0 && extension.length > 0 && !wanted.has(extension)) {
           console.info(`[RapidRAW] pick_gallery_images skip unsupported ${name}`);
           continue;
         }
@@ -1206,8 +1213,14 @@ export default class EntryAbility extends RustAbility {
       for (let i = 0; i < pickedUris.length; i++) {
         // Keep the original display name so the import filename template
         // ({original_filename}) still produces the expected name. Duplicates
-        // within one pick get an index suffix.
+        // within one pick get an index suffix. Media URIs without a filename
+        // (e.g. "file://media/photo/12") get a .jpg fallback — the picker
+        // guarantees IMAGE_TYPE, and the frontend extension filter needs
+        // a recognizable suffix to let the file through.
         let name: string = pickedNames[i];
+        if (!name.includes('.')) {
+          name = `${name}.jpg`;
+        }
         if (usedNames.has(name)) {
           const dot: number = name.lastIndexOf('.');
           const stem: string = dot > 0 ? name.substring(0, dot) : name;

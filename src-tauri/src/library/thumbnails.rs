@@ -293,7 +293,7 @@ fn generate_thumbnail_data_with_metadata(
         && !meta.adjustments.is_null()
     {
         let state = app_handle.state::<AppState>();
-        let target_res = settings.medium_thumbnail_resolution.unwrap_or(1280);
+        let mut target_res = settings.medium_thumbnail_resolution.unwrap_or(1280);
 
         let base_cache_hash = crate::render::cache_utils::calculate_thumbnail_source_hash(
             path_str,
@@ -401,6 +401,21 @@ fn generate_thumbnail_data_with_metadata(
 
             let full_max_dim = composite_image.width().max(composite_image.height());
             let texture_limit = context.limits.max_texture_dimension_2d;
+
+            // AGC review defect (MatePad Edge / API 24): low-end Maleoon GPUs
+            // can SIGSEGV inside the Vulkan driver during thumbnail
+            // generation even within the texture limit. A texture limit below
+            // 4096 marks a device where the driver has not been validated —
+            // cap the working resolution aggressively (256px) to minimise the
+            // driver surface the thumbnail touches.
+            if texture_limit < 4096 {
+                log::warn!(
+                    "Low GPU texture limit {} detected for {}; capping thumbnail resolution to 256.",
+                    texture_limit,
+                    path_str
+                );
+                target_res = target_res.min(256);
+            }
 
             let mut processing_dim = target_res;
             if let Some(c) = &crop_data
