@@ -504,7 +504,7 @@
         "backendLabel": "KI-Backend:",
         "builtinDesc": "Nutzt die integrierte KI. Für generatives Ersetzen wählen Sie Cloud oder AI Connector.",
         "builtinLabel": "Integrierte KI:",
-        "builtinLocalDesc": "",
+        "builtinLocalDesc": "Uses the built-in basic AI, running entirely on-device.",
         "cloudLabel": "Cloud-KI:",
         "connectorConnectedDesc": "Verbunden mit lokalem generativen Backend.",
         "connectorDisconnectedDesc": "Nur einfaches Reparieren verfügbar. Starten Sie Ihr lokales Backend.",
@@ -1027,9 +1027,9 @@
       "skip": "Überspringen"
     },
     "destination": {
-      "chooseFolder": "",
+      "chooseFolder": "Choose Folder",
       "customFolder": "Benutzerdefinierter Ordner",
-      "exportFolder": "",
+      "exportFolder": "Export to Folder",
       "originalFolder": "Ursprungsordner des Bildes",
       "subfolder": "Unterordner",
       "subfolderPlaceholder": "z. B. final, WebP"
@@ -1511,7 +1511,7 @@
     "tooltips": {
       "communityPresets": "Community-Vorgaben",
       "goHome": "Zur Startseite",
-      "importFromAlbum": "",
+      "importFromAlbum": "Import from Album",
       "importImages": "Bilder importieren",
       "select": "Auswählen"
     },
@@ -1845,20 +1845,20 @@
   },
   "settings": {
     "about": {
-      "agplNotice": "",
-      "licenseDesc": "",
-      "openSourceLicense": "",
-      "privacyPolicy": "",
-      "privacyPolicyDesc": "",
-      "sourceCode": "",
-      "sourceCodeDesc": "",
-      "title": "",
-      "userAgreement": "",
-      "userAgreementDesc": "",
-      "view": ""
+      "agplNotice": "This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY. See the GNU General Public License for more details.",
+      "licenseDesc": "This application is open source under the AGPL-3.0 license.",
+      "openSourceLicense": "Open Source License",
+      "privacyPolicy": "Privacy Policy",
+      "privacyPolicyDesc": "View the app's privacy policy.",
+      "sourceCode": "Source Code",
+      "sourceCodeDesc": "View or contribute to the source code on GitHub.",
+      "title": "About",
+      "userAgreement": "User Agreement",
+      "userAgreementDesc": "View the app's user agreement.",
+      "view": "View"
     },
     "categories": {
-      "about": "",
+      "about": "About",
       "general": "Allgemein",
       "processing": "Verarbeitung",
       "shortcuts": "Steuerung"
@@ -2104,17 +2104,17 @@
       "title": "Meine Objektive"
     },
     "privacy": {
-      "managedNotice": "",
-      "notIntegrated": "",
-      "requestConsent": "",
-      "requestConsentDesc": "",
-      "revoke": "",
-      "revokeConfirm": "",
-      "revokeDesc": "",
-      "status": "",
-      "statusDenied": "",
-      "statusGranted": "",
-      "statusUnknown": ""
+      "managedNotice": "Privacy agreement is managed by the system hosting service.",
+      "notIntegrated": "Privacy agreement hosting is not supported on this device.",
+      "requestConsent": "Request Consent",
+      "requestConsentDesc": "Request user consent for the privacy agreement.",
+      "revoke": "Revoke Consent",
+      "revokeConfirm": "Are you sure you want to revoke your privacy agreement consent?",
+      "revokeDesc": "The app will not function properly after revoking.",
+      "status": "Privacy Agreement Status",
+      "statusDenied": "Not Granted",
+      "statusGranted": "Granted",
+      "statusUnknown": "Unknown"
     },
     "processing": {
       "advanced": {
@@ -2193,15 +2193,15 @@
         },
         "title": "Generative KI"
       },
-      "aiDenoiseBackend": "",
-      "aiDenoiseBackendCpu": "",
-      "aiDenoiseBackendDesc": "",
-      "aiDenoiseBackendNpu": "",
-      "aiDenoiseNpuModel": "",
-      "aiDenoiseNpuModelChecking": "",
-      "aiDenoiseNpuModelDesc": "",
-      "aiDenoiseNpuModelMissing": "",
-      "aiDenoiseNpuModelReady": "",
+      "aiDenoiseBackend": "AI Denoise Backend",
+      "aiDenoiseBackendCpu": "CPU (Processor)",
+      "aiDenoiseBackendDesc": "Choose the processor for AI denoising. NPU runs on the device's NPU chip (supported devices only), CPU uses the traditional processor. Automatically falls back to CPU when NPU is unavailable.",
+      "aiDenoiseBackendNpu": "NPU (Device)",
+      "aiDenoiseNpuModel": "NPU Model",
+      "aiDenoiseNpuModelChecking": "Checking NPU model…",
+      "aiDenoiseNpuModelDesc": "Status of the on-device NPU denoise model file. The model file must be manually placed in the app data directory.",
+      "aiDenoiseNpuModelMissing": "{model} not installed. NPU backend will fall back to CPU.",
+      "aiDenoiseNpuModelReady": "{model} ready ({size} MB)",
       "alwaysDecodeRaw": "RAW immer decodieren",
       "alwaysDecodeRawDesc": "Erzwingt die vollständige RAW-Decodierung für Vorschaubilder, anstatt eingebettete JPEG-Vorschauen zu verwenden. Aktiviere diese Option, wenn sich die Vorschaubilder farblich oder im Kontrast vom geöffneten Bild unterscheiden.",
       "alwaysDecodeRawLabel": "RAW für Vorschaubilder immer decodieren",
@@ -2441,7 +2441,7 @@
       "dark": "Dunkel",
       "grey": "Grau",
       "light": "Hell",
-      "system": ""
+      "system": "Follow System"
     },
     "title": "Einstellungen",
     "tooltips": {
@@ -2503,16 +2503,16 @@
   },
   "ui": {
     "agreement": {
-      "agree": "",
-      "back": "",
-      "confirmExit": "",
-      "decline": "",
-      "exitMessage": "",
-      "exitTitle": "",
-      "privacyTab": "",
-      "subtitle": "",
-      "termsTab": "",
-      "title": ""
+      "agree": "Agree & Continue",
+      "back": "Back",
+      "confirmExit": "Exit",
+      "decline": "Decline",
+      "exitMessage": "You need to agree to the User Agreement & Privacy Policy to use this app. Are you sure you want to exit?",
+      "exitTitle": "Exit App",
+      "privacyTab": "Privacy Policy",
+      "subtitle": "Please read and agree to the following before using this app.",
+      "termsTab": "User Agreement",
+      "title": "User Agreement & Privacy Policy"
     },
     "bottomBar": {
       "imagesSelected": "{{current}} von {{total}} Bildern ausgewählt",

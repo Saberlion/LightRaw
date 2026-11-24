@@ -504,7 +504,7 @@
         "backendLabel": "AI 後端：",
         "builtinDesc": "使用基礎內建 AI。在設定中選擇雲端或 AI 聯結器以使用生成式替換。",
         "builtinLabel": "內建 AI：",
-        "builtinLocalDesc": "",
+        "builtinLocalDesc": "使用內建基礎 AI，全部在裝置本機運行。",
         "cloudLabel": "雲端 AI：",
         "connectorConnectedDesc": "已連線到本地生成式後端。",
         "connectorDisconnectedDesc": "僅可使用簡單修復。請啟動您的本地後端。",
@@ -1024,9 +1024,9 @@
       "skip": "略過"
     },
     "destination": {
-      "chooseFolder": "",
+      "chooseFolder": "選擇資料夾",
       "customFolder": "自訂資料夾",
-      "exportFolder": "",
+      "exportFolder": "匯出到資料夾",
       "originalFolder": "原始影像資料夾",
       "subfolder": "子資料夾",
       "subfolderPlaceholder": "例如：final, WebP"
@@ -1504,7 +1504,7 @@
     "tooltips": {
       "communityPresets": "社群預設",
       "goHome": "返回首頁",
-      "importFromAlbum": "",
+      "importFromAlbum": "從相簿匯入",
       "importImages": "匯入影像",
       "select": "選擇"
     },
@@ -1838,20 +1838,20 @@
   },
   "settings": {
     "about": {
-      "agplNotice": "",
-      "licenseDesc": "",
-      "openSourceLicense": "",
-      "privacyPolicy": "",
-      "privacyPolicyDesc": "",
-      "sourceCode": "",
-      "sourceCodeDesc": "",
-      "title": "",
-      "userAgreement": "",
-      "userAgreementDesc": "",
-      "view": ""
+      "agplNotice": "本程式是自由軟體：你可以根據自由軟體基金會發布的 GNU 通用公共授權條款（第 3 版或任意更高版本）重新分發或修改它。本程式不提供任何形式的擔保。詳情請參閱 GNU 通用公共授權條款。",
+      "licenseDesc": "本應用程式基於 AGPL-3.0 授權條款開源。",
+      "openSourceLicense": "開源授權",
+      "privacyPolicy": "隱私政策",
+      "privacyPolicyDesc": "查看應用程式的隱私政策。",
+      "sourceCode": "原始碼",
+      "sourceCodeDesc": "在 GitHub 上查看或貢獻原始碼。",
+      "title": "關於",
+      "userAgreement": "使用者協議",
+      "userAgreementDesc": "查看應用程式的使用者協議。",
+      "view": "查看"
     },
     "categories": {
-      "about": "",
+      "about": "關於",
       "general": "通用",
       "processing": "處理",
       "shortcuts": "控制"
@@ -2097,17 +2097,17 @@
       "title": "我的鏡頭"
     },
     "privacy": {
-      "managedNotice": "",
-      "notIntegrated": "",
-      "requestConsent": "",
-      "requestConsentDesc": "",
-      "revoke": "",
-      "revokeConfirm": "",
-      "revokeDesc": "",
-      "status": "",
-      "statusDenied": "",
-      "statusGranted": "",
-      "statusUnknown": ""
+      "managedNotice": "隱私協議由系統託管服務管理。",
+      "notIntegrated": "此裝置不支援隱私協議託管服務。",
+      "requestConsent": "請求同意",
+      "requestConsentDesc": "請求使用者同意隱私協議。",
+      "revoke": "撤銷同意",
+      "revokeConfirm": "確定要撤銷隱私協議同意嗎？",
+      "revokeDesc": "撤銷後應用程式將無法正常運行。",
+      "status": "隱私協議狀態",
+      "statusDenied": "未同意",
+      "statusGranted": "已同意",
+      "statusUnknown": "未知"
     },
     "processing": {
       "advanced": {
@@ -2186,15 +2186,15 @@
         },
         "title": "生成式 AI"
       },
-      "aiDenoiseBackend": "",
-      "aiDenoiseBackendCpu": "",
-      "aiDenoiseBackendDesc": "",
-      "aiDenoiseBackendNpu": "",
-      "aiDenoiseNpuModel": "",
-      "aiDenoiseNpuModelChecking": "",
-      "aiDenoiseNpuModelDesc": "",
-      "aiDenoiseNpuModelMissing": "",
-      "aiDenoiseNpuModelReady": "",
+      "aiDenoiseBackend": "AI 降噪後端",
+      "aiDenoiseBackendCpu": "CPU（處理器）",
+      "aiDenoiseBackendDesc": "選擇 AI 降噪的處理器。NPU 在裝置端 NPU 晶片上運行（僅支援的裝置可用），CPU 使用傳統處理器。NPU 不可用時自動回退 CPU。",
+      "aiDenoiseBackendNpu": "NPU（裝置端）",
+      "aiDenoiseNpuModel": "NPU 模型",
+      "aiDenoiseNpuModelChecking": "正在檢查 NPU 模型…",
+      "aiDenoiseNpuModelDesc": "裝置端 NPU 降噪模型檔案的狀態。模型檔案需手動放置在應用程式資料目錄中。",
+      "aiDenoiseNpuModelMissing": "未安裝 {model}，NPU 後端將回退到 CPU。",
+      "aiDenoiseNpuModelReady": "{model} 已就緒（{size} MB）",
       "alwaysDecodeRaw": "始終解碼 RAW",
       "alwaysDecodeRawDesc": "強制對縮圖進行完整的 RAW 解碼，而不是使用內建的 JPEG 預覽。如果您的縮圖在顏色或對比度上與打開的影像不同，請啟用此選項。",
       "alwaysDecodeRawLabel": "始終為縮圖解碼 RAW",
@@ -2434,7 +2434,7 @@
       "dark": "深色",
       "grey": "灰色",
       "light": "淺色",
-      "system": ""
+      "system": "跟隨系統"
     },
     "title": "設定",
     "tooltips": {
@@ -2496,16 +2496,16 @@
   },
   "ui": {
     "agreement": {
-      "agree": "",
-      "back": "",
-      "confirmExit": "",
-      "decline": "",
-      "exitMessage": "",
-      "exitTitle": "",
-      "privacyTab": "",
-      "subtitle": "",
-      "termsTab": "",
-      "title": ""
+      "agree": "同意並繼續",
+      "back": "返回",
+      "confirmExit": "確定退出",
+      "decline": "不同意",
+      "exitMessage": "您需要同意使用者協議與隱私政策才能使用本應用程式。確定要退出嗎？",
+      "exitTitle": "退出應用程式",
+      "privacyTab": "隱私政策",
+      "subtitle": "使用本應用程式前，請閱讀並同意以下協議。",
+      "termsTab": "使用者協議",
+      "title": "使用者協議與隱私政策"
     },
     "bottomBar": {
       "imagesSelected": "已選擇 {{current}} / {{total}} 張影像",

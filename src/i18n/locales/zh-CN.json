@@ -504,7 +504,7 @@
         "backendLabel": "AI 后端：",
         "builtinDesc": "使用基础内置 AI。在设置中选择云端或 AI 连接器以使用生成式替换。",
         "builtinLabel": "内置 AI：",
-        "builtinLocalDesc": "",
+        "builtinLocalDesc": "使用内置基础 AI，全部在设备本地运行。",
         "cloudLabel": "云端 AI：",
         "connectorConnectedDesc": "已连接到本地生成式后端。",
         "connectorDisconnectedDesc": "仅可使用简单修复。请启动您的本地后端。",
@@ -1024,9 +1024,9 @@
       "skip": "跳过"
     },
     "destination": {
-      "chooseFolder": "",
+      "chooseFolder": "选择文件夹",
       "customFolder": "自定义文件夹",
-      "exportFolder": "",
+      "exportFolder": "导出到文件夹",
       "originalFolder": "原始图像文件夹",
       "subfolder": "子文件夹",
       "subfolderPlaceholder": "例如：final, WebP"
@@ -1504,7 +1504,7 @@
     "tooltips": {
       "communityPresets": "社区预设",
       "goHome": "返回首页",
-      "importFromAlbum": "",
+      "importFromAlbum": "从相册导入",
       "importImages": "导入图像",
       "select": "选择"
     },
@@ -1838,20 +1838,20 @@
   },
   "settings": {
     "about": {
-      "agplNotice": "",
-      "licenseDesc": "",
-      "openSourceLicense": "",
-      "privacyPolicy": "",
-      "privacyPolicyDesc": "",
-      "sourceCode": "",
-      "sourceCodeDesc": "",
-      "title": "",
-      "userAgreement": "",
-      "userAgreementDesc": "",
-      "view": ""
+      "agplNotice": "本应用是自由软件：你可以根据自由软件基金会发布的 GNU 通用公共许可证（第 3 版或任意更高版本）重新分发或修改它。本应用不提供任何形式的担保。详情请参阅 GNU 通用公共许可证。",
+      "licenseDesc": "本应用基于 AGPL-3.0 许可证开源。",
+      "openSourceLicense": "开源许可",
+      "privacyPolicy": "隐私政策",
+      "privacyPolicyDesc": "查看应用的隐私政策。",
+      "sourceCode": "源代码",
+      "sourceCodeDesc": "在 GitHub 上查看或贡献源代码。",
+      "title": "关于",
+      "userAgreement": "用户协议",
+      "userAgreementDesc": "查看应用的用户协议。",
+      "view": "查看"
     },
     "categories": {
-      "about": "",
+      "about": "关于",
       "general": "通用",
       "processing": "处理",
       "shortcuts": "控制"
@@ -2097,17 +2097,17 @@
       "title": "我的镜头"
     },
     "privacy": {
-      "managedNotice": "",
-      "notIntegrated": "",
-      "requestConsent": "",
-      "requestConsentDesc": "",
-      "revoke": "",
-      "revokeConfirm": "",
-      "revokeDesc": "",
-      "status": "",
-      "statusDenied": "",
-      "statusGranted": "",
-      "statusUnknown": ""
+      "managedNotice": "隐私协议由系统托管服务管理。",
+      "notIntegrated": "此设备不支持隐私协议托管服务。",
+      "requestConsent": "请求同意",
+      "requestConsentDesc": "请求用户同意隐私协议。",
+      "revoke": "撤销同意",
+      "revokeConfirm": "确定要撤销隐私协议同意吗？",
+      "revokeDesc": "撤销后应用将无法正常运行。",
+      "status": "隐私协议状态",
+      "statusDenied": "未同意",
+      "statusGranted": "已同意",
+      "statusUnknown": "未知"
     },
     "processing": {
       "advanced": {
@@ -2186,15 +2186,15 @@
         },
         "title": "生成式 AI"
       },
-      "aiDenoiseBackend": "",
-      "aiDenoiseBackendCpu": "",
-      "aiDenoiseBackendDesc": "",
-      "aiDenoiseBackendNpu": "",
-      "aiDenoiseNpuModel": "",
-      "aiDenoiseNpuModelChecking": "",
-      "aiDenoiseNpuModelDesc": "",
-      "aiDenoiseNpuModelMissing": "",
-      "aiDenoiseNpuModelReady": "",
+      "aiDenoiseBackend": "AI 降噪后端",
+      "aiDenoiseBackendCpu": "CPU（处理器）",
+      "aiDenoiseBackendDesc": "选择 AI 降噪的处理器。NPU 在设备端 NPU 芯片上运行（仅支持的设备可用），CPU 使用传统处理器。NPU 不可用时自动回退 CPU。",
+      "aiDenoiseBackendNpu": "NPU（设备端）",
+      "aiDenoiseNpuModel": "NPU 模型",
+      "aiDenoiseNpuModelChecking": "正在检查 NPU 模型…",
+      "aiDenoiseNpuModelDesc": "设备端 NPU 降噪模型文件的状态。模型文件需手动放置在应用数据目录中。",
+      "aiDenoiseNpuModelMissing": "未安装 {model}，NPU 后端将回退到 CPU。",
+      "aiDenoiseNpuModelReady": "{model} 已就绪（{size} MB）",
       "alwaysDecodeRaw": "始终解码 RAW",
       "alwaysDecodeRawDesc": "强制对缩略图进行完整的 RAW 解码，而不是使用内置的 JPEG 预览。如果您的缩略图在颜色或对比度上与打开的图像不同，请启用此选项。",
       "alwaysDecodeRawLabel": "始终为缩略图解码 RAW",
@@ -2434,7 +2434,7 @@
       "dark": "深色",
       "grey": "灰色",
       "light": "浅色",
-      "system": ""
+      "system": "跟随系统"
     },
     "title": "设置",
     "tooltips": {
@@ -2496,16 +2496,16 @@
   },
   "ui": {
     "agreement": {
-      "agree": "",
-      "back": "",
-      "confirmExit": "",
-      "decline": "",
-      "exitMessage": "",
-      "exitTitle": "",
-      "privacyTab": "",
-      "subtitle": "",
-      "termsTab": "",
-      "title": ""
+      "agree": "同意并继续",
+      "back": "返回",
+      "confirmExit": "确定退出",
+      "decline": "不同意",
+      "exitMessage": "您需要同意用户协议与隐私政策才能使用本应用。确定要退出吗？",
+      "exitTitle": "退出应用",
+      "privacyTab": "隐私政策",
+      "subtitle": "使用本应用前，请阅读并同意以下协议。",
+      "termsTab": "用户协议",
+      "title": "用户协议与隐私政策"
     },
     "bottomBar": {
       "imagesSelected": "已选择 {{current}} / {{total}} 张图像",
