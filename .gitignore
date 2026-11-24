@@ -85,3 +85,5 @@ src-tauri/resources/film_luts/*
 !src-tauri/resources/film_luts/K-Vision 500T Cinematic.cube
 !src-tauri/resources/film_luts/SPEKTRAFILM_LICENSE.txt
 !src-tauri/resources/film_luts/manifest.json
+
+__pycache__/
