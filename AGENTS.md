@@ -23,7 +23,17 @@ Rust — always in `src-tauri/` (no workspace; `rust-toolchain.toml` pinning Rus
 
 ## No test suite
 
-No frontend tests, no Rust unit tests. Verification = lint + typecheck + clippy + fmt check + `i18n:check`, then manually exercising the affected surface in the running app. UI smoothness changes: scripted replay in `bench/` (see `bench/README.md`; only same-machine scripted-vs-scripted runs are comparable).
+No frontend tests, no Rust unit tests. Verification = lint + typecheck + clippy + fmt check + `i18n:check`, then manually exercising the affected surface in the running app. UI smoothness changes: scripted replay in `bench/` (see `bench/README.md`; only same-machine scripted-vs-scripted runs are comparable). **One mandatory exception: AI model golden tests (next section).**
+
+## AI model golden tests (mandatory)
+
+Every model the app runs at inference time must have a golden test — ORT/ONNX set: SAM, EfficientSAM3 (encoder/decoders), U-2Net/skyseg, BiRefNet, DepthAnything V2, CLIP, LaMa, NIND, MediaPipe face-landmarks/selfie, superres (`2xBHI`); CANN `.om` set: `nind_v2`, `u2net`. No new model ships, and no runtime change lands, without one.
+
+- **Definition**: fixed, seeded input (synthetic tensor or fixture image) run through the **production inference path** → output checked against a recorded golden reference: **NaN/Inf count must be 0**, plus min/max/mean (float outputs) or a byte digest (mask/patch outputs) within tolerance. Baseline values are recorded in the test report under `docs/reports/` the first time they are captured.
+- **Run on host x86** whenever a model file, its URL/SHA pin (`ai/models.rs`), or inference-path Rust code changes.
+- **Run on a real OHOS device** whenever `scripts/build-ort-ohos.ps1` changes (flags, patches, ORT pin) or a model is first enabled on OHOS. Cross-compiled MLAS kernels can silently emit all-NaN output that only surfaces as garbage pixels: BUG-2026-11-23-01 (`lama_fp16.onnx`, fp32 I/O, 1837056/1837056 NaN on the OHOS build while x86 official builds were healthy; found only via on-device pixel diff, fixed by disabling fp16 dispatch in `scripts/build-ort-ohos.ps1`). Precedent harnesses: the `[lama] output stats` log + NaN guard in `ai/lama.rs` (in-app), and the x86 Python ORT probe with fixed input + stats comparison (isolation).
+- **fp16-weight models (`*_fp16.onnx`) get the golden test on every runtime/platform change without exception** — the fp16 kernel path is the historically broken one.
+- New models or runtime changes must add/update the matching TC-AI cases in `docs/TEST_CASES.md` §3.12 (lightraw-qa skill maintenance rule).
 
 ## Conventions & gotchas
 

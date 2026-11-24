@@ -141,6 +141,42 @@ if (-not (Test-Path "$eigenDir\Eigen\Core")) {
 }
 Write-Host "using Eigen source: $eigenDir"
 
+# ---------- patch: disable MLAS fp16 dispatch (BUG-2026-11-23-01) ----------
+# The vendored ORT source tree is not a git repo (ignored directory), so this
+# is applied by text substitution instead of git apply. Idempotent: skipped
+# when the BUG marker is already present.
+$halfgemm = Join-Path $ortDir 'onnxruntime\core\mlas\lib\halfgemm.cpp'
+if (Test-Path $halfgemm) {
+  $src = Get-Content $halfgemm -Raw
+  if ($src -notmatch 'BUG-2026-11-23-01') {
+    Write-Host '==> patching halfgemm.cpp: disable MLAS fp16 dispatch (BUG-2026-11-23-01)'
+    $old = @'
+#ifdef MLAS_F16VEC_INTRINSICS_SUPPORTED
+    return MLAS_CPUIDINFO::GetCPUIDInfo().HasFp16VectorAcceleration();
+#else
+    return false;
+#endif
+}
+'@
+    $new = @'
+    // BUG-2026-11-23-01 (LightRaw OHOS cross-build): the NEON fp16 kernels
+    // cross-compiled with the OHOS clang 15 toolchain emit all-NaN output
+    // for fp16-weight models with fp32 I/O (lama_fp16.onnx: 1837056/1837056
+    // NaN on MOR-M1, while official x86 builds of the same model are
+    // healthy; enabling/disabling cpuinfo made no difference). Root cause
+    // not isolated - disable fp16 dispatch so the CPU EP falls back to
+    // fp32 kernels via cast insertion (correct, slower).
+    return false;
+}
+'@
+    if (-not $src.Contains($old)) { Fail 'halfgemm.cpp fp16-dispatch pattern not found (upstream changed?)' }
+    $src = $src.Replace($old, $new)
+    [System.IO.File]::WriteAllText($halfgemm, $src)
+  } else {
+    Write-Host '==> fp16-disable patch already applied (skipping)'
+  }
+}
+
 # ---------- CMake configure ----------
 # Minimal, OHOS-friendly feature set: shared ONNX Runtime, CPU EP only
 # (DirectML/CUDA/QNN/NNAPI/XNNPACK/... are desktop/Android-specific), no
@@ -166,7 +202,17 @@ $cmakeArgs = @(
   '-Donnxruntime_ENABLE_TRAINING=OFF',
   '-Donnxruntime_ENABLE_TRAINING_OPS=OFF',
   '-Donnxruntime_ENABLE_TRAINING_APIS=OFF',
-  '-Donnxruntime_ENABLE_CPUINFO=OFF',
+  # CPUINFO must stay ON: with it OFF the runtime cannot query aarch64 CPU
+  # features (HWCAP_FP16 etc.) and MLAS picks an fp16 GEMM path that emits
+  # all-NaN output for fp16-weight models with fp32 I/O (lama_fp16.onnx,
+  # BUG-2026-11-23-01: 100% NaN on device vs 0 NaN on x86 official builds).
+  # ORT's stock cmake fails to propagate the cpuinfo::cpuinfo link on this
+  # cross-build (common.cmake's list(APPEND onnxruntime_EXTERNAL_LIBRARIES ...)
+  # never reaches the shared-lib link line), so we inject the static library
+  # directly via CMAKE_SHARED_LINKER_FLAGS (absolute path, no ninja edge - see
+  # the pre-build cpuinfo target below).
+  '-Donnxruntime_ENABLE_CPUINFO=ON',
+  "-DCMAKE_SHARED_LINKER_FLAGS=$buildRoot/_deps/pytorch_cpuinfo-build/libcpuinfo.a",
   '-Donnxruntime_USE_OPENMP=OFF',
   '-Donnxruntime_USE_MPI=OFF',
   '-Donnxruntime_USE_DML=OFF',
@@ -195,6 +241,11 @@ if ($ConfigureOnly) {
 }
 
 # ---------- build ----------
+# BUG-2026-11-23-01: the linker flag references libcpuinfo.a by absolute path,
+# which creates no ninja dependency - build it first or the .so link fails
+# with undefined cpuinfo_* symbols.
+& cmake --build $buildRoot --target cpuinfo
+if ($LASTEXITCODE -ne 0) { Fail "cmake build of cpuinfo failed" }
 $buildArgs = @('--build', $buildRoot, '--target', 'onnxruntime')
 if ($Jobs -gt 0) { $buildArgs += @('--parallel', "$Jobs") }
 Write-Host "==> building onnxruntime (this takes a while on first run)"
