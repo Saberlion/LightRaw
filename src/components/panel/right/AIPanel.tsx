@@ -52,7 +52,6 @@ import {
   AI_DIRECT_PATCH_TYPES,
   AI_TOUCH_UP_TYPES,
   AI_GENERATIVE_CREATION_TYPES,
-  AI_SUB_MASK_COMPONENT_TYPES,
   NewMaskDropZone,
 } from './Masks';
 import { Mask, MaskType, SubMask, SubMaskMode, ToolType } from '../../../types/masks';
@@ -339,6 +338,7 @@ const ConnectionStatus = ({
   isAIConnectorConnected,
 }: ConnectionStatusProps) => {
   const { t } = useTranslation();
+  const isOhos = useSettingsStore((s) => s.isOhos);
   const [isHovered, setIsHovered] = useState(false);
 
   let statusColor: string;
@@ -361,7 +361,13 @@ const ConnectionStatus = ({
     titleText = t('editor.ai.connection.builtinLabel');
     statusColor = 'bg-green-500';
     statusText = t('editor.ai.connection.ready');
-    hoverContent = <Text variant={TextVariants.small}>{t('editor.ai.connection.builtinDesc')}</Text>;
+    // OHOS: generative replace backends are desktop-only (§6.32) — the default
+    // builtinDesc points users at cloud/connector options that don't exist here.
+    hoverContent = (
+      <Text variant={TextVariants.small}>
+        {t(isOhos ? 'editor.ai.connection.builtinLocalDesc' : 'editor.ai.connection.builtinDesc')}
+      </Text>
+    );
   }
 
   return (
@@ -455,9 +461,22 @@ export default function AIPanel() {
   } = useAiMasking();
 
   const aiProvider = useSettingsStore((s) => s.appSettings?.aiProvider ?? 'ai-free');
+  const isOhos = useSettingsStore((s) => s.isOhos);
   const isAiFree = aiProvider === 'ai-free';
 
-  const isGenerativeAvailable = aiProvider === 'ai-connector' && isAIConnectorConnected;
+  // OHOS: prompt-based generative replace (ai-connector / cloud backends) is
+  // desktop-only (docs/HARMONYOS_PORTING.md §6.32). isGenerativeAvailable=false
+  // forces the local LaMa fast-inpaint path and hides the prompt input.
+  const isGenerativeAvailable = !isOhos && aiProvider === 'ai-connector' && isAIConnectorConnected;
+
+  // OHOS: the generative edit section offers Quick Erase only; the remaining
+  // creation tools (Subject / Foreground / Brush / ...) belong to the connector
+  // workflow and stay desktop-only. Component menus keep the manual cleanup
+  // tools (Clone / Heal / Liquify / Retouch) plus Quick Erase.
+  const generativeCreationTypes = isOhos
+    ? AI_GENERATIVE_CREATION_TYPES.filter((maskType) => maskType.type === Mask.QuickEraser)
+    : AI_GENERATIVE_CREATION_TYPES;
+  const subMaskComponentTypes = [...AI_DIRECT_PATCH_TYPES, ...AI_TOUCH_UP_TYPES, ...generativeCreationTypes];
 
   const hasAnyActiveAiTask = Object.keys(activeAiTasks).length > 0;
 
@@ -764,10 +783,10 @@ export default function AIPanel() {
         ...buildMenu(AI_TOUCH_UP_TYPES, SubMaskMode.Additive),
         ...(isAiFree
           ? []
-          : [{ type: OPTION_SEPARATOR }, ...buildMenu(AI_GENERATIVE_CREATION_TYPES, SubMaskMode.Additive)]),
+          : [{ type: OPTION_SEPARATOR }, ...buildMenu(generativeCreationTypes, SubMaskMode.Additive)]),
       ];
     } else {
-      options = buildMenu(AI_SUB_MASK_COMPONENT_TYPES, SubMaskMode.Additive);
+      options = buildMenu(subMaskComponentTypes, SubMaskMode.Additive);
 
       if (hasComponents) {
         options.push(
@@ -775,12 +794,12 @@ export default function AIPanel() {
           {
             label: t('editor.ai.actions.subtractFromEdit'),
             icon: Minus,
-            submenu: buildMenu(AI_SUB_MASK_COMPONENT_TYPES, SubMaskMode.Subtractive),
+            submenu: buildMenu(subMaskComponentTypes, SubMaskMode.Subtractive),
           },
           {
             label: t('editor.ai.actions.intersectEditWith'),
             icon: SquaresIntersect,
-            submenu: buildMenu(AI_SUB_MASK_COMPONENT_TYPES, SubMaskMode.Intersect),
+            submenu: buildMenu(subMaskComponentTypes, SubMaskMode.Intersect),
           },
         );
       }
@@ -985,7 +1004,7 @@ export default function AIPanel() {
       onClick: () => handleAddAiPatchContainer(maskType.type),
     }));
 
-    const genSubMenu = AI_GENERATIVE_CREATION_TYPES.filter((maskType) => !maskType.disabled).map((maskType) => ({
+    const genSubMenu = generativeCreationTypes.filter((maskType) => !maskType.disabled).map((maskType) => ({
       label: formatMaskTypeName(maskType.type),
       icon: maskType.icon,
       onClick: () => handleAddAiPatchContainer(maskType.type),
@@ -1257,7 +1276,7 @@ export default function AIPanel() {
                           {t('editor.ai.generativeEditTitle')}
                         </Text>
                         <div className="grid grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
-                          {AI_GENERATIVE_CREATION_TYPES.map((maskType: MaskType) => (
+                          {generativeCreationTypes.map((maskType: MaskType) => (
                             <DraggableGridItem
                               key={maskType.type}
                               maskType={maskType}
@@ -1427,7 +1446,7 @@ export default function AIPanel() {
                 className="bg-surface rounded-lg gap-2 p-2 flex flex-col items-center justify-center aspect-square w-20 shadow-xl opacity-90"
               >
                 {(() => {
-                  const maskType = AI_SUB_MASK_COMPONENT_TYPES.find((m) => m.type === activeDragItem.maskType);
+                  const maskType = subMaskComponentTypes.find((m) => m.type === activeDragItem.maskType);
                   const Icon = maskType?.icon || Circle;
                   return (
                     <>

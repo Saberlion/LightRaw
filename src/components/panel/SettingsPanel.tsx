@@ -391,18 +391,24 @@ const MiniKey = ({ code, osPlatform }: { code: string; osPlatform: string }) => 
 interface AiProviderSwitchProps {
   selectedProvider: string;
   onProviderChange: (provider: string) => void;
+  isOhos?: boolean;
 }
 
-const AiProviderSwitch = ({ selectedProvider, onProviderChange }: AiProviderSwitchProps) => {
+const AiProviderSwitch = ({ selectedProvider, onProviderChange, isOhos = false }: AiProviderSwitchProps) => {
   const { t } = useTranslation();
 
   const aiProviders = useMemo(
     () => [
       { id: 'cpu', label: t('settings.processing.ai.providers.cpu'), icon: Cpu },
-      { id: 'ai-connector', label: t('settings.processing.ai.providers.aiConnector'), icon: Server },
+      // OHOS: no self-hosted AI connector — generative replace is desktop-only
+      // (docs/HARMONYOS_PORTING.md §6.32); the AI panel degrades to local Quick
+      // Erase (LaMa fast inpaint).
+      ...(!isOhos
+        ? [{ id: 'ai-connector', label: t('settings.processing.ai.providers.aiConnector'), icon: Server }]
+        : []),
         { id: 'ai-free', label: t('settings.processing.ai.providers.aiFree'), icon: Unplug },
     ],
-    [t],
+    [t, isOhos],
   );
 
   return (
@@ -1368,7 +1374,7 @@ export default function SettingsPanel({
                     </Text>
                     <Text className="mb-4">{t('settings.processing.ai.description')}</Text>
 
-                    <AiProviderSwitch selectedProvider={aiProvider} onProviderChange={handleProviderChange} />
+                    <AiProviderSwitch selectedProvider={aiProvider} onProviderChange={handleProviderChange} isOhos={isOhos} />
 
                     <div className="mt-8">
                       <AnimatePresence mode="wait">

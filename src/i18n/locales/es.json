@@ -525,6 +525,7 @@
         "backendLabel": "Backend de IA:",
         "builtinDesc": "Usando la IA integrada básica. Selecciona Cloud o AI Connector en ajustes para relleno generativo.",
         "builtinLabel": "IA integrada:",
+        "builtinLocalDesc": "Usa la IA integrada básica, completamente en el dispositivo.",
         "cloudLabel": "IA en la nube:",
         "connectorConnectedDesc": "Conectado al backend generativo local.",
         "connectorDisconnectedDesc": "Solo Inpainting básico disponible. Inicia tu backend local.",

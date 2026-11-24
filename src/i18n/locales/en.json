@@ -506,6 +506,7 @@
         "backendLabel": "AI Backend:",
         "builtinDesc": "Using basic built-in AI. Select Cloud or AI Connector in settings for generative replace.",
         "builtinLabel": "Built-in AI:",
+        "builtinLocalDesc": "Uses the built-in basic AI, running entirely on-device.",
         "cloudLabel": "Cloud AI:",
         "connectorConnectedDesc": "Connected to local generative backend.",
         "connectorDisconnectedDesc": "Only simple inpainting available. Start your local backend.",

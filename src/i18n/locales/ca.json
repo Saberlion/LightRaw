@@ -526,6 +526,7 @@
         "backendLabel": "Rerefons d'IA:",
         "builtinDesc": "Ús de la IA integrada bàsica. Seleccioneu Cloud o AI Connector a Configuració per a la substitució generativa.",
         "builtinLabel": "IA integrada:",
+        "builtinLocalDesc": "Utilitza la IA integrada bàsica, íntegrament al dispositiu.",
         "cloudLabel": "IA al núvol:",
         "connectorConnectedDesc": "Connectat al rerefons generatiu local.",
         "connectorDisconnectedDesc": "Només està disponible l'inpainting simple. Inicieu el vostre rerefons local.",

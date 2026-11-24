@@ -506,6 +506,7 @@
         "backendLabel": "AI-motor:",
         "builtinDesc": "Använder enkel inbyggd AI. Välj molnet eller AI Connector i inställningarna för generativ ersättning.",
         "builtinLabel": "Inbyggd AI:",
+        "builtinLocalDesc": "Använder det inbyggda grundläggande AI:et, helt på enheten.",
         "cloudLabel": "Molnbaserad AI:",
         "connectorConnectedDesc": "Ansluten till lokal generativ AI-motor.",
         "connectorDisconnectedDesc": "Endast enkel ifyllning är tillgänglig. Starta din lokala AI-motor.",

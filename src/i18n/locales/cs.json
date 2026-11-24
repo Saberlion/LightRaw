@@ -544,6 +544,7 @@
         "backendLabel": "AI Backend:",
         "builtinDesc": "Použití základní vestavěné AI. Výběr cloudového, nebo AI konektoru v nastavení pro generativní náhradu.",
         "builtinLabel": "Vestavěná AI:",
+        "builtinLocalDesc": "Používá vestavěné základní AI, kompletně na zařízení.",
         "cloudLabel": "Cloud AI:",
         "connectorConnectedDesc": "Připojeno k místnímu generativnímu backendu.",
         "connectorDisconnectedDesc": "K dispozici pouze jednoduché úpravy. Spusťte lokální backend.",

@@ -506,6 +506,7 @@
         "backendLabel": "KI-Backend:",
         "builtinDesc": "Nutzt die integrierte KI. Für generatives Ersetzen wählen Sie Cloud oder AI Connector.",
         "builtinLabel": "Integrierte KI:",
+        "builtinLocalDesc": "Nutzt die eingebaute Basis-KI, vollständig auf dem Gerät.",
         "cloudLabel": "Cloud-KI:",
         "connectorConnectedDesc": "Verbunden mit lokalem generativen Backend.",
         "connectorDisconnectedDesc": "Nur einfaches Reparieren verfügbar. Starten Sie Ihr lokales Backend.",

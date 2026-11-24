@@ -506,6 +506,7 @@
         "backendLabel": "AI バックエンド:",
         "builtinDesc": "基本的な内蔵AIを使用しています。生成塗りつぶしを使用するには、設定でクラウドまたはAI Connectorを選択してください。",
         "builtinLabel": "内蔵AI:",
+        "builtinLocalDesc": "内蔵の基本AIを使用し、すべてデバイス上で実行します。",
         "cloudLabel": "クラウドAI:",
         "connectorConnectedDesc": "ローカルの生成バックエンドに接続されました。",
         "connectorDisconnectedDesc": "簡易スポット修正のみ利用可能です。ローカルバックエンドを起動してください。",

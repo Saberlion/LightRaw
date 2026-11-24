@@ -544,6 +544,7 @@
         "backendLabel": "Backend AI:",
         "builtinDesc": "Używanie podstawowego wbudowanego AI. Wybierz Chmurę lub Złącze AI w ustawieniach do zastępowania generatywnego.",
         "builtinLabel": "Wbudowane AI:",
+        "builtinLocalDesc": "Korzysta z wbudowanego podstawowego AI, w całości na urządzeniu.",
         "cloudLabel": "AI w Chmurze:",
         "connectorConnectedDesc": "Połączono z lokalnym backendem generatywnym.",
         "connectorDisconnectedDesc": "Dostępny tylko prosty inpainting. Uruchom swój lokalny backend.",

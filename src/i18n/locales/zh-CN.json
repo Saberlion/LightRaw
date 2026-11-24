@@ -506,6 +506,7 @@
         "backendLabel": "AI 后端：",
         "builtinDesc": "使用基础内置 AI。在设置中选择云端或 AI 连接器以使用生成式替换。",
         "builtinLabel": "内置 AI：",
+        "builtinLocalDesc": "使用基础内置 AI，全部在设备本地运行。",
         "cloudLabel": "云端 AI：",
         "connectorConnectedDesc": "已连接到本地生成式后端。",
         "connectorDisconnectedDesc": "仅可使用简单修复。请启动您的本地后端。",

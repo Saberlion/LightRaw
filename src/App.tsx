@@ -621,6 +621,10 @@ function App() {
   }, [activePanel, activeView, setEditor]);
 
   useEffect(() => {
+    // OHOS: generative replace (ai-connector backend) is desktop-only
+    // (docs/HARMONYOS_PORTING.md §6.32) — no connector address can be
+    // configured, so skip the status polling and its event listener entirely.
+    if (isOhos) return;
     const unlisten = listen('ai-connector-status-update', (event: any) => {
       setEditor({ isAIConnectorConnected: event.payload.connected });
     });
@@ -630,7 +634,7 @@ function App() {
       clearInterval(interval);
       unlisten.then((f) => f());
     };
-  }, [setEditor]);
+  }, [setEditor, isOhos]);
 
   const createResizeHandler = (stateKey: string, startSize: number) => (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;

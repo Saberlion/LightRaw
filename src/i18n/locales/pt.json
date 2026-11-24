@@ -525,6 +525,7 @@
         "backendLabel": "Backend de IA:",
         "builtinDesc": "Usando a IA integrada básica. Selecione Nuvem ou AI Connector nas configurações para substituição generativa.",
         "builtinLabel": "IA Integrada:",
+        "builtinLocalDesc": "Usa a IA integrada básica, inteiramente no dispositivo.",
         "cloudLabel": "IA na Nuvem:",
         "connectorConnectedDesc": "Conectado ao backend generativo local.",
         "connectorDisconnectedDesc": "Apenas preenchimento simples disponível. Inicie seu backend local.",
@@ -2629,7 +2630,7 @@
     "startLiveView": "Iniciar Live View",
     "status": "Status",
     "stopLiveView": "Parar Live View",
-    "title": "Tethering",
+    "title": "Captura Conectada",
     "toasts": {
       "afFailed": "Falha ao acionar foco automático",
       "cameraDisconnected": "Câmera desconectada",

@@ -544,6 +544,7 @@
         "backendLabel": "DI posistemė:",
         "builtinDesc": "Naudojamas bazinis integruotas DI. Nustatymuose pasirinkite „Cloud“ arba „AI Connector“ generatyviniam objektų pakeitimui.",
         "builtinLabel": "Integruotas DI:",
+        "builtinLocalDesc": "Naudoja integruotą pagrindinį DI, visiškai įrenginyje.",
         "cloudLabel": "Debesijos DI:",
         "connectorConnectedDesc": "Prisijungta prie vietinės generatyvinės posistemės.",
         "connectorDisconnectedDesc": "Galimas tik paprastas objektų šalinimas (inpainting). Paleiskite savo vietinį serverį.",
@@ -1052,7 +1053,7 @@
         "inpaint": "Objektų šalinimas",
         "masks": "Kaukės",
         "presets": "Nustatymai",
-        "tethering": "Prijungimas"
+        "tethering": "Fotografavimas prijungus"
       }
     },
     "toasts": {
