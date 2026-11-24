@@ -1115,6 +1115,7 @@ function JobRow({ job, onNavigateToFolder }: { job: Job; onNavigateToFolder(path
   const subtitle = [
     job.status === JobStatus.Cancelling ? t('library.jobs.cancelling') : null,
     !showProgress && job.progress.total > 0 ? formatJobAmount(job, t, i18n.language) : null,
+    job.skipped ? t('library.jobs.skipped', { count: job.skipped }) : null,
     detail ? fileName(detail) : null,
     job.finishedAt !== null ? formatRelativeTime(job.finishedAt, i18n.language) : null,
   ]

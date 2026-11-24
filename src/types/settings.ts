@@ -138,6 +138,7 @@ export interface AppSettings {
   enableFolderImageCounts?: boolean;
   displayEditIcon?: boolean;
   linearRawMode?: string;
+  removeHotPixels?: boolean;
   enableXmpSync?: boolean;
   createXmpIfMissing?: boolean;
   isWaveformVisible?: boolean;
@@ -156,7 +157,7 @@ export interface AppSettings {
   baselineExposure?: number;
   compensateHighlightPreservation?: boolean;
   hdrDisplay?: boolean;
-  hdrHeadroom?: number;
+  gainMapMode?: 'auto' | 'never';
   displayColorMode?: 'auto' | 'off' | 'custom';
   displayIccProfile?: string | null;
   wideGamutPreview?: boolean;

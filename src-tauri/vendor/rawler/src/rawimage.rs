@@ -233,6 +233,12 @@ pub struct RawImage {
 
   /// orientation of the image as indicated by the image metadata
   pub orientation: Orientation,
+  /// Ported additive field from upstream DngLab PR#6 (rotated-Fuji sensor
+  /// normalization): the rotation width when a Fuji RAF was normalized in the
+  /// decoder. The vendored raf.rs handles rotation in-place instead, so this
+  /// stays None here — upstream RapidRAW guards (demosaic/hot_pixels) treat
+  /// None as "not rotated", which matches this vendor's behaviour.
+  pub fuji_rotation_width: Option<usize>,
   /// image data itself, has `width`\*`height`\*`cpp` elements
   pub data: RawImageData,
 
@@ -387,6 +393,7 @@ impl RawImage {
       crop_area,
       blackareas,
       orientation: Orientation::Normal, //cam.orientation, // TODO fixme
+      fuji_rotation_width: None,
       color_matrix: cam.color_matrix,
       dng_tags: HashMap::new(),
     }
@@ -476,6 +483,7 @@ impl RawImage {
       crop_area,
       blackareas,
       orientation: Orientation::Normal, //cam.orientation, // TODO fixme
+      fuji_rotation_width: None,
       color_matrix: cam.color_matrix,
       dng_tags: HashMap::new(),
     }

@@ -322,7 +322,7 @@ pub fn run_lama_inpainting(
         }
         #[cfg(target_env = "ohos")]
         models::LamaSession::Cann(model) => {
-            let mut model = model.lock().unwrap();
+            let model = model.lock().unwrap();
             model.write_input_f32(
                 0,
                 img_tensor

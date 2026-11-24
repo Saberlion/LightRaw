@@ -1,5 +1,5 @@
 import { open } from '@tauri-apps/plugin-dialog';
-import { invoke } from '@tauri-apps/api/core';
+import { Channel, invoke } from '@tauri-apps/api/core';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ImageOff, Upload, X, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,7 @@ import Slider from '../ui/Slider';
 import { Invokes } from '../../types/invokes';
 import { useEditorStore } from '../../store/useEditorStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { useHoverPreview, withLut } from '../../hooks/useEditorActions';
 
 interface LutEntry {
   name: string;
@@ -31,8 +32,7 @@ interface LUTControlProps {
   lutPath: string | null;
   lutName: string | null;
   lutIntensity: number;
-  onLutSelect: (path: string, isSceneReferred: boolean) => void;
-  onLutHover?: (path: string | null, isSceneReferred?: boolean) => void;
+  onLutSelect: (path: string, isBuiltIn: boolean) => void;
   onIntensityChange: (intensity: number) => void;
   onClear: () => void;
   onDragStateChange?: (isDragging: boolean) => void;
@@ -59,6 +59,7 @@ function getLutDisplayName(name: string): string {
   return name;
 }
 const PREVIEW_SIZE = 112;
+const PREVIEW_CACHE_IMAGES = 8;
 /** How long the LUT swatches wait for the grade to settle before regenerating. */
 const SWATCH_REGENERATION_DELAY_MS = 1000;
 const SUPPORTED_EXTENSIONS = ['cube', '3dl', 'png', 'jpg', 'jpeg', 'tiff'];
@@ -68,7 +69,6 @@ export default function LUTControl({
   lutName,
   lutIntensity,
   onLutSelect,
-  onLutHover,
   onIntensityChange,
   onClear,
   onDragStateChange,
@@ -93,6 +93,7 @@ export default function LUTControl({
   const [previews, setPreviews] = useState<Record<string, string | null>>({});
   const [isLoadingPreviews, setIsLoadingPreviews] = useState(false);
   const previewCache = useRef<Map<string, Record<string, string | null>>>(new Map());
+  const hoverPreview = useHoverPreview();
 
   const handleContextMenu = (event: React.MouseEvent, entry: LutEntry) => {
     if (entry.isBuiltIn) return;
@@ -173,48 +174,57 @@ export default function LUTControl({
       .join(',')}`;
     const cached = previewCache.current.get(cacheKey);
     if (cached) {
+      previewCache.current.delete(cacheKey);
+      previewCache.current.set(cacheKey, cached);
       setPreviews(cached);
+      setIsLoadingPreviews(false);
       return;
     }
 
     let isActive = true;
+    let frame = 0;
+    const results: Record<string, string | null> = {};
+    const onPreview = new Channel<LutPreview>();
+    onPreview.onmessage = ({ path, thumb }) => {
+      results[path] = thumb;
+      if (Object.keys(results).length === entries.length) {
+        previewCache.current.set(cacheKey, results);
+        while (previewCache.current.size > PREVIEW_CACHE_IMAGES) {
+          previewCache.current.delete(previewCache.current.keys().next().value!);
+        }
+        if (!isActive) return;
+        cancelAnimationFrame(frame);
+        setPreviews({ ...results });
+        setIsLoadingPreviews(false);
+      } else if (isActive && !frame) {
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          if (isActive) setPreviews({ ...results });
+        });
+      }
+    };
+
+    setPreviews({});
     setIsLoadingPreviews(true);
-    // Debounced by SWATCH_REGENERATION_DELAY_MS so a burst of adjustment
-    // changes (slider drags) only triggers one swatch batch after the user
-    // settles.
+    // Debounced so a burst of adjustment changes (slider drags) only triggers
+    // one swatch batch after the user settles; the Rust run token cancels
+    // stale batches server-side, the timer here keeps them from starting.
     const timer = setTimeout(() => {
-      if (!isActive) return;
-      invoke<LutPreview[]>('generate_lut_previews', {
-        luts: entries.map((entry) => ({
-          path: entry.path,
-          isSceneReferred: entry.isSceneReferred,
-        })),
+      invoke('generate_lut_previews', {
+        luts: entries.map((entry) => ({ path: entry.path, isSceneReferred: entry.isSceneReferred })),
         size: PREVIEW_SIZE,
         jsAdjustments: adjustmentsBase,
-      })
-        .then((results) => {
-          if (!isActive) return;
-          const map: Record<string, string | null> = {};
-          results.forEach((result) => {
-            map[result.path] = result.thumb;
-          });
-          previewCache.current.set(cacheKey, map);
-          // Keep the cache bounded: evict the oldest entries (insertion order).
-          while (previewCache.current.size > 12) {
-            const oldest = previewCache.current.keys().next().value;
-            if (oldest === undefined || oldest === cacheKey) break;
-            previewCache.current.delete(oldest);
-          }
-          setPreviews(map);
-        })
-        .catch((err) => console.error('Failed to generate LUT previews:', err))
-        .finally(() => {
-          if (isActive) setIsLoadingPreviews(false);
-        });
+        onPreview,
+      }).catch((err) => {
+        if (!isActive) return;
+        console.error('Failed to generate LUT previews:', err);
+        setIsLoadingPreviews(false);
+      });
     }, SWATCH_REGENERATION_DELAY_MS);
     return () => {
       isActive = false;
       clearTimeout(timer);
+      cancelAnimationFrame(frame);
     };
   }, [isExpanded, selectedImagePath, isImageReady, entries, adjustmentsFingerprint, adjustmentsBase]);
 
@@ -288,8 +298,16 @@ export default function LUTControl({
     }
   };
 
+  const handleSwatchHover = (entry: LutEntry) => {
+    if (entry.path === lutPath) {
+      hoverPreview.show(null);
+      return;
+    }
+    hoverPreview.show((adjustments) => withLut(adjustments, entry));
+  };
+
   const handleSwatchClick = (entry: LutEntry) => {
-    onLutHover?.(null);
+    hoverPreview.show(null);
     if (entry.path === lutPath) {
       onClear();
     } else {
@@ -383,8 +401,8 @@ export default function LUTControl({
     return (
       <button
         key={entry.path}
-        onMouseEnter={() => onLutHover?.(entry.path, entry.isSceneReferred)}
-        onMouseLeave={() => onLutHover?.(null)}
+        onMouseEnter={() => handleSwatchHover(entry)}
+        onMouseLeave={hoverPreview.leave}
         onClick={() => handleSwatchClick(entry)}
         onContextMenu={entry.isBuiltIn ? undefined : (e) => handleContextMenu(e, entry)}
         className={`relative aspect-square rounded-md overflow-hidden bg-bg-tertiary border-2 transition-colors ${

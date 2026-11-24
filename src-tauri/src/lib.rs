@@ -54,6 +54,9 @@ use std::time::Duration;
 use tauri::Manager;
 use tokio::sync::Mutex as TokioMutex;
 
+use crate::adjustments::lut_processing::{
+    LUT_CACHE_BUDGET_BYTES, LutCache, SWATCH_LUT_CACHE_BUDGET_BYTES,
+};
 #[cfg(not(any(target_os = "android", target_os = "ios", target_env = "ohos")))]
 use crate::app::launch_request::emit_launch_request;
 use crate::app::launch_request::{
@@ -61,7 +64,9 @@ use crate::app::launch_request::{
     resolve_gui_launch_paths, set_process_exit_code,
 };
 use crate::app::logging::setup_logging;
-use crate::app::settings::{AppSettings, load_settings, save_settings};
+#[cfg(target_env = "ohos")]
+use crate::app::settings::save_settings;
+use crate::app::settings::{AppSettings, load_settings};
 #[cfg(not(any(target_os = "android", target_env = "ohos")))]
 use crate::app::state::WindowState;
 use crate::app::state::{
@@ -227,6 +232,8 @@ pub fn run() {
             _ => {}
         })
         .setup(move |app| {
+            platform::monitor::watch_screen_changes(app.handle());
+
             #[cfg(feature = "tethering")]
             {
                 std::thread::spawn(|| {
@@ -290,20 +297,21 @@ pub fn run() {
 
             // Start the file logger before the GPU backend decisions below: their
             // warnings (crash fallback, backend reset) are the first thing support
-            // needs when a device renders nothing, and they used to be emitted
-            // before the logger existed and were lost. setup_logging only needs
+            // needs when a device renders nothing. setup_logging only needs
             // app_paths' log dir, so it is safe this early.
             setup_logging(&app_handle);
 
-            let config_dir =
-                crate::app_paths::app_config_dir(&app_handle).expect("Failed to get config dir");
-            let crash_flag_path = config_dir.join(".gpu_init_crash_flag");
-
-            {
-                let state = app.state::<AppState>();
-                *state.gpu_crash_flag_path.lock().unwrap() = Some(crash_flag_path.clone());
+            // Clean up a stale crash flag from the pre-record fallback era
+            // (upstream v1.7.1 replaced the mechanism with the gpu record;
+            // the file may linger from older installs). app_paths on OHOS
+            // (FUSE, EPERM — AGENTS.md port rule).
+            if let Ok(config_dir) = crate::app_paths::app_config_dir(&app_handle) {
+                let _ = std::fs::remove_file(config_dir.join(".gpu_init_crash_flag"));
             }
 
+            // `mut` only on OHOS (the Vulkan pin below rewrites the setting);
+            // allow keeps the host build warning-free.
+            #[allow(unused_mut)]
             let mut settings: AppSettings = load_settings(app_handle.clone()).unwrap_or_default();
 
             // OpenHarmony renders through Vulkan and nothing else: the GLES
@@ -330,44 +338,24 @@ pub fn run() {
             }
             crate::app::storage::apply_cache_limits(&settings);
 
-            if crash_flag_path.exists() {
-                let previous = settings
-                    .processing_backend
-                    .clone()
-                    .unwrap_or_else(|| "auto".to_string());
-                // OpenHarmony has no fallback to switch to: Vulkan is the only
-                // backend, so just clear the flag and let this start retry it
-                // (the pipeline-warmup marker already covers a crash inside
-                // shader compilation). Other platforms keep the long-standing
-                // OpenGL fallback.
-                #[cfg(target_env = "ohos")]
-                log::warn!(
-                    "GPU driver crash detected on last run (backend={previous}); retrying Vulkan."
-                );
-                #[cfg(not(target_env = "ohos"))]
-                {
-                    log::warn!(
-                        "GPU driver crash detected on last run (backend={previous}); switching to gl."
-                    );
-                    settings.processing_backend = Some("gl".to_string());
-                    let _ = save_settings(settings.clone(), app_handle.clone());
-                }
-                let _ = std::fs::remove_file(&crash_flag_path);
-            }
+            let backend =
+                render::gpu::fallback::choose_backend(settings.processing_backend.as_deref());
 
             adjustments::lens_correction::init_lensfun_db(&app_handle);
 
+            #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
+            let webkit_transport = platform::linux_graphics::configure_webkit_transport(
+                settings.linux_gpu_optimization.unwrap_or(false),
+            );
+
             unsafe {
-                if let Some(backend) = &settings.processing_backend
-                    && backend != "auto" {
-                        std::env::set_var("WGPU_BACKEND", backend);
-                    }
+                if let Some(backend) = &backend {
+                    std::env::set_var("WGPU_BACKEND", backend);
+                }
 
                 #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
                 {
                     if settings.linux_gpu_optimization.unwrap_or(false) {
-                        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
-                        std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
                         std::env::set_var("NODEVICE_SELECT", "1");
                     }
                 }
@@ -404,22 +392,24 @@ pub fn run() {
                 }
             }
 
-            if let Some(backend) = &settings.processing_backend
-                && backend != "auto" {
-                    log::info!("Applied processing backend setting: {}", backend);
-                }
+            if let Some(backend) = &backend {
+                log::info!("Applied processing backend: {}", backend);
+            }
 
             #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
-            if settings.linux_gpu_optimization.unwrap_or(false) {
-                log::info!("Applied Linux Compatibility Mode (forced software compositing).");
-            } else {
+            {
+                log::info!(
+                    "WebKitGTK {}, buffer transport: {:?}",
+                    platform::linux_graphics::webkit_version(),
+                    webkit_transport
+                );
                 log::info!(
                     "Wayland Nvidia quirk status: {:?}",
                     tauri_plugin_wayland_nvidia_quirk::status()
                 );
             }
 
-            jxl_oxide::integration::register_image_decoding_hook();
+            jxl_image_rs_integration::register_image_decoding_hook();
 
             match launch_req {
                 LaunchRequest::HeadlessExport(session) => {
@@ -543,12 +533,9 @@ pub fn run() {
                     .name("pipeline-warmup".into())
                     .spawn(move || {
                         let state = warmup_handle.state::<AppState>();
-                        let warmup_flag = state
-                            .gpu_crash_flag_path
-                            .lock()
+                        let warmup_flag = crate::app_paths::app_config_dir(&warmup_handle)
                             .ok()
-                            .and_then(|path| path.clone())
-                            .map(|path| path.with_file_name(".gpu_warmup_crash_flag"));
+                            .map(|dir| dir.join(".gpu_warmup_crash_flag"));
                         if warmup_flag.as_ref().is_some_and(|path| path.exists()) {
                             log::warn!(
                                 "[pipeline-warmup] skipped after a previous warmup crash (first image open may stall)"
@@ -738,7 +725,6 @@ pub fn run() {
         })
         .manage(AppState {
             window_setup_complete: AtomicBool::new(false),
-            gpu_crash_flag_path: Mutex::new(None),
             original_image: Mutex::new(None),
             cached_preview: Mutex::new(None),
             viewer_cached_preview: Mutex::new(None),
@@ -753,7 +739,8 @@ pub fn run() {
             merge_session: Arc::new(Mutex::new(None)),
             merge_generation: Arc::new(AtomicU64::new(0)),
             indexing_task_handle: Mutex::new(None),
-            lut_cache: Mutex::new(HashMap::new()),
+            lut_cache: Mutex::new(LutCache::new(LUT_CACHE_BUDGET_BYTES)),
+            swatch_lut_cache: Mutex::new(LutCache::new(SWATCH_LUT_CACHE_BUDGET_BYTES)),
             initial_file_path: Mutex::new(None),
             pending_edit_session: Mutex::new(None),
             thumbnail_cancellation_token: Arc::new(AtomicBool::new(false)),
@@ -787,6 +774,8 @@ pub fn run() {
             }),
         })
         .invoke_handler(tauri::generate_handler![
+            render::gpu::fallback::get_gpu_fallbacks,
+            render::gpu::fallback::reset_gpu_fallback,
             render::commands::apply_adjustments,
             render::commands::subscribe_analytics,
             render::commands::generate_preview_for_path,
@@ -1004,6 +993,7 @@ pub fn run() {
                 tauri::RunEvent::ExitRequested { api, code, .. } => {
                     api.prevent_exit();
                     let code = resolve_exit_code(code, process_exit_code());
+                    render::gpu::fallback::abandon_attempt();
 
                     #[cfg(target_os = "macos")]
                     unsafe { libc::_exit(code); }
@@ -1013,6 +1003,7 @@ pub fn run() {
                 }
                 tauri::RunEvent::Exit => {
                     let code = process_exit_code();
+                    render::gpu::fallback::abandon_attempt();
 
                     #[cfg(target_os = "macos")]
                     unsafe { libc::_exit(code); }

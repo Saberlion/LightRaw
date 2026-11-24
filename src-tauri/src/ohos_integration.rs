@@ -331,7 +331,7 @@ mod system_bridge {
 /// Emit a tauri event to the webview from a NAPI callback, where no AppHandle
 /// is in scope (shared with sibling OHOS bridge modules - the tethering
 /// usb_manager uses it for USB hotplug notifications).
-#[cfg(target_env = "ohos")]
+#[cfg(all(target_env = "ohos", feature = "tethering"))]
 pub fn emit_to_webview(event: &str, payload: serde_json::Value) {
     system_bridge::emit(event, payload);
 }

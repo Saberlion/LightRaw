@@ -296,7 +296,6 @@
     },
     "editor": {
       "autoAdjust": "Regolazione Automatica",
-      "autoLensCorrection": "Correzione automatica obiettivo",
       "autoStraighten": "Raddrizza automaticamente",
       "cancel": "Annulla",
       "closeViewer": "Chiudi la seconda finestra",
@@ -305,7 +304,6 @@
       "convertBlackWhite": "Converti in Bianco e Nero",
       "convertNegative": "Converti Negativo",
       "copyAdjustments": "Copia Regolazioni",
-      "cullImage": "Selezione Automatica",
       "denoise": "Riduci Rumore",
       "editImage": "Modifica Immagine",
       "editIn": "Modifica in",
@@ -314,6 +312,7 @@
       "flagPick": "Scelta",
       "flagReject": "Rifiutata",
       "frameImage": "Editor Cornici",
+      "lensCorrection": "Correzione Obiettivo",
       "mergeHdr": "Unisci in HDR",
       "noLabel": "Nessuna Etichetta",
       "noRating": "Nessuna Valutazione",
@@ -327,6 +326,7 @@
       "redo": "Ripeti",
       "removeBlackWhite": "Rimuovi Bianco e Nero",
       "removeDenoise": "Rimuovi Riduzione Rumore",
+      "removeLensCorrection": "Rimuovi Correzione Obiettivo",
       "removeNegativeConversion": "Rimuovi Conversione Negativo",
       "removeSuperResolution": "Rimuovi RapidRes",
       "resetAdjustments": "Ripristina Regolazioni",
@@ -381,9 +381,6 @@
       "autoAdjust_one": "Regolazione Automatica",
       "autoAdjust_many": "Regolazione Automatica",
       "autoAdjust_other": "Regolazione Automatica",
-      "autoLensCorrection_one": "Correzione automatica obiettivo",
-      "autoLensCorrection_many": "Correzione automatica obiettivo",
-      "autoLensCorrection_other": "Correzione automatica obiettivo",
       "autoStraighten_one": "Raddrizza automaticamente",
       "autoStraighten_many": "Raddrizza automaticamente",
       "autoStraighten_other": "Raddrizza automaticamente",
@@ -392,9 +389,6 @@
       "collage_other": "Crea Collage",
       "confirmDelete": "Conferma Eliminazione",
       "confirmDeleteVc": "Conferma Eliminazione + Copie Virtuali",
-      "convertNegative_one": "Converti Negativo",
-      "convertNegative_many": "Converti Negativi",
-      "convertNegative_other": "Converti Negativi",
       "copyImage_one": "Copia Immagine",
       "copyImage_many": "Copia {{count}} Immagini",
       "copyImage_other": "Copia {{count}} Immagini",
@@ -414,6 +408,9 @@
       "exportImage_one": "Esporta Immagine",
       "exportImage_many": "Esporta {{count}} Immagini",
       "exportImage_other": "Esporta {{count}} Immagini",
+      "lensCorrection_one": "Correzione Obiettivo",
+      "lensCorrection_many": "Correzione Obiettivo",
+      "lensCorrection_other": "Correzione Obiettivo",
       "noAlbums": "Nessun Album Disponibile",
       "pasteAdjustments_one": "Incolla Regolazioni",
       "pasteAdjustments_many": "Incolla Regolazioni su {{count}} Immagini",
@@ -525,7 +522,7 @@
         "backendLabel": "Backend AI:",
         "builtinDesc": "Utilizza l'AI integrata di base. Seleziona Cloud o Connettore AI nelle impostazioni per la sostituzione generativa.",
         "builtinLabel": "AI Integrata:",
-        "builtinLocalDesc": "Utilizza l'AI integrata di base, interamente sul dispositivo.",
+        "builtinLocalDesc": "",
         "cloudLabel": "AI Cloud:",
         "connectorConnectedDesc": "Connesso al backend generativo locale.",
         "connectorDisconnectedDesc": "Solo inpainting semplice disponibile. Avvia il tuo backend locale.",
@@ -928,7 +925,7 @@
         "importPresetsTitle": "Importa Predefiniti",
         "legacyPreset": "Predefinito Obsoleto",
         "presetFile": "File Predefinito",
-        "rapidRawPreset": "Predefinito LightRaw"
+        "rapidRawPreset": "Predefinito RapidRAW"
       },
       "menu": {
         "configurePreset": "Configura Predefinito",
@@ -948,7 +945,7 @@
         "unsetDefaultForCamera": "Non usare più come predefinito per {{camera}}"
       },
       "status": {
-        "empty": "Ancora nessun predefinito salvato. Creane uno o importalo da un file.",
+        "empty": "Ancora nessun predefinito salvato. Creane uno, importalo da un file o esplora i predefiniti della community.",
         "getCommunity": "Ottieni Predefiniti della Community",
         "loading": "Caricamento Predefiniti..."
       },
@@ -992,7 +989,7 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "LightRaw non è riuscito a decodificare questo file RAW, quindi stai vedendo e modificando l'anteprima JPEG incorporata della fotocamera. Aspettati una qualità inferiore e meno margine di modifica rispetto a un vero RAW."
+      "embeddedPreview": "RapidRAW non è riuscito a decodificare questo file RAW, quindi stai vedendo e modificando l'anteprima JPEG incorporata della fotocamera. Aspettati una qualità inferiore e meno margine di modifica rispetto a un vero RAW."
     },
     "toolbar": {
       "history": "Cronologia",
@@ -1003,11 +1000,9 @@
         "compare": "Prima / dopo (B) o modalità (clic destro)",
         "focalLength": "Lunghezza Focale",
         "fullscreen": "Attiva/Disattiva Schermo Intero (F)",
-        "hdr": "Anteprima HDR",
+        "hdr": "Mostra l'HDR su questo schermo, le esportazioni non cambiano senza l'output HDR",
         "iso": "ISO",
         "redo": "Ripeti (Ctrl+Y) o Cronologia (Tasto destro)",
-        "showEdited": "Mostra Modificata (B)",
-        "showOriginal": "Mostra Originale (B)",
         "shutterSpeed": "Tempo di Esposizione",
         "undo": "Annulla (Ctrl+Z) o Cronologia (Tasto destro)"
       },
@@ -1015,7 +1010,7 @@
     },
     "viewer": {
       "openFailed": "Impossibile aprire la seconda finestra: {{error}}",
-      "windowTitle": "Visualizzatore LightRaw"
+      "windowTitle": "Visualizzatore RapidRAW"
     }
   },
   "export": {
@@ -1049,10 +1044,17 @@
       "mb": "MB",
       "tb": "TB"
     },
+    "conflict": {
+      "createUnique": "Mantieni entrambi (_1, _2)",
+      "label": "Se il file esiste",
+      "overwrite": "Sovrascrivi",
+      "overwriteIfChanged": "Sovrascrivi se modificata",
+      "skip": "Salta"
+    },
     "destination": {
-      "chooseFolder": "Scegli cartella…",
+      "chooseFolder": "",
       "customFolder": "Cartella personalizzata",
-      "exportFolder": "Cartella di esportazione",
+      "exportFolder": "",
       "originalFolder": "Cartella dell'immagine originale",
       "subfolder": "Sottocartella",
       "subfolderPlaceholder": "es. final, WebP"
@@ -1068,10 +1070,12 @@
       "colorSpace": "Spazio colore",
       "dpi": "DPI",
       "hdr": "Uscita HDR",
-      "hdrJpegHint": "Aggiunge una gain map: gli schermi HDR mostrano luci più luminose, tutto il resto mostra la foto normale.",
-      "hdrJxlHint": "Salva un vero file HDR (PQ, Rec. 2020). Richiede un visualizzatore compatibile con HDR.",
-      "hdrNoPreview": "Questo schermo non può mostrare le alte luci HDR. L'esportazione le conterrà comunque.",
-      "hdrPreviewOff": "Attiva l'HDR nella barra degli strumenti dell'editor per vedere le alte luci in anteprima.",
+      "hdrHeadroom": "Margine HDR",
+      "hdrHeadroomHint": "Quanto possono essere luminose le alte luci nell'esportazione. 2 EV va bene per la maggior parte degli schermi.",
+      "hdrJpegHint": "Aggiunge una mappa di guadagno per schermi HDR. Gli altri mostrano la foto normale.",
+      "hdrJxlHint": "Vero file HDR (PQ, Rec. 2020). Serve un visualizzatore HDR.",
+      "hdrNoPreview": "Questo schermo non può mostrare l'HDR.",
+      "hdrPreviewOff": "Attiva l'HDR nella barra degli strumenti per l'anteprima.",
       "quality": "Qualità",
       "qualityLossless": "Qualità (Senza Perdita)",
       "resolution": "Risoluzione",
@@ -1118,6 +1122,7 @@
       "watermark": "Filigrana"
     },
     "status": {
+      "allSkipped": "Tutte le immagini saltate",
       "cancelExport": "Annulla Esportazione",
       "cancelled": "Esportazione annullata",
       "cancelling": "Annullamento esportazione…",
@@ -1135,7 +1140,8 @@
       "failed": "Esportazione fallita",
       "noImageSelected": "Nessuna immagine selezionata per l'esportazione.",
       "noImagesSelected": "Nessuna immagine selezionata.",
-      "success": "Esportazione completata con successo!"
+      "success": "Esportazione completata con successo!",
+      "successWithSkipped": "{{exported}} esportate, {{skipped}} saltate"
     },
     "title": "Esporta",
     "watermark": {
@@ -1163,7 +1169,7 @@
     "close": {
       "cancel": "Annulla",
       "closeAnyway": "Chiudi comunque",
-      "message": "Modifiche in attesa di Immich: {{number}}. Restano su questo computer e verranno inviate la prossima volta che LightRaw è in esecuzione e Immich è raggiungibile.",
+      "message": "Modifiche in attesa di Immich: {{number}}. Restano su questo computer e verranno inviate la prossima volta che RapidRAW è in esecuzione e Immich è raggiungibile.",
       "title": "Modifiche non ancora su Immich"
     },
     "export": {
@@ -1283,7 +1289,7 @@
       "clickThumbnailsHint": "Fai clic sulle miniature nella barra laterale destra per aggiungerle alla vista di confronto.",
       "colorLabel": "Etichetta colore",
       "dimensions": "Dimensioni",
-      "editImage": "Modifica immagine",
+      "doubleClickToEditHint": "Fai doppio clic su una miniatura per aprirla nell'editor.",
       "focalLength": "Lunghezza focale",
       "iso": "ISO",
       "metadata": "Metadati",
@@ -1431,11 +1437,6 @@
         "title": "Opzioni di Visualizzazione"
       }
     },
-    "import": {
-      "complete": "Importazione Completata!",
-      "failed": "Importazione Fallita!",
-      "progress": "Importazione in corso... ({{current}}/{{total}})"
-    },
     "items": {
       "cloudPlaceholder": "Archiviato in iCloud — non scaricato",
       "collapseFolder": "Comprimi Cartella",
@@ -1474,6 +1475,9 @@
       },
       "openInLibrary": "Apri nella libreria",
       "recent": "Recenti",
+      "skipped_one": "saltata: {{count}}",
+      "skipped_many": "saltate: {{count}}",
+      "skipped_other": "saltate: {{count}}",
       "title": "Attività"
     },
     "reject": {
@@ -1505,7 +1509,7 @@
     },
     "splash": {
       "addFolder": "Aggiungi Cartella",
-      "brand": "LightRaw",
+      "brand": "RapidRAW",
       "continueSession": "Continua Sessione",
       "contribute": "Contribuisci su GitHub",
       "descriptionAndroid": "Un editor di immagini RAW velocissimo e con accelerazione GPU. Apri la libreria per iniziare.",
@@ -1541,7 +1545,7 @@
     "tooltips": {
       "communityPresets": "Predefiniti della Community",
       "goHome": "Torna alla Home page",
-      "importFromAlbum": "Importa dall'album",
+      "importFromAlbum": "",
       "importImages": "Importa Immagini",
       "select": "Seleziona"
     },
@@ -1639,7 +1643,6 @@
         "colorMixer": "Mixer Colori",
         "cropAspectRatio": "Ritaglio e Proporzioni",
         "curves": "Curve",
-        "exposureToneMapper": "Esposizione e Tone Mapper",
         "fog": "Nebbia",
         "grain": "Grana",
         "guidedPerspective": "Prospettiva guidata",
@@ -1655,7 +1658,6 @@
         "presence": "Presenza",
         "relight": "Reilluminazione",
         "sharpness": "Nitidezza",
-        "tone": "Tono",
         "transformRotation": "Trasformazione e Rotazione",
         "vignette": "Vignettatura",
         "whiteBalance": "Bilanciamento del Bianco"
@@ -1715,77 +1717,30 @@
       "starting": "Avvio in corso...",
       "title": "Selezione Immagini"
     },
-    "denoise": {
-      "batchProgressText": "Riduzione rumore su {{current}} di {{total}}...",
-      "btnBatchDenoise": "Riduci Rumore in Blocco e Salva",
-      "btnRetry": "Riprova",
-      "btnSave": "Salva",
-      "btnStart": "Avvia",
-      "cancel": "Annulla",
-      "close": "Chiudi",
-      "denoised": "Rumore Ridotto",
-      "denoisingProgress": "Riduzione Rumore in Corso",
-      "description": "Rimuovi il rumore dalla tua immagine utilizzando l'intelligenza artificiale o i metodi di riduzione rumore tradizionali.",
-      "downloadingText": "Download in corso {{status}}...",
-      "gpuWarningTooltip": "NIND Denoise non supporta ancora l'accelerazione GPU a causa di limitazioni delle dipendenze.",
-      "initializing": "Inizializzazione...",
-      "methodAi": "NIND (AI - Consigliato per RAW)",
-      "methodBm3d": "BM3D (Tradizionale - Tutti i formati)",
-      "methodLabel": "Metodo",
-      "methodRaw9": "Apple RAW 9 (Neural Engine)",
-      "openInEditor": "Apri nell'Editor",
-      "original": "Originale",
-      "panZoomEnabled": "Panoramica e Zoom abilitati",
-      "processingFailed": "Elaborazione Fallita",
-      "qualityTileSizeLabel": "Qualità / Dimensione Sezione",
-      "reset": "Ripristina",
-      "saveSuccess": "Immagine Salvata con Successo!",
-      "speedNotice": "L'operazione potrebbe richiedere alcuni minuti a seconda delle dimensioni dell'immagine e del metodo selezionato.",
-      "strengthLabel": "Intensità",
-      "titleBatch": "Riduci Rumore Immagini",
-      "titleSingle": "Riduci Rumore Immagine"
-    },
     "focusStack": {
-      "cancel": "Annulla",
-      "close": "Chiudi",
       "depthMap": "Mappa di profondità",
       "description": "Combina più immagini con diverse distanze di messa a fuoco in un'unica immagine perfettamente nitida.",
       "descriptionWithCount_one": "Combina {{count}} immagine con diverse distanze di messa a fuoco in un'unica immagine perfettamente nitida.",
       "descriptionWithCount_many": "Combina {{count}} immagini con diverse distanze di messa a fuoco in un'unica immagine perfettamente nitida.",
       "descriptionWithCount_other": "Combina {{count}} immagini con diverse distanze di messa a fuoco in un'unica immagine perfettamente nitida.",
       "failed": "Focus Stacking non riuscito",
-      "initializing": "Inizializzazione...",
       "method": "Metodo",
       "methodDetail": "Dettaglio",
       "methodHint": "Dettaglio conserva le strutture più fini come peli e setole. Morbido offre transizioni più morbide e meno rumore.",
       "methodSmooth": "Morbido",
-      "openInEditor": "Apri nell'editor",
       "processing": "Unione messa a fuoco in corso",
-      "result": "Risultato",
-      "save": "Salva",
       "savedSuccess": "Focus Stack salvato con successo!",
-      "stacking": "Unione messa a fuoco in corso",
-      "start": "Avvia",
       "title": "Focus Stacking"
     },
     "hdr": {
-      "cancel": "Annulla",
-      "close": "Chiudi",
       "description": "Unisci le tue esposizioni in bracketing in una singola immagine ad Alta Gamma Dinamica (HDR).",
       "descriptionWithCount": "Unisci {{count}} esposizioni in bracketing in una singola immagine ad Alta Gamma Dinamica (HDR).",
       "descriptionWithCount_one": "Unisci {{count}} esposizione in bracketing in una singola immagine ad Alta Gamma Dinamica (HDR).",
       "descriptionWithCount_many": "Unisci {{count}} esposizioni in bracketing in una singola immagine ad Alta Gamma Dinamica (HDR).",
       "descriptionWithCount_other": "Unisci {{count}} esposizioni in bracketing in una singola immagine ad Alta Gamma Dinamica (HDR).",
       "failed": "Unione HDR Fallita",
-      "initializing": "Inizializzazione...",
-      "merging": "Unione HDR in corso",
-      "openInEditor": "Apri nell'Editor",
       "processing": "Unione HDR in corso",
-      "retry": "Riprova",
-      "save": "Salva",
       "savedSuccess": "HDR Salvato con Successo!",
-      "speedNotice": "L'operazione potrebbe richiedere alcuni minuti a seconda del numero e delle dimensioni delle tue esposizioni.",
-      "start": "Avvia",
       "title": "Unisci in HDR"
     },
     "importSettings": {
@@ -1847,7 +1802,6 @@
       "openInEditor": "Apri nell'Editor",
       "outputInfo": "{{images}} immagini · {{width}} × {{height}} px",
       "result": "Risultato",
-      "retry": "Riprova",
       "save": "Salva",
       "saving": "Salvataggio…",
       "speedNotice": "L'operazione potrebbe richiedere alcuni minuti a seconda del numero e delle dimensioni delle immagini.",
@@ -1856,42 +1810,10 @@
       "unalignedImages_many": "Non è stato possibile allineare {{count}} di immagini",
       "unalignedImages_other": "Non è stato possibile allineare {{count}} immagini"
     },
-    "negativeConversion": {
-      "blueWeight": "Blu (Giallo)",
-      "cancel": "Annulla",
-      "colorTiming": "Color Timing",
-      "compareTooltip": "Tieni premuto per visualizzare l'originale",
-      "contrast": "Contrasto (Grade)",
-      "convertAndSave": "Converti e Salva",
-      "convertAndSaveAll": "Converti e Salva Tutti ({{count}})",
-      "convertAndSaveAll_one": "Converti e Salva Tutti ({{count}})",
-      "convertAndSaveAll_many": "Converti e Salva Tutti ({{count}})",
-      "convertAndSaveAll_other": "Converti e Salva Tutti ({{count}})",
-      "converting": "Conversione in corso",
-      "convertingProgress": "Conversione {{current}}/{{total}}",
-      "exposure": "Esposizione",
-      "greenWeight": "Verde (Magenta)",
-      "noticeText": "Logica di inversione ispirata a <0>NegPy</0> creata da marcinz606 (<1>GPL-3.0</1>).",
-      "originalLabel": "Negativo Originale",
-      "printGrade": "Print Grade",
-      "redWeight": "Rosso (Ciano)",
-      "resetTooltip": "Ripristina",
-      "resetViewTooltip": "Ripristina Visualizzazione",
-      "title": "Conversione Negativo",
-      "zoomInTooltip": "Ingrandisci",
-      "zoomOutTooltip": "Riduci"
-    },
     "panorama": {
       "autoProjectionUsed": "In uso: {{projection}}",
       "boundaryWarp": "Distorsione bordi",
       "boundaryWarpHint": "Allunga i bordi per riempire l'inquadratura invece di ritagliarli.",
-      "cancel": "Annulla",
-      "close": "Chiudi",
-      "descCount": "Unisci {{count}} immagini sovrapposte in un panorama perfetto.",
-      "descCount_one": "Unisci {{count}} immagine sovrapposta in un panorama perfetto.",
-      "descCount_many": "Unisci {{count}} immagini sovrapposte in un panorama perfetto.",
-      "descCount_other": "Unisci {{count}} immagini sovrapposte in un panorama perfetto.",
-      "descGeneric": "Unisci le tue immagini sovrapposte in un panorama perfetto.",
       "description": "Unisci le tue immagini sovrapposte in un panorama perfetto.",
       "descriptionWithCount": "Unisci {{count}} immagini sovrapposte in un panorama perfetto.",
       "descriptionWithCount_one": "Unisci {{count}} immagine sovrapposta in un panorama perfetto.",
@@ -1900,8 +1822,6 @@
       "exposureCompensation": "Compensazione dell'esposizione",
       "exposureCompensationHint": "Uniforma esposizione, bilanciamento del bianco e vignettatura tra le immagini.",
       "failed": "Panorama Fallito",
-      "initializing": "Inizializzazione...",
-      "openInEditor": "Apri nell'Editor",
       "processing": "Unione Panorama in corso",
       "projection": "Proiezione",
       "projectionAuto": "Automatica",
@@ -1909,12 +1829,7 @@
       "projectionFallback": "{{requested}} non copre questo campo visivo, in uso: {{projection}}",
       "projectionPerspective": "Prospettica",
       "projectionSpherical": "Sferica",
-      "retry": "Riprova",
-      "save": "Salva",
       "savedSuccess": "Panorama Salvato con Successo!",
-      "speedNotice": "L'operazione potrebbe richiedere alcuni minuti a seconda del numero e delle dimensioni delle immagini.",
-      "start": "Avvia",
-      "stitchingProgress": "Unione Panorama in corso",
       "title": "Unisci Panorama"
     },
     "renameAlbum": {
@@ -1972,20 +1887,20 @@
   },
   "settings": {
     "about": {
-      "agplNotice": "Questa applicazione è software libero sotto GNU AGPL-3.0. Il testo completo della licenza e il codice sorgente sono disponibili tramite i link sopra.",
-      "licenseDesc": "LightRaw è concesso in licenza AGPL-3.0",
-      "openSourceLicense": "Licenza Open Source",
-      "privacyPolicy": "Informativa sulla Privacy",
-      "privacyPolicyDesc": "Come LightRaw tratta i tuoi dati",
-      "sourceCode": "Codice Sorgente",
-      "sourceCodeDesc": "LightRaw è open source — contributi benvenuti",
-      "title": "Informazioni su LightRaw",
-      "userAgreement": "Contratto d'Uso",
-      "userAgreementDesc": "Termini d'uso di LightRaw",
-      "view": "Visualizza"
+      "agplNotice": "",
+      "licenseDesc": "",
+      "openSourceLicense": "",
+      "privacyPolicy": "",
+      "privacyPolicyDesc": "",
+      "sourceCode": "",
+      "sourceCodeDesc": "",
+      "title": "",
+      "userAgreement": "",
+      "userAgreementDesc": "",
+      "view": ""
     },
     "categories": {
-      "about": "Informazioni",
+      "about": "",
       "general": "Generale",
       "processing": "Elaborazione",
       "shortcuts": "Controlli"
@@ -2036,21 +1951,11 @@
       "allTags": "Cancella Tutti i Tag",
       "allTagsDesc": "Rimuove i tag generati dall’IA e quelli aggiunti da te da tutte le immagini nelle cartelle principali. Le etichette colore vengono mantenute.",
       "clear": "Svuota",
-      "clearSidecars": "Cancella Tutti i File Sidecar",
-      "clearSidecarsButton": "Cancella",
-      "clearSidecarsDesc": "Questo eliminerà tutti i file .rrdata (contenenti le tue modifiche) all'interno delle cartelle principali:",
-      "clearThumbnail": "Cancella Cache Miniature",
-      "clearThumbnailButton": "Cancella",
-      "clearThumbnailDesc": "Questo eliminerà tutte le immagini miniatura memorizzate nella cache. Verranno rigenerate automaticamente sfogliando la libreria.",
       "delete": "Elimina",
       "deleteEdits": "Elimina tutte le modifiche",
       "deleteEditsDesc": "Rimuove tutti i file sidecar .rrdata (le tue modifiche) in tutte le cartelle principali. L’operazione non può essere annullata.",
       "libraryAndWorkspace": "Libreria e spazio di lavoro",
       "limit": "Limite",
-      "loading": "Caricamento...",
-      "logs": "Visualizza Log Applicazione",
-      "logsButton": "Apri",
-      "logsDesc": "Visualizza il file di log dell'applicazione per la risoluzione dei problemi. Il log si trova in:",
       "modals": {
         "aiDenoiseMessage": "Vuoi davvero svuotare la cache della riduzione rumore IA?\n\nLe immagini con la riduzione rumore IA attiva dovranno essere elaborate di nuovo, operazione che può richiedere diversi minuti per immagine.",
         "aiMapsMessage": "Vuoi davvero svuotare le mappe di profondità e normali?\n\nLe immagini che usano sfocatura obiettivo, nebbia o reilluminazione rigenereranno le mappe alla prossima apertura.",
@@ -2060,11 +1965,9 @@
         "cacheMessage": "Sei sicuro di voler cancellare la cache delle miniature?\n\nTutte le miniature dovranno essere rigenerate, operazione che potrebbe essere lenta per le cartelle di grandi dimensioni.",
         "confirmAiTitle": "Conferma Eliminazione Tag AI",
         "confirmAllTitle": "Conferma Eliminazione Tutti i Tag",
-        "confirmCacheTitle": "Conferma Eliminazione Cache",
         "confirmClear": "Cancella",
         "confirmClearAi": "Cancella Tag AI",
         "confirmClearAll": "Cancella Tutti i Tag",
-        "confirmClearCache": "Cancella Cache",
         "confirmDeleteAllEdits": "Elimina Tutte le Modifiche",
         "confirmResetLayout": "Ripristina layout",
         "confirmResetLayoutTitle": "Ripristina layout spazio di lavoro",
@@ -2078,7 +1981,6 @@
       "noFolders": "Nessuna cartella selezionata",
       "refresh": "Aggiorna",
       "reset": "Ripristina",
-      "resetLayoutButton": "Ripristina layout",
       "resetLayoutDesc": "Ripristina i pannelli ancorati, i divisori laterali, le altezze e i selettori dei pannelli al layout predefinito.",
       "resetLayoutTitle": "Ripristina layout spazio di lavoro",
       "show": "Mostra",
@@ -2095,14 +1997,7 @@
         "allSuccess_other": "{{count}} file aggiornati. Tutti i tag non colore rimossi.",
         "cacheSuccess": "Cache miniature cancellata con successo.",
         "cleared": "Svuotato correttamente.",
-        "clearingAi": "Rimozione dei tag AI da tutti i file sidecar...",
-        "clearingAll": "Rimozione di tutti i tag dai file sidecar...",
-        "clearingCache": "Cancellazione cache miniature...",
-        "deleting": "Eliminazione dei file sidecar, attendere...",
-        "failedToGetPath": "Impossibile recuperare il percorso del file di log.",
         "layoutResetSuccess": "Layout dello spazio di lavoro ripristinato.",
-        "processing": "Elaborazione in corso...",
-        "resettingLayout": "Ripristino dello spazio di lavoro...",
         "sidecarSuccess": "{{count}} file sidecar eliminati con successo.",
         "sidecarSuccess_one": "{{count}} file sidecar eliminato con successo.",
         "sidecarSuccess_many": "{{count}} file sidecar eliminati con successo.",
@@ -2128,7 +2023,7 @@
       },
       "storageTitle": "Archiviazione",
       "title": "Gestione Dati",
-      "totalUsed": "LightRaw sta usando {{size}} su questo dispositivo."
+      "totalUsed": "RapidRAW sta usando {{size}} su questo dispositivo."
     },
     "general": {
       "createXmp": "Crea File XMP Mancanti",
@@ -2150,7 +2045,7 @@
       "hideCollapsedPanels": "Nascondi Pannelli Ridotti",
       "hideCollapsedPanelsDesc": "I pannelli laterali ridotti vengono nascosti completamente invece di lasciare una striscia stretta. Riaprili dalla barra inferiore o con le relative scorciatoie da tastiera.",
       "nativeTitlebar": "Barra del Titolo Nativa",
-      "nativeTitlebarDesc": "Usa la barra del titolo della finestra predefinita del tuo sistema invece di quella personalizzata di LightRaw.",
+      "nativeTitlebarDesc": "Usa la barra del titolo della finestra predefinita del tuo sistema invece di quella personalizzata di RapidRAW.",
       "neutralGreyCanvas": "Tela grigio neutro",
       "neutralGreyCanvasDesc": "Usa una tela grigio neutro per una correzione del colore e dell'esposizione più precisa senza cambiare il tema dell'app.",
       "poppins": "Poppins",
@@ -2254,17 +2149,17 @@
       "title": "I Miei Obiettivi"
     },
     "privacy": {
-      "managedNotice": "Questa app utilizza l'informativa sulla privacy gestita di AppGallery; la finestra sulla privacy del primo avvio è fornita da AppGallery.",
-      "notIntegrated": "Non attivato",
-      "requestConsent": "Richiedi consenso",
-      "requestConsentDesc": "Mostra la finestra sulla privacy standardizzata di AppGallery",
-      "revoke": "Revoca consenso",
-      "revokeConfirm": "Revocare il consenso sulla privacy registrato? La finestra di AppGallery ricomparirà al prossimo avvio e sarà necessario autorizzare di nuovo l'accesso ai file.",
-      "revokeDesc": "Cancella il consenso registrato; al prossimo avvio verrà richiesto di nuovo",
-      "status": "Stato del consenso",
-      "statusDenied": "Non accettato",
-      "statusGranted": "Accettato",
-      "statusUnknown": "Sconosciuto"
+      "managedNotice": "",
+      "notIntegrated": "",
+      "requestConsent": "",
+      "requestConsentDesc": "",
+      "revoke": "",
+      "revokeConfirm": "",
+      "revokeDesc": "",
+      "status": "",
+      "statusDenied": "",
+      "statusGranted": "",
+      "statusUnknown": ""
     },
     "processing": {
       "advanced": {
@@ -2279,7 +2174,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "Disattiva tutte le funzioni di IA. Tutti i controlli legati all'IA vengono nascosti dall'interfaccia, così LightRaw funziona come un editor RAW puramente tradizionale.",
+          "description": "Disattiva tutte le funzioni di IA. Tutti i controlli legati all'IA vengono nascosti dall'interfaccia, così RapidRAW funziona come un editor RAW puramente tradizionale.",
           "feature1": "Nessuna maschera IA, sfocatura dell'obiettivo o modifica generativa nell'interfaccia",
           "feature2": "Le modifiche IA esistenti continuano a essere visualizzate normalmente",
           "feature3": "Un'interfaccia più pulita e mirata",
@@ -2314,7 +2209,7 @@
         "connector": {
           "address": "Indirizzo Connettore AI",
           "addressDesc": "Inserisci l'indirizzo e la porta della tua istanza del Connettore AI in esecuzione. Richiesto per le funzionalità di AI generativa.",
-          "description": "Per gli utenti con una GPU in grado di offrire il massimo controllo, collega LightRaw al tuo server Connettore personale. Questo ti offre il controllo completo per i flussi di lavoro tecnici.",
+          "description": "Per gli utenti con una GPU in grado di offrire il massimo controllo, collega RapidRAW al tuo server Connettore personale. Questo ti offre il controllo completo per i flussi di lavoro tecnici.",
           "failed": "Connessione fallita.",
           "feature1": "Usa la tua istanza ComfyUI",
           "feature2": "Modifiche generative avanzate gratuite",
@@ -2322,10 +2217,10 @@
           "success": "Connessione riuscita!",
           "test": "Testa",
           "testing": "Test in corso...",
-          "title": "Self-Hosted (Connettore AI LightRaw)"
+          "title": "Self-Hosted (Connettore AI RapidRAW)"
         },
         "cpu": {
-          "description": "Integrate direttamente in LightRaw, queste funzionalità funzionano interamente sul tuo computer. Sono veloci, gratuite e non richiedono alcuna configurazione, rendendole ideali per accelerare il flusso di lavoro quotidiano.",
+          "description": "Integrate direttamente in RapidRAW, queste funzionalità funzionano interamente sul tuo computer. Sono veloci, gratuite e non richiedono alcuna configurazione, rendendole ideali per accelerare il flusso di lavoro quotidiano.",
           "feature1": "Mascheratura AI (Soggetto, Cielo, Primo Piano)",
           "feature2": "Tagging Automatico Immagini",
           "feature3": "Sostituzione Generativa semplice sul dispositivo",
@@ -2334,7 +2229,7 @@
           "gpuAccelerationLabel": "Usa la GPU per i modelli IA",
           "title": "AI Integrata"
         },
-        "description": "L'AI di LightRaw è concepita per essere flessibile. Scegli il tuo flusso di lavoro ideale, da strumenti locali veloci a un potente self-hosting.",
+        "description": "L'AI di RapidRAW è concepita per essere flessibile. Scegli il tuo flusso di lavoro ideale, da strumenti locali veloci a un potente self-hosting.",
         "providers": {
           "aiConnector": "Connettore AI",
           "aiFree": "Senza IA",
@@ -2343,20 +2238,23 @@
         },
         "title": "AI Generativa"
       },
-      "aiDenoiseBackend": "Backend riduzione rumore IA",
-      "aiDenoiseBackendCpu": "CPU (ONNX Runtime)",
-      "aiDenoiseBackendDesc": "Seleziona il backend di inferenza per la riduzione rumore IA (NIND). La NPU viene eseguita sul chip NPU del dispositivo (~5x più veloce) ed esegue il fallback automatico su CPU (ONNX Runtime) se NPU o modello non sono disponibili.",
-      "aiDenoiseBackendNpu": "NPU (sul dispositivo)",
-      "aiDenoiseNpuModel": "Modello NPU",
-      "aiDenoiseNpuModelChecking": "Verifica…",
-      "aiDenoiseNpuModelDesc": "Il modello CANN (nind_v2.om) è compilato per SoC e non viene distribuito con l'app; inseriscilo nella cartella dei modelli AI per usare il backend NPU.",
-      "aiDenoiseNpuModelMissing": "{{model}} non installato: il backend NPU passa alla CPU",
-      "aiDenoiseNpuModelReady": "{{model}} pronto ({{size}} MB)",
+      "aiDenoiseBackend": "",
+      "aiDenoiseBackendCpu": "",
+      "aiDenoiseBackendDesc": "",
+      "aiDenoiseBackendNpu": "",
+      "aiDenoiseNpuModel": "",
+      "aiDenoiseNpuModelChecking": "",
+      "aiDenoiseNpuModelDesc": "",
+      "aiDenoiseNpuModelMissing": "",
+      "aiDenoiseNpuModelReady": "",
       "alwaysDecodeRaw": "Decodifica RAW sempre",
       "alwaysDecodeRawDesc": "Forza la decodifica RAW completa per le miniature invece di usare le anteprime JPEG incorporate. Attiva questa opzione se i colori o il contrasto delle miniature sono diversi dall'immagine aperta.",
       "alwaysDecodeRawLabel": "Decodifica RAW sempre per le miniature",
       "backend": "Backend di Elaborazione",
       "backendDesc": "Seleziona l'API grafica. 'Auto' è consigliata. Potrebbe risolvere i crash su alcuni sistemi.",
+      "backendFallback": "{{failed}} si è bloccato all'avvio su questa GPU, quindi per ora viene usato {{using}}.",
+      "backendFallbackRetry": "Riprova {{failed}}",
+      "backendFallbackRetryPending": "{{failed}} verrà riprovato al prossimo avvio.",
       "backends": {
         "auto": "Auto",
         "dx12": "DirectX 12",
@@ -2369,18 +2267,19 @@
         "modeAuto": "Automatico (profilo di sistema)",
         "modeCustom": "Profilo ICC personalizzato",
         "modeOff": "Disattivato",
+        "previewGamut": "Gamut anteprima",
+        "previewGamutDesc": "Scegli lo spazio colore in cui esporti. sRGB mostra come apparirà un'esportazione sRGB o per il web. Gamut esteso mostra anche i colori oltre sRGB che il monitor può visualizzare, come nelle esportazioni Display P3 o Adobe RGB.",
+        "previewGamutSrgb": "sRGB",
+        "previewGamutWide": "Gamut esteso",
+        "previewGamutWideSpace": "Gamut esteso ({{space}})",
         "profile": "Profilo del monitor",
         "profileDesc": "Converte l'anteprima dell'editor nel profilo colore del monitor, così i colori sono corretti su schermi calibrati e ad ampio gamut. Le esportazioni non cambiano.",
         "statusInvalid": "Impossibile caricare questo profilo.",
         "statusNone": "Nessun profilo del monitor trovato. L'anteprima viene mostrata come sRGB.",
         "statusProfile": "In uso: {{name}}.",
         "statusSystem": "I colori sono gestiti dal sistema operativo.",
-        "statusUnavailable": "La gestione del colore richiede il renderer GPU.",
-        "wideGamut": "Anteprima ad ampio gamut ({{space}}).",
-        "wideGamutHdrNote": "Non usata mentre l'editor mostra l'HDR.",
-        "wideGamutPreview": "Anteprima gamut esteso",
-        "wideGamutPreviewDesc": "Mostra i colori oltre sRGB sui monitor a gamut esteso. Attivala se esporti in Display P3, Adobe RGB o un altro spazio colore ampio. Disattivata, vedi l'aspetto di un'esportazione sRGB.",
-        "wideGamutPreviewEnable": "Mostra colori a gamut esteso"
+        "statusUnavailable": "La gestione del colore richiede il Direct Rendering WGPU.",
+        "wideGamut": "Anteprima ad ampio gamut ({{space}})."
       },
       "defaultAdjustments": {
         "addCamera": "Aggiungi fotocamera…",
@@ -2428,14 +2327,13 @@
       },
       "enableLivePreviews": "Abilita Anteprime dal Vivo",
       "hdr": {
-        "display": "Schermo HDR",
-        "displayDesc": "Mostra le luci più luminose del bianco normale su uno schermo HDR. Ombre e mezzitoni restano uguali e le esportazioni standard non cambiano.",
-        "enableDisplay": "Usa HDR nell'editor",
-        "headroom": "Gamma delle luci",
-        "headroomDesc": "Quanto le luci possono superare il bianco normale. Usato anche per le esportazioni HDR.",
-        "statusActive": "Questo schermo è in modalità HDR.",
+        "gainMaps": "Foto HDR",
+        "gainMapsAuto": "Automatico",
+        "gainMapsDesc": "Le foto con una mappa di guadagno HDR, come quelle dei telefoni recenti, mostrano le alte luci HDR fin dove lo schermo lo consente. Le esportazioni HDR usano il margine impostato nelle impostazioni di esportazione, le altre esportazioni mostrano la foto normale. Sempre come SDR ignora i dati HDR.",
+        "gainMapsNever": "Sempre in SDR",
+        "statusActive": "Questo schermo è in modalità HDR. Attiva l'HDR nella barra degli strumenti dell'editor per l'anteprima.",
         "statusInactive": "Questo schermo non è in modalità HDR. Attiva HDR nelle impostazioni dello schermo del sistema per vedere l'effetto.",
-        "statusUnsupported": "HDR richiede il renderer GPU su Windows o macOS."
+        "statusUnsupported": "HDR richiede il Direct Rendering WGPU e, su Linux, una sessione Wayland con supporto HDR."
       },
       "highDpi": "Rendering High-DPI",
       "highDpiDesc": "Renderizza le anteprime alla risoluzione nativa in pixel fisici {{dpr}}x del tuo schermo. Produce l'anteprima più nitida possibile ma utilizza molta più memoria.",
@@ -2444,7 +2342,7 @@
       "imageCacheDesc": "Numero massimo di immagini a piena risoluzione conservate nella RAM. Valori più alti rendono immediato il passaggio da un'immagine modificata di recente all'altra, ma utilizzano significativamente più memoria.",
       "images": "Immagini",
       "linuxCompat": "Modalità Compatibilità Linux",
-      "linuxCompatDesc": "Abilita soluzioni alternative per problemi comuni di driver della GPU e server di visualizzazione. Disabilita questo per abilitare la piena accelerazione GPU.",
+      "linuxCompatDesc": "Instrada la vista web attraverso la memoria condivisa invece della condivisione dei buffer GPU per aggirare problemi dei driver della GPU, come una finestra vuota. Le GPU Nvidia su X11 lo ricevono già automaticamente, quindi abilita questa opzione solo se vedi ancora una finestra vuota o danneggiata.",
       "linuxCompatLabel": "Abilita Modalità Compatibilità",
       "livePreviewQuality": "Qualità Anteprima dal Vivo",
       "livePreviewQualityDesc": "Controlla la risoluzione e la compressione dell'immagine mentre trascini i cursori. Una qualità inferiore migliora significativamente la reattività.",
@@ -2475,12 +2373,15 @@
         "enableAppleRaw9": "Usa Apple RAW 9 per i file RAW",
         "enableBaselineExposure": "Applica l'esposizione di base ai file RAW",
         "enableHighlightPreservation": "Compensa le modalità di protezione delle alte luci della fotocamera",
+        "enableHotPixels": "Rimuovi pixel caldi e morti",
         "enablePreprocessingNonRaws": "Abilita per Non-RAW",
         "enableTonemapperOverride": "Abilita Sovrascrittura Tonemapper",
         "highlightPreservation": "Compensazione della protezione delle alte luci",
         "highlightPreservationDesc": "Ripristina l'esposizione ridotta dalle modalità di protezione delle alte luci, come Fujifilm DR200/DR400 o D-Lighting attivo Nikon.",
         "highlightRecovery": "Recupero Luci RAW",
         "highlightRecoveryDesc": "Controlla quanti dettagli vengono recuperati dalle luci bruciate nei file RAW. Valori più alti recuperano più dettagli ma possono introdurre artefatti viola.",
+        "hotPixels": "Rimozione pixel caldi",
+        "hotPixelsDesc": "Corregge automaticamente i pixel caldi, bloccati e morti del sensore durante la decodifica dei file RAW. Vengono sostituiti solo i pixel isolati, quindi stelle e piccoli riflessi restano intatti.",
         "linearOptions": {
           "auto": "Auto",
           "gamma": "Applica Gamma",
@@ -2503,17 +2404,19 @@
       "previewResDesc": "Determina la risoluzione massima dell'anteprima. Valori inferiori migliorano notevolmente le prestazioni.",
       "previewStrategy": "Strategia Rendering Anteprima",
       "qualities": {
-        "full": "Piena Risoluzione",
         "high": "Alta Qualità",
         "performance": "Prestazioni"
       },
       "rawDecoding": "Decodifica RAW",
       "rawDecodingDesc": "Seleziona dove vengono decodificati i file RAW. 'Auto' usa la GPU e passa alla CPU se non riesce a gestire le tue immagini. 'GPU' prova sempre prima la GPU. 'CPU' è più lenta, ma funziona su ogni sistema.",
+      "rawDecodingFallback": "La GPU non è riuscita a gestire i file RAW grandi, quindi per ora i file da {{megapixels}} MP in su vengono sviluppati sulla CPU.",
+      "rawDecodingFallbackRetry": "Riprova la GPU",
       "rawDecodingOptions": {
         "auto": "Auto",
         "cpu": "CPU",
         "gpu": "GPU"
       },
+      "rawDecodingUnavailable": "Questa GPU non può eseguire la decodifica RAW, quindi i file RAW vengono decodificati sulla CPU.",
       "renderScale": "Scala Risoluzione Render",
       "renderScaleDesc": "Scala la risoluzione del render rispetto al tuo display. Valori inferiori migliorano le prestazioni sugli schermi ad alta risoluzione a scapito di una minore nitidezza.",
       "restartRequired": "Le modifiche al motore di elaborazione richiedono il riavvio dell'applicazione per avere effetto.",
@@ -2543,15 +2446,10 @@
       "aiTaggingDesc": "Abilita il tagging automatico delle immagini utilizzando un modello AI (CLIP). Questo scaricherà un modello aggiuntivo e influenzerà le prestazioni durante l'esplorazione delle cartelle. I tag vengono utilizzati per la ricerca in una cartella.",
       "amount": "Quantità",
       "automaticAiTagging": "Tagging AI Automatico",
-      "clearAiTagsButton": "Cancella",
-      "clearAiTagsDesc": "Questo rimuoverà tutti i tag generati dall'AI dai file .rrdata in tutte le cartelle principali attive. I tag aggiunti dall'utente verranno mantenuti.",
-      "clearAiTagsTitle": "Cancella Tag AI",
-      "clearAllTagsDesc": "Questo rimuoverà tutti i tag generati dall'AI e aggiunti dall'utente dai file .rrdata in tutte le cartelle principali attive. Le etichette di colore verranno mantenute.",
-      "clearAllTagsTitle": "Cancella Tutti i Tag",
       "clearCustomTooltip": "Cancella Lista Tag AI",
       "clearShortcutsTooltip": "Cancella Lista Tag Scorciatoie",
       "customList": "Lista Tag AI Personalizzata",
-      "customListDesc": "Se fornito, l'AI utilizzerà SOLO i tag da questa lista, ignorando la lista predefinita di LightRaw. Il tagging funziona solo in inglese.",
+      "customListDesc": "Se fornito, l'AI utilizzerà SOLO i tag da questa lista, ignorando la lista predefinita di RapidRAW. Il tagging funziona solo in inglese.",
       "maxAiTags": "Tag AI Massimi",
       "maxAiTagsDesc": "Il numero massimo di tag da generare per immagine.",
       "noCustomTags": "Nessun tag AI personalizzato (Usando la lista integrata)",
@@ -2563,7 +2461,7 @@
       "title": "Tag"
     },
     "thanks": {
-      "description": "Un enorme grazie ai seguenti progetti che sono stati molto importanti nello sviluppo di LightRaw:",
+      "description": "Un enorme grazie ai seguenti progetti che sono stati molto importanti nello sviluppo di RapidRAW:",
       "list": {
         "birefnet": "Per il modello di segmentazione ad alta risoluzione che alimenta il rilevamento AI del primo piano.",
         "darktable": "Per alcune implementazioni di riferimento che hanno guidato parti di questo lavoro.",
@@ -2571,16 +2469,15 @@
         "efficientsam3": "Per l'efficiente modello di segmentazione guidato da prompt, distillato da SAM 3, che alimenta le maschere AI di cielo e testo.",
         "lama": "Per il potente e semplice modello di inpainting delle immagini, che permette il riempimento in base al contenuto e la rimozione di oggetti.",
         "lensfun": "Per la sua inestimabile libreria open source e il database completo per la correzione automatica dell'obiettivo.",
-        "libgphoto2": "Per la completa libreria di comunicazione con le fotocamere che alimenta il tethering e lo scatto remoto di LightRaw.",
+        "libgphoto2": "Per la completa libreria di comunicazione con le fotocamere che alimenta il tethering e lo scatto remoto di RapidRAW.",
         "mediapipe": "Per i rapidi modelli di punti del viso e segmentazione che alimentano le maschere viso IA.",
         "negpy": "Per l'ispirazione dietro alla logica di conversione dei negativi.",
-        "nind": "Per aver fornito i modelli AI che alimentano le capacità di riduzione del rumore AI in LightRaw.",
+        "nind": "Per aver fornito i modelli AI che alimentano le capacità di riduzione del rumore AI in RapidRAW.",
         "rawler": "Per l'eccellente crate Rust che fornisce le basi per l'elaborazione dei file RAW in questo progetto.",
         "sam2": "Per aver fornito il modello fondamentale usato per le funzionalità di rilevamento del soggetto tramite AI.",
-        "span": "Per il modello IA di base di RapidRes, l'ingrandimento 2x con IA di LightRaw, perfezionato da LightRaw sulla propria elaborazione RAW (di Philip Hofmann, CC BY 4.0).",
-        "spektrafilm": "Per le LUT di emulazione pellicola su base spettrale di Andrea Volpato, che alimentano le emulazioni integrate di LightRaw. Concesse in licenza CC BY-SA 4.0.",
-        "u2net": "Per aver fornito la robusta architettura usata per le funzionalità di rilevamento AI del cielo e del primo piano.",
-        "you": "Per utilizzare e supportare LightRaw. Il tuo interesse mantiene questo progetto vivo e in evoluzione.",
+        "span": "Per il modello IA di base di RapidRes, l'ingrandimento 2x con IA di RapidRAW, perfezionato da RapidRAW sulla propria elaborazione RAW (di Philip Hofmann, CC BY 4.0).",
+        "spektrafilm": "Per le LUT di emulazione pellicola su base spettrale di Andrea Volpato, che alimentano le emulazioni integrate di RapidRAW. Concesse in licenza CC BY-SA 4.0.",
+        "you": "Per utilizzare e supportare RapidRAW. Il tuo interesse mantiene questo progetto vivo e in evoluzione.",
         "youLabel": "Te"
       },
       "title": "Ringraziamenti Speciali"
@@ -2589,7 +2486,7 @@
       "dark": "Scuro",
       "grey": "Grigio",
       "light": "Chiaro",
-      "system": "Sistema"
+      "system": ""
     },
     "title": "Impostazioni",
     "tooltips": {
@@ -2651,16 +2548,16 @@
   },
   "ui": {
     "agreement": {
-      "agree": "Accetta e Continua",
-      "back": "Indietro",
-      "confirmExit": "Esci",
-      "decline": "Rifiuta",
-      "exitMessage": "Puoi usare LightRaw solo dopo aver accettato il Contratto d'Uso e l'Informativa sulla Privacy.",
-      "exitTitle": "Uscire da LightRaw?",
-      "privacyTab": "Informativa sulla Privacy",
-      "subtitle": "Per continuare, leggi e accetta il Contratto d'Uso e l'Informativa sulla Privacy",
-      "termsTab": "Contratto d'Uso",
-      "title": "Benvenuto in LightRaw"
+      "agree": "",
+      "back": "",
+      "confirmExit": "",
+      "decline": "",
+      "exitMessage": "",
+      "exitTitle": "",
+      "privacyTab": "",
+      "subtitle": "",
+      "termsTab": "",
+      "title": ""
     },
     "bottomBar": {
       "imagesSelected": "{{current}} di {{total}} immagini selezionate",
@@ -2723,7 +2620,6 @@
       "selectImageFile": "Seleziona un file immagine"
     },
     "lut": {
-      "all": "Tutti",
       "clearLut": "Cancella LUT",
       "customLuts": "LUT personalizzate",
       "empty": "Nessuna LUT ancora — importane alcune",

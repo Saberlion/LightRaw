@@ -66,8 +66,11 @@ quick-xml = { version = "0.41", features = ["serialize"] }
 fuzzy-matcher = "0.3.7"
 mozjpeg-rs = "0.9.2"
 webp = "0.3"
-jxl-oxide = { version = "0.12.6", features = ["image"] }
-jxl-encoder = "0.3.1"
+jxl = "0.8.0"
+zenavif = { version = "0.1.6", default-features = false }
+zenpixels = "0.2.16"
+jxl-image-rs-integration = "0.8.0"
+jxl-encoder = "0.3.4"
 filetime = "0.2"
 libc = "0.2.189"
 rgb = "0.8.53"
@@ -92,6 +95,8 @@ windows = { version = "0.62", features = [
     "Win32_Graphics_Dxgi",
     "Win32_Graphics_Dxgi_Common",
     "Win32_Graphics_Gdi",
+    "Win32_Graphics_Imaging",
+    "Win32_System_Com",
     "Win32_System_Threading",
     "Win32_UI_ColorSystem",
 ] }
@@ -122,13 +127,22 @@ gphoto2-sys = { git = "https://github.com/CyberTimon/libgphoto2-rs", optional = 
 apple-native-keyring-store = { version = "1", features = ["keychain"] }
 objc = "0.2"
 objc2 = "0.6"
+block2 = "0.6"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = [
+    "std",
+    "NSApplication",
+] }
 objc2-foundation = { version = "0.3.2", features = [
+    "block2",
+    "NSNotification",
+    "NSOperation",
     "NSData",
     "NSDictionary",
     "NSString",
     "NSURL",
     "NSValue",
     "NSArray",
+    "NSNull",
 ] }
 objc2-core-foundation = { version = "0.3.2", features = ["CFCGTypes"] }
 objc2-core-graphics = { version = "0.3.2", features = ["CGColorSpace"] }
@@ -164,7 +178,7 @@ webkit2gtk = "=2.0.2"
 tauri-plugin-wayland-nvidia-quirk = "0.1.0"
 wayland-client = "0.31"
 wayland-backend = { version = "0.3", features = ["client_system"] }
-wayland-protocols = { version = "0.32", features = ["client"] }
+wayland-protocols = { version = "0.32", features = ["client", "staging"] }
 zbus = { version = "5", default-features = false, features = ["blocking-api", "tokio"] }
 
 # OpenHarmony (OHOS): reqwest is required for AI model / LUT downloads,

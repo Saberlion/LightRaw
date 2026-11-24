@@ -18,7 +18,6 @@ import {
 import { Panel, PanelRegion } from '../../types/ui';
 import { getRegionActivePanel, isPanelAvailable, SwitcherPlacement, useUIStore } from '../../store/useUIStore';
 import type { ParseKeys } from 'i18next';
-import LutIcon from '../ui/LutIcon';
 
 type PanelIconComponent = React.ComponentType<{ size?: number; className?: string }>;
 
@@ -28,7 +27,6 @@ export const PANEL_ICONS: Record<Panel, PanelIconComponent> = {
   [Panel.Crop]: Crop,
   [Panel.Masks]: Layers,
   [Panel.Ai]: Paintbrush,
-  [Panel.Lut]: LutIcon,
   [Panel.Presets]: SwatchBook,
   [Panel.Export]: FileInput,
   [Panel.FolderTree]: FolderIcon,
@@ -42,7 +40,6 @@ const PANEL_TITLES: Record<Panel, ParseKeys> = {
   [Panel.Crop]: 'editor.switcher.tooltips.crop',
   [Panel.Masks]: 'editor.switcher.tooltips.masks',
   [Panel.Ai]: 'editor.switcher.tooltips.inpaint',
-  [Panel.Lut]: 'ui.lut.label',
   [Panel.Presets]: 'editor.switcher.tooltips.presets',
   [Panel.Export]: 'editor.switcher.tooltips.export',
   [Panel.FolderTree]: 'library.folders.sourcesTitle',
@@ -312,7 +309,6 @@ export function MobilePanelSwitcher({
     Panel.Crop,
     Panel.Masks,
     Panel.Ai,
-    Panel.Lut,
     Panel.Presets,
     Panel.Export,
   ];

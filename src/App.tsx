@@ -34,7 +34,6 @@ import AdjustmentSliderResetProvider from './components/adjustments/AdjustmentSl
 import MasksPanel from './components/panel/right/MasksPanel';
 import AIPanel from './components/panel/right/AIPanel';
 import PresetsPanel from './components/panel/right/PresetsPanel';
-import LutPanel from './components/panel/right/LutPanel';
 import TetheringPanel from './components/panel/right/TetheringPanel';
 
 import EditorView from './components/views/EditorView';
@@ -857,8 +856,6 @@ function App() {
           return <MasksPanel />;
         case Panel.Ai:
           return <AIPanel />;
-        case Panel.Lut:
-          return <LutPanel />;
         case Panel.Presets:
           return <PresetsPanel />;
         case Panel.Tethering:

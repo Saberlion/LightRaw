@@ -36,7 +36,6 @@ export enum Panel {
   Ai = 'ai',
   Crop = 'crop',
   Export = 'export',
-  Lut = 'lut',
   Masks = 'masks',
   Metadata = 'metadata',
   Presets = 'presets',

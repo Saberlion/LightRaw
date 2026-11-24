@@ -57,6 +57,7 @@ impl<'a> SourceLoader<'a> {
                         path,
                         is_raw_file(path),
                         None,
+                        1,
                         0,
                         "tiff",
                         0,
@@ -94,6 +95,11 @@ impl<'a> SourceLoader<'a> {
         let linear_raw = is_raw && self.linear_raw;
         if is_raw && !linear_raw {
             apply_cpu_default_raw_processing(&mut dynamic_image);
+        } else if !is_raw {
+            crate::decode::hdr_source::roll_off_encoded(
+                &mut dynamic_image,
+                crate::decode::as_shot::as_shot_from_bytes(path, &file_bytes).source_peak,
+            );
         }
 
         let rgb = dynamic_image.into_rgb32f();

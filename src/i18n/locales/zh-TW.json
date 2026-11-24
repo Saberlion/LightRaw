@@ -296,7 +296,6 @@
     },
     "editor": {
       "autoAdjust": "自動調整",
-      "autoLensCorrection": "自動鏡頭校正",
       "autoStraighten": "自動拉直",
       "cancel": "取消",
       "closeViewer": "關閉第二視窗",
@@ -305,7 +304,6 @@
       "convertBlackWhite": "轉換為黑白",
       "convertNegative": "轉換負片",
       "copyAdjustments": "複製調整",
-      "cullImage": "自動篩選",
       "denoise": "降噪",
       "editImage": "編輯影像",
       "editIn": "在其他程式中編輯",
@@ -314,6 +312,7 @@
       "flagPick": "留用",
       "flagReject": "已拒絕",
       "frameImage": "邊框編輯器",
+      "lensCorrection": "鏡頭校正",
       "mergeHdr": "合併為 HDR",
       "noLabel": "無標籤",
       "noRating": "無評分",
@@ -326,6 +325,7 @@
       "redo": "重做",
       "removeBlackWhite": "移除黑白",
       "removeDenoise": "移除降噪",
+      "removeLensCorrection": "移除鏡頭校正",
       "removeNegativeConversion": "移除負片轉換",
       "removeSuperResolution": "移除 RapidRes",
       "resetAdjustments": "重置調整",
@@ -376,16 +376,12 @@
       "addToAlbum": "新增到相簿",
       "autoAdjust_one": "自動調整",
       "autoAdjust_other": "自動調整",
-      "autoLensCorrection_one": "自動鏡頭校正",
-      "autoLensCorrection_other": "自動鏡頭校正",
       "autoStraighten_one": "自動拉直",
       "autoStraighten_other": "自動拉直",
       "collage_one": "邊框編輯器",
       "collage_other": "建立拼貼畫",
       "confirmDelete": "確認刪除",
       "confirmDeleteVc": "確認刪除 + 虛擬副本",
-      "convertNegative_one": "轉換負片",
-      "convertNegative_other": "轉換負片",
       "copyImage_one": "複製影像",
       "copyImage_other": "複製 {{count}} 張影像",
       "cullImage_one": "自動篩選",
@@ -400,6 +396,8 @@
       "enable": "啟用",
       "exportImage_one": "匯出影像",
       "exportImage_other": "匯出 {{count}} 張影像",
+      "lensCorrection_one": "鏡頭校正",
+      "lensCorrection_other": "鏡頭校正",
       "noAlbums": "無可用相簿",
       "pasteAdjustments_one": "貼上調整",
       "pasteAdjustments_other": "貼上調整到 {{count}} 張影像",
@@ -506,7 +504,7 @@
         "backendLabel": "AI 後端：",
         "builtinDesc": "使用基礎內建 AI。在設定中選擇雲端或 AI 聯結器以使用生成式替換。",
         "builtinLabel": "內建 AI：",
-        "builtinLocalDesc": "使用基礎內建 AI，全部在裝置本機執行。",
+        "builtinLocalDesc": "",
         "cloudLabel": "雲端 AI：",
         "connectorConnectedDesc": "已連線到本地生成式後端。",
         "connectorDisconnectedDesc": "僅可使用簡單修復。請啟動您的本地後端。",
@@ -551,10 +549,8 @@
         "aiEdit_one": "AI 編輯 {{count}}",
         "aiEdit_other": "AI 編輯 {{count}}",
         "clone": "仿製 {{count}}",
-        "clone_one": "Clone {{count}}",
         "clone_other": "仿製 {{count}}",
         "heal": "修復 {{count}}",
-        "heal_one": "Heal {{count}}",
         "heal_other": "修復 {{count}}",
         "invertedName": "{{name}} 反轉",
         "liquify": "液化 {{count}}",
@@ -564,7 +560,6 @@
         "quickErase_one": "快速擦除 {{count}}",
         "quickErase_other": "快速擦除 {{count}}",
         "retouch": "修飾 {{count}}",
-        "retouch_one": "Retouch {{count}}",
         "retouch_other": "修飾 {{count}}"
       },
       "resetInpaintingTooltip": "重置影像修復",
@@ -902,7 +897,7 @@
         "importPresetsTitle": "匯入預設",
         "legacyPreset": "舊版預設",
         "presetFile": "預設檔案",
-        "rapidRawPreset": "LightRaw 預設"
+        "rapidRawPreset": "RapidRAW 預設"
       },
       "menu": {
         "configurePreset": "配置預設",
@@ -922,7 +917,7 @@
         "unsetDefaultForCamera": "不再作為 {{camera}} 的預設值"
       },
       "status": {
-        "empty": "尚未儲存預設。建立您自己的預設，或從檔案匯入。",
+        "empty": "尚未儲存預設。建立您自己的預設、從檔案匯入或探索社群預設。",
         "getCommunity": "取得社群預設",
         "loading": "載入預設中..."
       },
@@ -966,22 +961,20 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "LightRaw 無法解碼此 RAW 檔案，因此您看到和編輯的是相機內嵌的 JPEG 預覽。畫質會低於真正的 RAW，可調整的空間也更小。"
+      "embeddedPreview": "RapidRAW 無法解碼此 RAW 檔案，因此您看到和編輯的是相機內嵌的 JPEG 預覽。畫質會低於真正的 RAW，可調整的空間也更小。"
     },
     "toolbar": {
       "history": "歷史記錄",
-      "switchToVariant": "Switch to {{label}}",
+      "switchToVariant": "切換到 {{label}}",
       "tooltips": {
         "aperture": "光圈",
         "backToLibrary": "返回相簿",
         "compare": "前後對比（B）或模式（右鍵）",
         "focalLength": "焦距",
         "fullscreen": "切換全屏（F）",
-        "hdr": "HDR 預覽",
+        "hdr": "在此螢幕上顯示 HDR，除非開啟 HDR 輸出，否則不影響匯出",
         "iso": "ISO",
         "redo": "重做（Ctrl+Y）或歷史記錄（右鍵單擊）",
-        "showEdited": "顯示編輯後（B）",
-        "showOriginal": "顯示原始（B）",
         "shutterSpeed": "快門速度",
         "undo": "復原（Ctrl+Z）或歷史記錄（右鍵單擊）"
       },
@@ -989,7 +982,7 @@
     },
     "viewer": {
       "openFailed": "無法開啟第二視窗：{{error}}",
-      "windowTitle": "LightRaw 檢視器"
+      "windowTitle": "RapidRAW 檢視器"
     }
   },
   "export": {
@@ -1023,10 +1016,17 @@
       "mb": "MB",
       "tb": "TB"
     },
+    "conflict": {
+      "createUnique": "保留兩者 (_1, _2)",
+      "label": "檔案已存在時",
+      "overwrite": "覆蓋",
+      "overwriteIfChanged": "有變更時覆蓋",
+      "skip": "略過"
+    },
     "destination": {
-      "chooseFolder": "選擇目錄…",
+      "chooseFolder": "",
       "customFolder": "自訂資料夾",
-      "exportFolder": "匯出目錄",
+      "exportFolder": "",
       "originalFolder": "原始影像資料夾",
       "subfolder": "子資料夾",
       "subfolderPlaceholder": "例如：final, WebP"
@@ -1041,10 +1041,12 @@
       "colorSpace": "色彩空間",
       "dpi": "DPI",
       "hdr": "HDR 輸出",
-      "hdrJpegHint": "加入增益圖：HDR 螢幕顯示更亮的亮部，其他情況下顯示一般照片。",
-      "hdrJxlHint": "儲存為真正的 HDR 檔案（PQ，Rec. 2020）。需要支援 HDR 的檢視器。",
-      "hdrNoPreview": "此螢幕無法顯示 HDR 亮部，但匯出的檔案仍會包含它們。",
-      "hdrPreviewOff": "在編輯器工具列中開啟 HDR 以預覽亮部。",
+      "hdrHeadroom": "HDR 餘裕",
+      "hdrHeadroomHint": "匯出中亮部可以有多亮。2 EV 適合大多數螢幕。",
+      "hdrJpegHint": "為 HDR 螢幕加入增益圖。其他螢幕顯示一般照片。",
+      "hdrJxlHint": "真正的 HDR 檔案（PQ、Rec. 2020）。需要支援 HDR 的檢視器。",
+      "hdrNoPreview": "此螢幕無法顯示 HDR。",
+      "hdrPreviewOff": "在工具列中開啟 HDR 即可預覽。",
       "quality": "品質",
       "qualityLossless": "品質（無損）",
       "resolution": "解析度",
@@ -1091,6 +1093,7 @@
       "watermark": "水印"
     },
     "status": {
+      "allSkipped": "已略過所有影像",
       "cancelExport": "取消匯出",
       "cancelled": "匯出已取消",
       "cancelling": "正在取消匯出…",
@@ -1107,7 +1110,8 @@
       "failed": "匯出失敗",
       "noImageSelected": "未選擇要匯出的影像。",
       "noImagesSelected": "未選擇影像。",
-      "success": "匯出成功！"
+      "success": "匯出成功！",
+      "successWithSkipped": "已匯出 {{exported}} 張，略過 {{skipped}} 張"
     },
     "title": "匯出",
     "watermark": {
@@ -1135,7 +1139,7 @@
     "close": {
       "cancel": "取消",
       "closeAnyway": "仍然關閉",
-      "message": "等待同步到 Immich 的編輯：{{number}}。它們會保留在這台電腦上，並在下次執行 LightRaw 且 Immich 可用時傳送。",
+      "message": "等待同步到 Immich 的編輯：{{number}}。它們會保留在這台電腦上，並在下次執行 RapidRAW 且 Immich 可用時傳送。",
       "title": "編輯尚未同步到 Immich"
     },
     "export": {
@@ -1225,7 +1229,6 @@
       "thumbnailPaused": "AI 處理已暫停",
       "thumbnailPending": "等待 AI 處理",
       "title": "AI 處理",
-      "unprocessed_one": "{{count}} image needs AI processing",
       "unprocessed_other": "{{count}} 張影像需要 AI 處理",
       "waiting": "正在準備 AI 處理…"
     },
@@ -1254,7 +1257,7 @@
       "clickThumbnailsHint": "按一下右側邊欄中的縮圖，將其新增至比較檢視中。",
       "colorLabel": "顏色標籤",
       "dimensions": "尺寸",
-      "editImage": "編輯影像",
+      "doubleClickToEditHint": "按兩下縮圖即可在編輯器中開啟。",
       "focalLength": "焦距",
       "iso": "ISO",
       "metadata": "中繼資料",
@@ -1271,7 +1274,6 @@
       "vc": "VC"
     },
     "filterExit": {
-      "hiddenMultiple_one": "{{count}} images no longer match the filter",
       "hiddenMultiple_other": "{{count}} 張影像已不再符合篩選條件",
       "hiddenSingle": "{{name}} 已不再符合篩選條件",
       "undo": "復原"
@@ -1376,12 +1378,12 @@
         "filterByFileType": "按檔案型別過濾",
         "filterByFlag": "按標記過濾",
         "filterByRating": "按評分過濾",
-        "groupEditedFiles": "Include edited files in groups",
-        "groupIgnoreMetadata": "Ignore mismatched EXIF dates",
-        "groupOff": "Off",
-        "groupPreferJpeg": "Prefer JPEG",
-        "groupPreferRaw": "Prefer RAW",
-        "groupRawJpeg": "Group RAW + JPEG",
+        "groupEditedFiles": "將已編輯的檔案納入分組",
+        "groupIgnoreMetadata": "忽略不一致的 EXIF 日期",
+        "groupOff": "關閉",
+        "groupPreferJpeg": "優先 JPEG",
+        "groupPreferRaw": "優先 RAW",
+        "groupRawJpeg": "RAW + JPEG 分組",
         "metadataAlways": "始終",
         "metadataHover": "懸停時",
         "metadataOff": "關閉",
@@ -1400,11 +1402,6 @@
         "thumbnailSize": "縮圖大小",
         "title": "檢視選項"
       }
-    },
-    "import": {
-      "complete": "匯入完成！",
-      "failed": "匯入失敗！",
-      "progress": "匯入中...（{{current}}/{{total}}）"
     },
     "items": {
       "cloudPlaceholder": "儲存在 iCloud 中 — 未下載",
@@ -1430,7 +1427,6 @@
       "empty": "沒有進行中的工作",
       "emptyHint": "匯出、匯入、檔案傳輸和 AI 工作會顯示在這裡。",
       "errorCopied": "錯誤已複製到剪貼簿",
-      "images_one": "{{count}} image",
       "images_other": "{{count}} 張圖片",
       "kinds": {
         "aiTagging": "AI 標籤",
@@ -1442,6 +1438,7 @@
       },
       "openInLibrary": "在圖庫中開啟",
       "recent": "最近",
+      "skipped_other": "已略過 {{count}} 張",
       "title": "工作"
     },
     "reject": {
@@ -1471,7 +1468,7 @@
     },
     "splash": {
       "addFolder": "新增資料夾",
-      "brand": "LightRaw",
+      "brand": "RapidRAW",
       "continueSession": "繼續會話",
       "contribute": "在 GitHub 上貢獻",
       "descriptionAndroid": "一款極速、GPU 加速的 RAW 影像編輯器。開啟相簿以開始。",
@@ -1507,7 +1504,7 @@
     "tooltips": {
       "communityPresets": "社群預設",
       "goHome": "返回首頁",
-      "importFromAlbum": "從相冊匯入",
+      "importFromAlbum": "",
       "importImages": "匯入影像",
       "select": "選擇"
     },
@@ -1605,7 +1602,6 @@
         "colorMixer": "顏色混合器",
         "cropAspectRatio": "裁剪與寬高比",
         "curves": "曲線",
-        "exposureToneMapper": "曝光與色調映射",
         "fog": "霧",
         "grain": "顆粒",
         "guidedPerspective": "引導透視",
@@ -1621,7 +1617,6 @@
         "presence": "質感",
         "relight": "重新打光",
         "sharpness": "銳度",
-        "tone": "色調",
         "transformRotation": "變換與旋轉",
         "vignette": "暗角",
         "whiteBalance": "白平衡"
@@ -1679,75 +1674,28 @@
       "starting": "啟動中...",
       "title": "篩選影像"
     },
-    "denoise": {
-      "batchProgressText": "降噪中 {{current}} / {{total}}...",
-      "btnBatchDenoise": "批次降噪並儲存",
-      "btnRetry": "重試",
-      "btnSave": "儲存",
-      "btnStart": "開始",
-      "cancel": "取消",
-      "close": "關閉",
-      "denoised": "已降噪",
-      "denoisingProgress": "降噪進行中",
-      "description": "使用 AI 驅動或傳統降噪技術去除影像中的噪聲。",
-      "downloadingText": "下載中 {{status}}...",
-      "gpuWarningTooltip": "由於依賴項限制，NIND 降噪尚不支援 GPU 加速。",
-      "initializing": "初始化中...",
-      "methodAi": "NIND（AI - 最適合 RAW）",
-      "methodBm3d": "BM3D（傳統 - 所有格式）",
-      "methodLabel": "方法",
-      "methodRaw9": "Apple RAW 9 (Neural Engine)",
-      "openInEditor": "在編輯器中開啟",
-      "original": "原始",
-      "panZoomEnabled": "平移和縮放已啟用",
-      "processingFailed": "處理失敗",
-      "qualityTileSizeLabel": "品質 / 分塊大小",
-      "reset": "重置",
-      "saveSuccess": "影像儲存成功！",
-      "speedNotice": "這可能需要幾分鐘，具體取決於影像大小和所選方法。",
-      "strengthLabel": "強度",
-      "titleBatch": "降噪影像",
-      "titleSingle": "降噪影像"
-    },
     "focusStack": {
-      "cancel": "取消",
-      "close": "關閉",
       "depthMap": "深度圖",
       "description": "將多張不同對焦距離的影像合併為一張完美清晰的影像。",
       "descriptionWithCount_one": "將 {{count}} 張不同對焦距離的影像合併為一張完美清晰的影像。",
       "descriptionWithCount_other": "將 {{count}} 張不同對焦距離的影像合併為一張完美清晰的影像。",
       "failed": "焦距合成失敗",
-      "initializing": "正在初始化...",
       "method": "方法",
       "methodDetail": "細節",
       "methodHint": "細節可保留毛髮和剛毛等最細微的結構。平滑可帶來更柔和的過渡與更少的雜訊。",
       "methodSmooth": "平滑",
-      "openInEditor": "在編輯器中打開",
       "processing": "正在合成焦距",
-      "result": "結果",
-      "save": "儲存",
       "savedSuccess": "焦距合成已成功儲存！",
-      "stacking": "正在合成焦距",
-      "start": "開始",
       "title": "焦距合成"
     },
     "hdr": {
-      "cancel": "取消",
-      "close": "關閉",
       "description": "將您的包圍曝光合併為一張高動態範圍影像。",
       "descriptionWithCount": "將 {{count}} 張包圍曝光合併為一張高動態範圍影像。",
       "descriptionWithCount_one": "將 {{count}} 張包圍曝光合併為一張高動態範圍影像。",
       "descriptionWithCount_other": "將 {{count}} 張包圍曝光合併為一張高動態範圍影像。",
       "failed": "HDR 合併失敗",
-      "initializing": "初始化中...",
-      "merging": "合併 HDR 中",
-      "openInEditor": "在編輯器中開啟",
       "processing": "合併 HDR 中",
-      "retry": "重試",
-      "save": "儲存",
       "savedSuccess": "HDR 儲存成功！",
-      "speedNotice": "這可能需要幾分鐘，具體取決於曝光影像的數量和大小。",
-      "start": "開始",
       "title": "合併為 HDR"
     },
     "importSettings": {
@@ -1808,7 +1756,6 @@
       "openInEditor": "在編輯器中開啟",
       "outputInfo": "{{images}} 張影像 · {{width}} × {{height}} 像素",
       "result": "結果",
-      "retry": "重試",
       "save": "儲存",
       "saving": "正在儲存…",
       "speedNotice": "這可能需要幾分鐘，具體取決於影像的數量和大小。",
@@ -1816,40 +1763,10 @@
       "unalignedImages_one": "{{count}} 張影像無法對齊",
       "unalignedImages_other": "{{count}} 張影像無法對齊"
     },
-    "negativeConversion": {
-      "blueWeight": "藍色（黃色）",
-      "cancel": "取消",
-      "colorTiming": "色彩時機",
-      "compareTooltip": "按住以檢視原始",
-      "contrast": "對比（分級）",
-      "convertAndSave": "轉換並儲存",
-      "convertAndSaveAll": "轉換並儲存全部（{{count}}）",
-      "convertAndSaveAll_one": "轉換並儲存全部（{{count}}）",
-      "convertAndSaveAll_other": "轉換並儲存全部（{{count}}）",
-      "converting": "轉換中",
-      "convertingProgress": "轉換中 {{current}}/{{total}}",
-      "exposure": "曝光",
-      "greenWeight": "綠色（洋紅）",
-      "noticeText": "反轉邏輯受 <0>NegPy</0>（作者 marcinz606，<1>GPL-3.0</1>）啟發。",
-      "originalLabel": "原始負片",
-      "printGrade": "列印分級",
-      "redWeight": "紅色（青色）",
-      "resetTooltip": "重置",
-      "resetViewTooltip": "重置檢視",
-      "title": "負片轉換",
-      "zoomInTooltip": "放大",
-      "zoomOutTooltip": "縮小"
-    },
     "panorama": {
       "autoProjectionUsed": "使用中：{{projection}}",
       "boundaryWarp": "邊界變形",
       "boundaryWarpHint": "延展邊緣以填滿畫面，而非將其裁掉。",
-      "cancel": "取消",
-      "close": "關閉",
-      "descCount": "將 {{count}} 張重疊影像合併為一張無縫全景圖。",
-      "descCount_one": "將 {{count}} 張重疊影像合併為一張無縫全景圖。",
-      "descCount_other": "將 {{count}} 張重疊影像合併為一張無縫全景圖。",
-      "descGeneric": "將您的重疊影像合併為一張無縫全景圖。",
       "description": "將您的重疊影像合併為一張無縫全景圖。",
       "descriptionWithCount": "將 {{count}} 張重疊影像合併為一張無縫全景圖。",
       "descriptionWithCount_one": "將 {{count}} 張重疊影像合併為一張無縫全景圖。",
@@ -1857,8 +1774,6 @@
       "exposureCompensation": "曝光補償",
       "exposureCompensationHint": "統一各影像之間的曝光、白平衡與暗角。",
       "failed": "全景圖拼接失敗",
-      "initializing": "初始化中...",
-      "openInEditor": "在編輯器中開啟",
       "processing": "拼接全景圖中",
       "projection": "投影",
       "projectionAuto": "自動",
@@ -1866,12 +1781,7 @@
       "projectionFallback": "{{requested}} 無法涵蓋此視野，正在使用 {{projection}}",
       "projectionPerspective": "透視",
       "projectionSpherical": "球面",
-      "retry": "重試",
-      "save": "儲存",
       "savedSuccess": "全景圖儲存成功！",
-      "speedNotice": "這可能需要幾分鐘，具體取決於影像的數量和大小。",
-      "start": "開始",
-      "stitchingProgress": "拼接全景圖中",
       "title": "拼接全景圖"
     },
     "renameAlbum": {
@@ -1928,20 +1838,20 @@
   },
   "settings": {
     "about": {
-      "agplNotice": "本應用程式是基於 GNU AGPL-3.0 授權條款的自由軟體,完整授權條款文本與原始碼可透過上方連結取得。",
-      "licenseDesc": "LightRaw 基於 AGPL-3.0 許可證發布",
-      "openSourceLicense": "開源許可",
-      "privacyPolicy": "隱私政策",
-      "privacyPolicyDesc": "了解 LightRaw 如何處理您的資料",
-      "sourceCode": "原始碼",
-      "sourceCodeDesc": "LightRaw 是開源軟體,歡迎參與貢獻",
-      "title": "關於 LightRaw",
-      "userAgreement": "使用者協議",
-      "userAgreementDesc": "LightRaw 的使用條款",
-      "view": "檢視"
+      "agplNotice": "",
+      "licenseDesc": "",
+      "openSourceLicense": "",
+      "privacyPolicy": "",
+      "privacyPolicyDesc": "",
+      "sourceCode": "",
+      "sourceCodeDesc": "",
+      "title": "",
+      "userAgreement": "",
+      "userAgreementDesc": "",
+      "view": ""
     },
     "categories": {
-      "about": "關於",
+      "about": "",
       "general": "通用",
       "processing": "處理",
       "shortcuts": "控制"
@@ -1992,21 +1902,11 @@
       "allTags": "清除所有標籤",
       "allTagsDesc": "從根資料夾中的所有影像移除 AI 產生的標籤和使用者加入的標籤。顏色標記會保留。",
       "clear": "清除",
-      "clearSidecars": "清除所有附屬檔案",
-      "clearSidecarsButton": "清除",
-      "clearSidecarsDesc": "這將刪除您的根資料夾中的所有 .rrdata 檔案（包含您的編輯資料）：",
-      "clearThumbnail": "清除縮圖快取",
-      "clearThumbnailButton": "清除",
-      "clearThumbnailDesc": "這將刪除所有快取的縮圖。在您瀏覽相簿時，它們會自動重新生成。",
       "delete": "刪除",
       "deleteEdits": "刪除所有編輯",
       "deleteEditsDesc": "刪除所有根資料夾中的 .rrdata 附屬檔案（你的編輯）。此操作無法復原。",
       "libraryAndWorkspace": "圖庫與工作區",
       "limit": "上限",
-      "loading": "載入中...",
-      "logs": "檢視應用日誌",
-      "logsButton": "開啟",
-      "logsDesc": "檢視應用程式的日誌檔案以進行故障排除。日誌檔案位於：",
       "modals": {
         "aiDenoiseMessage": "確定要清除 AI 降噪快取嗎？\n\n啟用 AI 降噪的影像需要重新降噪，每張影像可能需要數分鐘。",
         "aiMapsMessage": "確定要清除深度與法線貼圖嗎？\n\n使用鏡頭模糊、霧效或重新打光的影像會在下次開啟時重新產生貼圖。",
@@ -2016,11 +1916,9 @@
         "cacheMessage": "您確定要清除縮圖快取嗎？\n\n所有縮圖將需要重新生成，對於大型資料夾可能會很慢。",
         "confirmAiTitle": "確認刪除 AI 標籤",
         "confirmAllTitle": "確認刪除所有標籤",
-        "confirmCacheTitle": "確認刪除快取",
         "confirmClear": "清除",
         "confirmClearAi": "清除 AI 標籤",
         "confirmClearAll": "清除所有標籤",
-        "confirmClearCache": "清除快取",
         "confirmDeleteAllEdits": "刪除所有編輯",
         "confirmResetLayout": "重設版面配置",
         "confirmResetLayoutTitle": "重設工作區版面配置",
@@ -2034,7 +1932,6 @@
       "noFolders": "未選擇資料夾",
       "refresh": "重新整理",
       "reset": "重設",
-      "resetLayoutButton": "重設版面配置",
       "resetLayoutDesc": "將面板停靠區、側邊分割條、高度和面板切換器還原為預設的版面配置。",
       "resetLayoutTitle": "重設工作區版面配置",
       "show": "顯示",
@@ -2049,14 +1946,7 @@
         "allSuccess_other": "{{count}} 個檔案已更新。所有非顏色標籤已移除。",
         "cacheSuccess": "縮圖快取已成功清除。",
         "cleared": "已成功清除。",
-        "clearingAi": "正在從所有附屬檔案中清除 AI 標籤...",
-        "clearingAll": "正在從附屬檔案中清除所有標籤...",
-        "clearingCache": "正在清除縮圖快取...",
-        "deleting": "正在刪除附屬檔案，請稍候...",
-        "failedToGetPath": "無法取得日誌檔案路徑。",
         "layoutResetSuccess": "工作區版面配置已重設為預設值。",
-        "processing": "處理中...",
-        "resettingLayout": "正在重設工作區...",
         "sidecarSuccess": "{{count}} 個附屬檔案已成功刪除。",
         "sidecarSuccess_one": "{{count}} 個附屬檔案已成功刪除。",
         "sidecarSuccess_other": "{{count}} 個附屬檔案已成功刪除。"
@@ -2081,7 +1971,7 @@
       },
       "storageTitle": "儲存空間",
       "title": "資料管理",
-      "totalUsed": "LightRaw 在此裝置上使用了 {{size}}。"
+      "totalUsed": "RapidRAW 在此裝置上使用了 {{size}}。"
     },
     "general": {
       "createXmp": "建立缺失的 XMP 檔案",
@@ -2103,7 +1993,7 @@
       "hideCollapsedPanels": "隱藏折疊的面板",
       "hideCollapsedPanelsDesc": "折疊的側邊面板將完全隱藏，而不是留下一道窄條。可透過底部列或鍵盤快捷鍵重新開啟。",
       "nativeTitlebar": "原生標題欄",
-      "nativeTitlebarDesc": "使用系統預設的視窗標題欄，而非 LightRaw 的自定義標題欄。",
+      "nativeTitlebarDesc": "使用系統預設的視窗標題欄，而非 RapidRAW 的自定義標題欄。",
       "neutralGreyCanvas": "中性灰畫布",
       "neutralGreyCanvasDesc": "使用中性灰畫布，以便在不更改應用程式主題的情況下進行更準確的色彩和曝光分級。",
       "poppins": "Poppins",
@@ -2207,17 +2097,17 @@
       "title": "我的鏡頭"
     },
     "privacy": {
-      "managedNotice": "本應用使用應用程式市場標準化隱私聲明託管服務,首次啟動的隱私彈窗由應用程式市場提供。",
-      "notIntegrated": "未啟用",
-      "requestConsent": "重新請求授權",
-      "requestConsentDesc": "拉起應用程式市場的標準化隱私彈窗",
-      "revoke": "撤銷同意",
-      "revokeConfirm": "確定撤銷已記錄的隱私同意?下次啟動將重新彈出隱私彈窗,檔案存取需重新授權。",
-      "revokeDesc": "清除已記錄的同意,下次啟動重新徵求同意",
-      "status": "授權狀態",
-      "statusDenied": "未同意",
-      "statusGranted": "已同意",
-      "statusUnknown": "未知"
+      "managedNotice": "",
+      "notIntegrated": "",
+      "requestConsent": "",
+      "requestConsentDesc": "",
+      "revoke": "",
+      "revokeConfirm": "",
+      "revokeDesc": "",
+      "status": "",
+      "statusDenied": "",
+      "statusGranted": "",
+      "statusUnknown": ""
     },
     "processing": {
       "advanced": {
@@ -2232,7 +2122,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "關閉所有 AI 功能。所有與 AI 相關的控制項都會從介面中隱藏，LightRaw 將作為純傳統的 RAW 編輯器運作。",
+          "description": "關閉所有 AI 功能。所有與 AI 相關的控制項都會從介面中隱藏，RapidRAW 將作為純傳統的 RAW 編輯器運作。",
           "feature1": "介面中不顯示 AI 遮色片、鏡頭模糊或生成式編輯",
           "feature2": "現有的 AI 編輯仍會正常呈現",
           "feature3": "更簡潔、更專注的介面",
@@ -2267,7 +2157,7 @@
         "connector": {
           "address": "AI 聯結器地址",
           "addressDesc": "輸入您正在執行的 AI 聯結器實例的地址和連接埠。這是使用生成式 AI 功能所必需的。",
-          "description": "對於擁有強大 GPU 且希望最大程度控制的使用者，可以將 LightRaw 連線到您自己的聯結器伺服器。這為您提供了技術工作流的完全控制。",
+          "description": "對於擁有強大 GPU 且希望最大程度控制的使用者，可以將 RapidRAW 連線到您自己的聯結器伺服器。這為您提供了技術工作流的完全控制。",
           "failed": "連線失敗。",
           "feature1": "使用您自己的 ComfyUI 實例",
           "feature2": "免費的進階生成式編輯",
@@ -2275,10 +2165,10 @@
           "success": "連線成功！",
           "test": "測試",
           "testing": "測試中...",
-          "title": "自託管（LightRaw AI 聯結器）"
+          "title": "自託管（RapidRAW AI 聯結器）"
         },
         "cpu": {
-          "description": "直接整合到 LightRaw 中，這些功能完全在您的計算機上執行。它們快速、免費且無需設定，非常適合日常加速工作流程。",
+          "description": "直接整合到 RapidRAW 中，這些功能完全在您的計算機上執行。它們快速、免費且無需設定，非常適合日常加速工作流程。",
           "feature1": "AI 遮色片（主體、天空、前景）",
           "feature2": "自動影像標籤",
           "feature3": "簡單的本機生成式替換",
@@ -2287,7 +2177,7 @@
           "gpuAccelerationLabel": "為 AI 模型使用 GPU",
           "title": "內建 AI"
         },
-        "description": "LightRaw 的 AI 專為靈活性而設計。選擇您理想的工作流程，從快速的本地工具到強大的自託管。",
+        "description": "RapidRAW 的 AI 專為靈活性而設計。選擇您理想的工作流程，從快速的本地工具到強大的自託管。",
         "providers": {
           "aiConnector": "AI 聯結器",
           "aiFree": "無 AI",
@@ -2296,20 +2186,23 @@
         },
         "title": "生成式 AI"
       },
-      "aiDenoiseBackend": "AI 降噪後端",
-      "aiDenoiseBackendCpu": "CPU（ONNX Runtime）",
-      "aiDenoiseBackendDesc": "選擇 AI 降噪（NIND）的推理後端。NPU 在裝置端 NPU 晶片上執行（約快 5 倍）；NPU 或模型不可用時自動回退 CPU（ONNX Runtime）。",
-      "aiDenoiseBackendNpu": "NPU（裝置端）",
-      "aiDenoiseNpuModel": "NPU 模型",
-      "aiDenoiseNpuModelChecking": "檢查中…",
-      "aiDenoiseNpuModelDesc": "CANN 模型（nind_v2.om）依晶片型號建置，不隨應用程式散布；放入 AI 模型目錄後 NPU 後端才會生效。",
-      "aiDenoiseNpuModelMissing": "未安裝 {{model}}，NPU 後端將回退至 CPU",
-      "aiDenoiseNpuModelReady": "{{model}} 已就緒（{{size}} MB）",
+      "aiDenoiseBackend": "",
+      "aiDenoiseBackendCpu": "",
+      "aiDenoiseBackendDesc": "",
+      "aiDenoiseBackendNpu": "",
+      "aiDenoiseNpuModel": "",
+      "aiDenoiseNpuModelChecking": "",
+      "aiDenoiseNpuModelDesc": "",
+      "aiDenoiseNpuModelMissing": "",
+      "aiDenoiseNpuModelReady": "",
       "alwaysDecodeRaw": "始終解碼 RAW",
       "alwaysDecodeRawDesc": "強制對縮圖進行完整的 RAW 解碼，而不是使用內建的 JPEG 預覽。如果您的縮圖在顏色或對比度上與打開的影像不同，請啟用此選項。",
       "alwaysDecodeRawLabel": "始終為縮圖解碼 RAW",
       "backend": "處理後端",
       "backendDesc": "選擇圖形 API。推薦使用「自動」。在某些系統上可能解決崩潰問題。",
+      "backendFallback": "{{failed}} 在此 GPU 上啟動時當機，因此暫時使用 {{using}}。",
+      "backendFallbackRetry": "重新嘗試 {{failed}}",
+      "backendFallbackRetryPending": "下次啟動時將重新嘗試 {{failed}}。",
       "backends": {
         "auto": "自動",
         "dx12": "DirectX 12",
@@ -2322,18 +2215,19 @@
         "modeAuto": "自動（系統描述檔）",
         "modeCustom": "自訂 ICC 描述檔",
         "modeOff": "關閉",
+        "previewGamut": "預覽色域",
+        "previewGamutDesc": "請與匯出所用的色彩空間保持一致。sRGB 顯示 sRGB 或網頁匯出的效果。廣色域還會顯示螢幕能呈現的超出 sRGB 的顏色，例如 Display P3 或 Adobe RGB 匯出。",
+        "previewGamutSrgb": "sRGB",
+        "previewGamutWide": "廣色域",
+        "previewGamutWideSpace": "廣色域（{{space}}）",
         "profile": "螢幕描述檔",
         "profileDesc": "將編輯器預覽轉換為螢幕的色彩描述檔，讓顏色在已校色與廣色域螢幕上正確顯示。匯出不受影響。",
         "statusInvalid": "無法載入此描述檔。",
         "statusNone": "找不到螢幕描述檔。預覽以 sRGB 顯示。",
         "statusProfile": "正在使用 {{name}}。",
         "statusSystem": "顏色由作業系統管理。",
-        "statusUnavailable": "色彩管理需要 GPU 算繪器。",
-        "wideGamut": "廣色域預覽（{{space}}）。",
-        "wideGamutHdrNote": "編輯器顯示 HDR 時不會套用。",
-        "wideGamutPreview": "廣色域預覽",
-        "wideGamutPreviewDesc": "在廣色域螢幕上顯示超出 sRGB 的色彩。以 Display P3、Adobe RGB 或其他寬色彩空間匯出時請開啟。關閉時預覽與 sRGB 匯出效果一致。",
-        "wideGamutPreviewEnable": "顯示廣色域色彩"
+        "statusUnavailable": "色彩管理需要 WGPU 直接渲染。",
+        "wideGamut": "廣色域預覽（{{space}}）。"
       },
       "defaultAdjustments": {
         "addCamera": "新增相機…",
@@ -2381,14 +2275,13 @@
       },
       "enableLivePreviews": "啟用即時預覽",
       "hdr": {
-        "display": "HDR 顯示",
-        "displayDesc": "在 HDR 顯示器上以高於一般白色的亮度顯示亮部。陰影與中間調維持不變，一般匯出不受影響。",
-        "enableDisplay": "在編輯器中使用 HDR",
-        "headroom": "亮部範圍",
-        "headroomDesc": "亮部可以超出一般白色的程度。也用於 HDR 匯出。",
-        "statusActive": "此顯示器處於 HDR 模式。",
+        "gainMaps": "HDR 相片",
+        "gainMapsAuto": "自動",
+        "gainMapsDesc": "含有 HDR 增益圖的照片（例如新款手機拍攝的照片）會在螢幕允許的範圍內顯示 HDR 亮部。HDR 匯出會使用匯出設定中的餘裕，其他匯出則顯示一般照片。「一律為 SDR」會忽略 HDR 資料。",
+        "gainMapsNever": "一律以 SDR 開啟",
+        "statusActive": "此螢幕處於 HDR 模式。在編輯器工具列中開啟 HDR 即可預覽。",
         "statusInactive": "此顯示器未處於 HDR 模式。請在系統顯示設定中開啟 HDR 以查看效果。",
-        "statusUnsupported": "HDR 需要在 Windows 或 macOS 上使用 GPU 繪製器。"
+        "statusUnsupported": "HDR 需要 WGPU 直接渲染；在 Linux 上還需要支援 HDR 的 Wayland 工作階段。"
       },
       "highDpi": "高 DPI 渲染",
       "highDpiDesc": "以螢幕原生 {{dpr}}x 物理畫素解析度渲染預覽。產生最清晰的預覽，但會顯著增加記憶體使用。",
@@ -2397,7 +2290,7 @@
       "imageCacheDesc": "儲存在記憶體中的全解析度影像最大數量。較高的值可使最近編輯的影像之間切換即時完成，但會顯著增加記憶體使用。",
       "images": "張影像",
       "linuxCompat": "Linux 相容模式",
-      "linuxCompatDesc": "啟用針對常見 GPU 驅動和顯示伺服器問題的相容方案。停用此選項以啟用完整的 GPU 加速。",
+      "linuxCompatDesc": "透過共享記憶體而非 GPU 緩衝區共享來傳輸網頁視圖，以規避視窗空白等 GPU 驅動問題。X11 上的 Nvidia GPU 已自動套用此方案，因此僅在視窗仍然空白或顯示異常時才啟用此選項。",
       "linuxCompatLabel": "啟用相容模式",
       "livePreviewQuality": "即時預覽品質",
       "livePreviewQualityDesc": "控制拖動滑桿時影像的解析度和壓縮。較低的品質可顯著提高反應速度。",
@@ -2428,12 +2321,15 @@
         "enableAppleRaw9": "對 RAW 檔案使用 Apple RAW 9",
         "enableBaselineExposure": "對 RAW 檔案套用基礎曝光",
         "enableHighlightPreservation": "補償相機的高光保護模式",
+        "enableHotPixels": "移除熱像素與壞點",
         "enablePreprocessingNonRaws": "對非 RAW 影像啟用",
         "enableTonemapperOverride": "啟用色調映射覆蓋",
         "highlightPreservation": "高光保護補償",
         "highlightPreservationDesc": "恢復相機高光保護模式（如富士 DR200/DR400、Nikon 動態 D-Lighting）降低的曝光。",
         "highlightRecovery": "RAW 亮部恢復",
         "highlightRecoveryDesc": "控制從 RAW 檔案的裁剪亮部中恢復細節的程度。較高的值可恢復更多細節，但可能引入紫色偽影。",
+        "hotPixels": "熱像素移除",
+        "hotPixelsDesc": "解碼 RAW 檔案時自動修復感光元件上的熱像素、卡住像素與壞點。僅替換孤立的單一像素，因此星星與細小高光會被保留。",
         "linearOptions": {
           "auto": "自動",
           "gamma": "應用 Gamma",
@@ -2456,17 +2352,19 @@
       "previewResDesc": "確定預覽的最大解析度。較低的值可顯著提高效能。",
       "previewStrategy": "預覽渲染策略",
       "qualities": {
-        "full": "全解析度",
         "high": "高品質",
         "performance": "效能優先"
       },
       "rawDecoding": "RAW 解碼",
       "rawDecodingDesc": "選擇在何處解碼 RAW 檔案。「自動」使用 GPU，並在 GPU 無法處理您的影像時切換到 CPU。「GPU」始終先嘗試 GPU。「CPU」較慢，但適用於所有系統。",
+      "rawDecodingFallback": "GPU 處理大型 RAW 檔案失敗，因此 {{megapixels}} MP 以上的檔案暫時在 CPU 上顯影。",
+      "rawDecodingFallbackRetry": "重新嘗試 GPU",
       "rawDecodingOptions": {
         "auto": "自動",
         "cpu": "CPU",
         "gpu": "GPU"
       },
+      "rawDecodingUnavailable": "此 GPU 無法執行 RAW 解碼，因此 RAW 檔案在 CPU 上解碼。",
       "renderScale": "渲染解析度縮放",
       "renderScaleDesc": "相對於顯示器縮放渲染解析度。較低的值可在高解析度螢幕上提高效能，但會犧牲一些清晰度。",
       "restartRequired": "處理引擎的更改需要重啟應用程式才能生效。",
@@ -2496,15 +2394,10 @@
       "aiTaggingDesc": "使用 AI（CLIP）模型啟用自動影像標籤。這將下載額外的模型，並在瀏覽資料夾時影響效能。標籤用於搜尋資料夾。",
       "amount": "數量",
       "automaticAiTagging": "自動 AI 標籤",
-      "clearAiTagsButton": "清除",
-      "clearAiTagsDesc": "這將從所有活動根資料夾中的 .rrdata 檔案中移除所有 AI 生成的標籤。使用者新增的標籤將被保留。",
-      "clearAiTagsTitle": "清除 AI 標籤",
-      "clearAllTagsDesc": "這將從所有活動根資料夾中的 .rrdata 檔案中移除所有 AI 生成和使用者新增的標籤。顏色標籤將被保留。",
-      "clearAllTagsTitle": "清除所有標籤",
       "clearCustomTooltip": "清除 AI 標籤列表",
       "clearShortcutsTooltip": "清除快捷方式標籤列表",
       "customList": "自定義 AI 標籤列表",
-      "customListDesc": "如果提供，AI 將僅使用此列表中的標籤，覆蓋 LightRaw 內建的標籤列表。標籤功能僅支援英文。",
+      "customListDesc": "如果提供，AI 將僅使用此列表中的標籤，覆蓋 RapidRAW 內建的標籤列表。標籤功能僅支援英文。",
       "maxAiTags": "最大 AI 標籤數",
       "maxAiTagsDesc": "每張影像生成的最大標籤數量。",
       "noCustomTags": "無自定義 AI 標籤（使用內建列表）",
@@ -2516,7 +2409,7 @@
       "title": "標籤"
     },
     "thanks": {
-      "description": "衷心感謝以下專案，它們在 LightRaw 的開發過程中非常重要：",
+      "description": "衷心感謝以下專案，它們在 RapidRAW 的開發過程中非常重要：",
       "list": {
         "birefnet": "為提供高解析度分割模型，用於 AI 前景檢測功能。",
         "darktable": "為部分參考實現提供了指導。",
@@ -2524,16 +2417,15 @@
         "efficientsam3": "為提供從 SAM 3 蒸餾而來的高效提示式分割模型，用於 AI 天空和文字遮罩。",
         "lama": "為強大且簡單的影像修復模型提供支援，實現了內容感知填充和物件移除。",
         "lensfun": "為無價的開源庫和全面的資料庫提供支援，實現了自動鏡頭校正。",
-        "libgphoto2": "感謝提供全面的相機通訊函式庫，為 LightRaw 的連線拍攝與遠端控制子系統提供支援。",
+        "libgphoto2": "感謝提供全面的相機通訊函式庫，為 RapidRAW 的連線拍攝與遠端控制子系統提供支援。",
         "mediapipe": "感謝其快速的臉部特徵點與分割模型，為 AI 臉部遮罩提供支援。",
         "negpy": "為負片轉換邏輯提供了靈感。",
-        "nind": "為 AI 模型提供支援，驅動了 LightRaw 中的 AI 降噪功能。",
+        "nind": "為 AI 模型提供支援，驅動了 RapidRAW 中的 AI 降噪功能。",
         "rawler": "為優秀的 Rust 庫提供支援，構成了本專案 RAW 檔案處理的基礎。",
         "sam2": "為提供基礎模型，用於 AI 主體檢測功能。",
-        "span": "LightRaw 的 AI 2 倍放大功能 RapidRes 的基礎 AI 模型，由 LightRaw 針對自身的 RAW 處理流程進行微調（作者 Philip Hofmann，CC BY 4.0）。",
-        "spektrafilm": "感謝 Andrea Volpato 提供基於光譜的底片模擬 LUT，為 LightRaw 的內建底片模擬提供支援。採用 CC BY-SA 4.0 授權。",
-        "u2net": "為提供穩健的架構，用於 AI 天空和前景檢測功能。",
-        "you": "感謝您使用和支援 LightRaw。您的關注使本專案持續發展。",
+        "span": "RapidRAW 的 AI 2 倍放大功能 RapidRes 的基礎 AI 模型，由 RapidRAW 針對自身的 RAW 處理流程進行微調（作者 Philip Hofmann，CC BY 4.0）。",
+        "spektrafilm": "感謝 Andrea Volpato 提供基於光譜的底片模擬 LUT，為 RapidRAW 的內建底片模擬提供支援。採用 CC BY-SA 4.0 授權。",
+        "you": "感謝您使用和支援 RapidRAW。您的關注使本專案持續發展。",
         "youLabel": "您"
       },
       "title": "特別鳴謝"
@@ -2542,7 +2434,7 @@
       "dark": "深色",
       "grey": "灰色",
       "light": "淺色",
-      "system": "系統"
+      "system": ""
     },
     "title": "設定",
     "tooltips": {
@@ -2604,16 +2496,16 @@
   },
   "ui": {
     "agreement": {
-      "agree": "同意並繼續",
-      "back": "返回",
-      "confirmExit": "離開",
-      "decline": "不同意",
-      "exitMessage": "同意《使用者協議》與《隱私政策》後才能使用 LightRaw。",
-      "exitTitle": "離開 LightRaw?",
-      "privacyTab": "隱私政策",
-      "subtitle": "請閱讀並同意《使用者協議》與《隱私政策》後繼續使用",
-      "termsTab": "使用者協議",
-      "title": "歡迎使用 LightRaw"
+      "agree": "",
+      "back": "",
+      "confirmExit": "",
+      "decline": "",
+      "exitMessage": "",
+      "exitTitle": "",
+      "privacyTab": "",
+      "subtitle": "",
+      "termsTab": "",
+      "title": ""
     },
     "bottomBar": {
       "imagesSelected": "已選擇 {{current}} / {{total}} 張影像",
@@ -2675,7 +2567,6 @@
       "selectImageFile": "選擇影像檔案"
     },
     "lut": {
-      "all": "全部",
       "clearLut": "清除 LUT",
       "customLuts": "自訂 LUT",
       "empty": "暫無 LUT — 請匯入一些",

@@ -53,7 +53,7 @@ export default function Controls({ compact = false }: { compact?: boolean } = {}
   const { showContextMenu } = useContextMenu();
   const { isResizingWaveform, onToggleWaveform, setActiveWaveformChannel, handleWaveformResize } =
     useWaveformControls();
-  const { setAdjustments, handleAutoAdjustments } = useEditorActions();
+  const { setAdjustments, handleAutoAdjustments, handleLutSelect } = useEditorActions();
 
   const { appSettings, theme } = useSettingsStore(
     useShallow((state) => ({
@@ -419,7 +419,19 @@ export default function Controls({ compact = false }: { compact?: boolean } = {}
                   onToggleVisibility={() => handleToggleVisibility(sectionName)}
                   title={title}
                 >
-                  <AdjustmentSectionContent sectionName={sectionName} {...sectionProps} />
+                  <AdjustmentSectionContent
+                    sectionName={sectionName}
+                    activeTools={activeTools}
+                    onToggleTool={handleToggleVisibility}
+                    setAdjustments={setAdjustments}
+                    theme={theme}
+                    handleLutSelect={handleLutSelect}
+                    appSettings={appSettings}
+                    asShotWhiteBalance={selectedImage.asShotWhiteBalance}
+                    isWbPickerActive={isWbPickerActive}
+                    toggleWbPicker={toggleWbPicker}
+                    onDragStateChange={onDragStateChange}
+                  />
                 </CollapsibleSection>
               </div>
             );

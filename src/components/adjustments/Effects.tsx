@@ -27,6 +27,7 @@ import { ColorSwatch } from './Color';
 import { AppSettings } from '../../types/settings';
 import Text from '../ui/Text';
 import AdjustmentSubSection from './AdjustmentSubSection';
+import LUTControl from './LUTControl';
 import { TextVariants } from '../../types/typography';
 import { DepthRangePicker } from './DepthRangePicker';
 import DepthScope from './depthScope/DepthScope';
@@ -41,6 +42,7 @@ interface EffectsPanelProps {
   adjustments: Adjustments;
   isForMask?: boolean;
   setAdjustments(adjustments: Partial<Adjustments> | ((prev: Adjustments) => Adjustments)): void;
+  handleLutSelect(path: string, isBuiltIn: boolean): void;
   appSettings: AppSettings | null;
   onDragStateChange?: (isDragging: boolean) => void;
 }
@@ -208,6 +210,7 @@ function EffectsPanel({
   adjustments,
   setAdjustments,
   isForMask = false,
+  handleLutSelect,
   appSettings,
   onDragStateChange,
 }: EffectsPanelProps) {
@@ -296,6 +299,22 @@ function EffectsPanel({
 
   const handleScenePatch = (patch: ScenePatch) => {
     setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, ...patch }));
+  };
+
+  const handleLutIntensityChange = (intensity: number) => {
+    setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, lutIntensity: intensity }));
+  };
+
+  const handleLutClear = () => {
+    setAdjustments((prev: Partial<Adjustments>) => ({
+      ...prev,
+      lutPath: null,
+      lutName: null,
+      lutData: null,
+      lutSize: 0,
+      lutIntensity: 100,
+      lutIsSceneReferred: false,
+    }));
   };
 
   const handleAdjustmentChange = (key: string, value: boolean | number | string) => {
@@ -1137,6 +1156,20 @@ function EffectsPanel({
                   )}
                 </SpatialEffect>
               </div>
+            </AdjustmentSubSection>
+          )}
+
+          {!hiddenTools.includes('lut') && (
+            <AdjustmentSubSection id="lut" order={toolOrder.indexOf('lut')} title={t('adjustments.effects.lut')}>
+              <LUTControl
+                lutPath={adjustments.lutPath || null}
+                lutName={adjustments.lutName || null}
+                lutIntensity={adjustments.lutIntensity ?? 100}
+                onLutSelect={handleLutSelect}
+                onIntensityChange={handleLutIntensityChange}
+                onClear={handleLutClear}
+                onDragStateChange={onDragStateChange}
+              />
             </AdjustmentSubSection>
           )}
 
