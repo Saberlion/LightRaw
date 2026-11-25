@@ -1577,6 +1577,7 @@
       "list": "Seznam"
     },
     "toasts": {
+      "importFailed": "Import se nezdařil: {{err}}",
       "importPickFailed": "Selhal výběr obrázků k importu: {{err}}"
     },
     "tooltips": {

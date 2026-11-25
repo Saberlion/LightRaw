@@ -1419,13 +1419,33 @@ export default class EntryAbility extends RustAbility {
   private async copyGalleryAsset(uri: string, target: string): Promise<boolean> {
     try {
       const source: fs.File = fs.openSync(uri, fs.OpenMode.READ_ONLY);
+      let sourceSize: number = 0;
       try {
+        sourceSize = fs.statSync(source.fd).size;
         fs.copyFileSync(source.fd, target);
       } finally {
         fs.closeSync(source);
       }
-      console.info(`[RapidRAW] gallery copy via fs fd: ${target}`);
-      return true;
+      // HarmonyOS "optimized storage" offloads old gallery assets to the
+      // cloud and replaces the local file with a 0-byte stub: openSync +
+      // copyFileSync succeed but copy nothing. Staging such a file would
+      // import as a permanent broken entry (no thumbnail, the editor cannot
+      // open it; observed on Mate 80, 2026-11-25). Treat an empty result as a
+      // fast-path miss so the MediaAssetManager fallback below runs - it
+      // materialises the cloud bytes.
+      const stagedSize: number = fs.statSync(target).size;
+      if (sourceSize > 0 && stagedSize > 0) {
+        console.info(`[RapidRAW] gallery copy via fs fd: ${target} (${stagedSize} bytes)`);
+        return true;
+      }
+      console.warn(
+        `[RapidRAW] gallery fast-path copy yielded ${stagedSize} bytes (source ${sourceSize}) for ${uri}; trying MediaAssetManager`,
+      );
+      try {
+        fs.unlinkSync(target);
+      } catch (cleanupError) {
+        // Best effort - the retry loop overwrites the target anyway.
+      }
     } catch (e) {
       console.warn(`[RapidRAW] gallery fs open failed for ${uri} (${JSON.stringify(e)}); trying MediaAssetManager`);
     }

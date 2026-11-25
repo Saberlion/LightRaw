@@ -1509,6 +1509,7 @@
       "list": "List"
     },
     "toasts": {
+      "importFailed": "Import failed: {{err}}",
       "importPickFailed": "Import picker failed: {{err}}"
     },
     "tooltips": {

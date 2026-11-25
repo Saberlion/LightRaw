@@ -1502,6 +1502,7 @@
       "list": "列表"
     },
     "toasts": {
+      "importFailed": "匯入失敗：{{err}}",
       "importPickFailed": "匯入選取圖片失敗：{{err}}"
     },
     "tooltips": {

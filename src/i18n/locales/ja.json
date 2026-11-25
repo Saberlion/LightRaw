@@ -1502,6 +1502,7 @@
       "list": "リスト"
     },
     "toasts": {
+      "importFailed": "インポートに失敗しました：{{err}}",
       "importPickFailed": "インポートする画像の選択に失敗しました：{{err}}"
     },
     "tooltips": {

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { Channel, convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { Status } from '../types/export';
 import { Invokes } from '../types/invokes';
 import { Progress } from '../types/library';
@@ -86,6 +87,7 @@ export function useTauriListeners({
   markGenerated,
   prevAdjustmentsRef,
 }: TauriListenerProps) {
+  const { t } = useTranslation();
   const refs = useRef({ refreshAllFolderTrees, handleSelectSubfolder, refreshImageList, markGenerated });
 
   useEffect(() => {
@@ -403,7 +405,12 @@ export function useTauriListeners({
       }),
       listen('import-complete', () => {
         if (isEffectActive) {
-          useProcessStore.getState().setImportState({ status: Status.Success });
+          // A per-file failure (e.g. the empty-file guard) emits import-error
+          // before this event; do not paper over it with Success — the error
+          // has to survive until the next import-start resets the state.
+          if (useProcessStore.getState().importState.status !== Status.Error) {
+            useProcessStore.getState().setImportState({ status: Status.Success });
+          }
           refs.current.refreshAllFolderTrees();
           const currentPath = useLibraryStore.getState().currentFolderPath;
           if (currentPath) {
@@ -415,11 +422,16 @@ export function useTauriListeners({
         void cleanupOhosImportStaging();
       }),
       listen('import-error', (event: any) => {
+        const message = typeof event.payload === 'string' ? event.payload : 'Unknown error';
         if (isEffectActive)
           useProcessStore.getState().setImportState({
             status: Status.Error,
-            errorMessage: typeof event.payload === 'string' ? event.payload : 'Unknown error',
+            errorMessage: message,
           });
+        // The import worker emits one error per failed file (e.g. empty /
+        // unreadable sources). Nothing in the library UI rendered the stored
+        // error, so failed imports used to look like "nothing happened".
+        toast.error(t('library.toasts.importFailed', { err: message }));
       }),
       listen<{ path: string; progress: number }>('ai-denoise-progress', (event) => {
         if (!isEffectActive) return;

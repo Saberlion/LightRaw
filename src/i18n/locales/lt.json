@@ -1616,6 +1616,7 @@
       "list": "Sąrašas"
     },
     "toasts": {
+      "importFailed": "Importuoti nepavyko: {{err}}",
       "importPickFailed": "Nepavyko pasirinkti importuotinų vaizdų: {{err}}"
     },
     "tooltips": {

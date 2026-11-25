@@ -1518,6 +1518,7 @@
       "list": "Lista"
     },
     "toasts": {
+      "importFailed": "Importen misslyckades: {{err}}",
       "importPickFailed": "Misslyckades med att välja bilder för import: {{err}}"
     },
     "tooltips": {

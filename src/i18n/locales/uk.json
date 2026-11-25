@@ -1577,6 +1577,7 @@
       "list": "Список"
     },
     "toasts": {
+      "importFailed": "Не вдалося імпортувати: {{err}}",
       "importPickFailed": "Не вдалося вибрати зображення для імпорту: {{err}}"
     },
     "tooltips": {

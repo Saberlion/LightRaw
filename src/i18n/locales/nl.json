@@ -1509,6 +1509,7 @@
       "list": "Lijst"
     },
     "toasts": {
+      "importFailed": "Importeren mislukt: {{err}}",
       "importPickFailed": "Selecteren van afbeeldingen voor import mislukt: {{err}}"
     },
     "tooltips": {

@@ -1544,6 +1544,7 @@
       "list": "Liste"
     },
     "toasts": {
+      "importFailed": "Échec de l'importation : {{err}}",
       "importPickFailed": "Échec de la sélection d'images pour l'importation : {{err}}"
     },
     "tooltips": {

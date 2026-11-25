@@ -1543,6 +1543,7 @@
       "list": "Lista"
     },
     "toasts": {
+      "importFailed": "Error al importar: {{err}}",
       "importPickFailed": "Error al seleccionar imágenes para importar: {{err}}"
     },
     "tooltips": {

@@ -872,6 +872,13 @@ pub async fn import_files(
                 if is_android_content_uri(source_path_str) {
                     let resolved_name = resolve_android_content_uri_name(source_path_str)?;
                     let source_bytes = read_android_content_uri(source_path_str)?;
+                    // Same empty-file guard as the path branch below.
+                    if source_bytes.is_empty() {
+                        return Err(format!(
+                            "Refusing to import an empty (0-byte) file: {}",
+                            source_path_str
+                        ));
+                    }
                     let source_name_path = Path::new(&resolved_name);
                     let file_date = exif_processing::get_creation_date_from_bytes(
                         &resolved_name,
@@ -928,6 +935,23 @@ pub async fn import_files(
                 let (source_path, source_sidecar) = parse_virtual_path(source_path_str);
                 if !source_path.exists() {
                     return Err(format!("Source file not found: {}", source_path_str));
+                }
+                // Empty source files would land as unreadable library entries
+                // (no thumbnail, the editor cannot open them). Truncated
+                // USB/MTP or cloud transfers leave exactly these 0-byte files
+                // behind (observed on Mate 80: an interrupted Download
+                // transfer imported as a permanent broken grid item,
+                // 2026-11-25). Reject them up front — import-error surfaces
+                // the message to the user instead of a silent broken entry.
+                if source_path
+                    .metadata()
+                    .map(|meta| meta.len() == 0)
+                    .unwrap_or(false)
+                {
+                    return Err(format!(
+                        "Refusing to import an empty (0-byte) file: {}",
+                        source_path_str
+                    ));
                 }
 
                 let file_date = exif_processing::get_creation_date_from_path(&source_path);
