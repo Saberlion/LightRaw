@@ -19,17 +19,21 @@ const Button = ({
   const baseClasses = `
     flex items-center justify-center gap-2
     font-semibold py-2 px-4 rounded-md
-    text-button-text text-md
+    text-md
     disabled:opacity-50 disabled:cursor-not-allowed
   `;
 
   const hasSurfaceBg = className.includes('bg-surface');
 
+  // bg-surface buttons get theme-primary text (readable on the light surface);
+  // default buttons keep the accent background with button-text (white) —
+  // previously the white text stayed on surface backgrounds too, making
+  // surface buttons invisible in light themes (settings consent buttons).
   const combinedClasses = clsx(
     baseClasses,
     {
-      'bg-accent': !hasSurfaceBg,
-      'bg-surface': hasSurfaceBg,
+      'bg-accent text-button-text': !hasSurfaceBg,
+      'bg-surface text-text-primary': hasSurfaceBg,
     },
     className,
   );
