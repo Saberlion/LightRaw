@@ -1517,6 +1517,9 @@
     "thumbnailSize": {
       "list": "Lista"
     },
+    "toasts": {
+      "importPickFailed": "Misslyckades med att välja bilder för import: {{err}}"
+    },
     "tooltips": {
       "communityPresets": "Användarnas förinställningar",
       "goHome": "Gå till startsidan",

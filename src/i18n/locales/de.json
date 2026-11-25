@@ -1508,6 +1508,9 @@
     "thumbnailSize": {
       "list": "Liste"
     },
+    "toasts": {
+      "importPickFailed": "Bildauswahl für Import fehlgeschlagen: {{err}}"
+    },
     "tooltips": {
       "communityPresets": "Community-Vorgaben",
       "goHome": "Zur Startseite",

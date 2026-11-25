@@ -1508,6 +1508,9 @@
     "thumbnailSize": {
       "list": "Lijst"
     },
+    "toasts": {
+      "importPickFailed": "Selecteren van afbeeldingen voor import mislukt: {{err}}"
+    },
     "tooltips": {
       "communityPresets": "Community-voorinstellingen",
       "goHome": "Naar startpagina",

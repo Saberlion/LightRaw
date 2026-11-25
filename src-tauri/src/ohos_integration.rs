@@ -515,6 +515,24 @@ mod file_bridge {
         Ok(())
     }
 
+    /// Error-aware variant of `resolve_ohos_pick_files` for pick flows that
+    /// stage bytes on the ArkTS side (gallery import): `ok: false` plus a
+    /// human-readable `error` lets the Rust command surface a failure instead
+    /// of resolving an empty path list that the frontend would silently drop.
+    #[napi_derive_ohos::napi]
+    pub fn resolve_ohos_pick_files_ex(
+        request_id: u32,
+        ok: bool,
+        paths: Vec<String>,
+        error: Option<String>,
+    ) -> Result<()> {
+        complete_request(
+            request_id,
+            serde_json::json!({ "ok": ok, "paths": paths, "error": error }),
+        );
+        Ok(())
+    }
+
     #[napi_derive_ohos::napi]
     pub fn resolve_ohos_save_to_gallery(
         request_id: u32,
@@ -606,6 +624,17 @@ mod file_bridge {
             "maxSelect": max_select,
         }))
         .await?;
+        // The ArkTS side resolves through `resolve_ohos_pick_files_ex` with
+        // `ok: false` when none of the picked images could be opened (even
+        // after the deferred retries) — turn that into an error so the
+        // frontend can show it instead of treating it as "imported nothing".
+        if result.get("ok").and_then(serde_json::Value::as_bool) == Some(false) {
+            let error = result
+                .get("error")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("Gallery import failed without a detailed error");
+            return Err(error.to_string());
+        }
         Ok(result["paths"]
             .as_array()
             .map(|paths| {

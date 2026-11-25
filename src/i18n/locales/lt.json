@@ -1615,6 +1615,9 @@
     "thumbnailSize": {
       "list": "Sąrašas"
     },
+    "toasts": {
+      "importPickFailed": "Nepavyko pasirinkti importuotinų vaizdų: {{err}}"
+    },
     "tooltips": {
       "communityPresets": "Bendruomenės nustatymai",
       "goHome": "Į pradžią",

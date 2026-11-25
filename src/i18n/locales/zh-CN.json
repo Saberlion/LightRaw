@@ -1501,6 +1501,9 @@
     "thumbnailSize": {
       "list": "列表"
     },
+    "toasts": {
+      "importPickFailed": "导入选择图片失败：{{err}}"
+    },
     "tooltips": {
       "communityPresets": "社区预设",
       "goHome": "返回首页",

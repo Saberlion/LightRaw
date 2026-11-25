@@ -1508,6 +1508,9 @@
     "thumbnailSize": {
       "list": "List"
     },
+    "toasts": {
+      "importPickFailed": "Import picker failed: {{err}}"
+    },
     "tooltips": {
       "communityPresets": "Community Presets",
       "goHome": "Go to Home",

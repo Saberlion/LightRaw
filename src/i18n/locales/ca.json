@@ -1542,6 +1542,9 @@
     "thumbnailSize": {
       "list": "Llista"
     },
+    "toasts": {
+      "importPickFailed": "Ha fallat el selector d'imatges per importar: {{err}}"
+    },
     "tooltips": {
       "communityPresets": "Ajustos preestablerts de la comunitat",
       "goHome": "Anar a l'inici",

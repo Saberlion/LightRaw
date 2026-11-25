@@ -1576,6 +1576,9 @@
     "thumbnailSize": {
       "list": "Seznam"
     },
+    "toasts": {
+      "importPickFailed": "Selhal výběr obrázků k importu: {{err}}"
+    },
     "tooltips": {
       "communityPresets": "Presety komunity",
       "goHome": "Přejít na domovskou stránku",

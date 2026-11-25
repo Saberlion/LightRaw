@@ -10,8 +10,35 @@ import fs from '@ohos.file.fs';
 import { fileShare } from '@kit.CoreFileKit';
 import deviceInfo from '@ohos.deviceInfo';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
+import { dataSharePredicates } from '@kit.ArkData';
 import { privacyManager } from '@kit.AppGalleryKit';
 import usbManager from '@ohos.usbManager';
+
+// Media Library Kit resource handler for the gallery-import fallback path
+// (see EntryAbility.stageGalleryImages): MediaAssetManager.requestImageData
+// hands the prepared image bytes to onDataPrepared. Official sample pattern —
+// arrow property so `this` stays bound.
+class GalleryAssetDataHandler implements photoAccessHelper.MediaAssetDataHandler<ArrayBuffer> {
+  private callback: (data: ArrayBuffer | null) => void;
+
+  constructor(callback: (data: ArrayBuffer | null) => void) {
+    this.callback = callback;
+  }
+
+  onDataPrepared = (data: ArrayBuffer, map?: Map<string, string>): void => {
+    // The system passes undefined when preparation fails; type the param as
+    // declared but funnel the failure to the caller as null.
+    if (data === undefined || data === null) {
+      console.error('[RapidRAW] gallery asset request prepared no data');
+      this.callback(null);
+      return;
+    }
+    console.info(
+      `[RapidRAW] gallery asset data prepared (quality: ${map?.get('quality') ?? 'unknown'}, ${data.byteLength} bytes)`,
+    );
+    this.callback(data);
+  };
+}
 
 export default class EntryAbility extends RustAbility {
   // change to dynamic library name
@@ -32,6 +59,26 @@ export default class EntryAbility extends RustAbility {
   // PRIVACY_STATE_CHANGED subscription (AppGallery standardized privacy
   // hosting); kept so a future teardown path can unsubscribe.
   private privacySubscriber: commonEventManager.CommonEventSubscriber | null = null;
+  // Pending gallery-import staging job — see pickGalleryImages/stageGalleryImages.
+  // The read grant behind picker-returned media URIs is NOT usable from inside
+  // the picker's own select() callback: official Media Library Kit guidance is
+  // to save the URIs and open the files only after the callback returns, and
+  // opening them in-callback fails with 13900002 (ENOENT) on current
+  // HarmonyOS builds — which silently dropped every selected image
+  // (Mate 80, 2026-11-25). The job fields hold the parked copy work.
+  private galleryPickRequestId: number = -1;
+  private galleryPickResolver: ESObject | null = null;
+  private galleryPickUris: Array<string> = [];
+  private galleryPickTargets: Array<string> = [];
+  private galleryPickStaged: Array<string> = [];
+  private galleryPickCopied: Array<boolean> = [];
+  private galleryPickAttempt: number = 0;
+  // Copy attempts per pick and the back-off ladder between them. The first
+  // attempt runs ~200ms after the picker closes (grant registration is
+  // asynchronous); retries cover slower devices. Total worst case ~7.7s, but
+  // the common case succeeds on attempt 1.
+  private static readonly GALLERY_PICK_MAX_ATTEMPTS: number = 5;
+  private static readonly GALLERY_PICK_RETRY_DELAYS_MS: Array<number> = [200, 500, 1000, 2000, 4000];
 
   async onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): Promise<void> {
     super.onCreate(want, launchParam);
@@ -169,6 +216,8 @@ export default class EntryAbility extends RustAbility {
         mod.resolveOhosPickFolder ?? mod.default?.resolveOhosPickFolder;
       const resolvePickFiles: ESObject =
         mod.resolveOhosPickFiles ?? mod.default?.resolveOhosPickFiles;
+      const resolvePickFilesEx: ESObject =
+        mod.resolveOhosPickFilesEx ?? mod.default?.resolveOhosPickFilesEx;
       const resolveSaveToGallery: ESObject =
         mod.resolveOhosSaveToGallery ?? mod.default?.resolveOhosSaveToGallery;
       const resolveSaveFileAs: ESObject =
@@ -182,6 +231,9 @@ export default class EntryAbility extends RustAbility {
       if (typeof resolvePickFolder !== 'function' || typeof resolvePickFiles !== 'function' ||
         typeof resolveSaveToGallery !== 'function' || typeof resolveSaveFileAs !== 'function') {
         console.error('[RapidRAW] bridge resolve exports missing from liblightraw.so');
+      }
+      if (typeof resolvePickFilesEx !== 'function') {
+        console.error('[RapidRAW] resolveOhosPickFilesEx missing from liblightraw.so');
       }
       if (typeof resolvePrivacy !== 'function') {
         console.error('[RapidRAW] resolveOhosPrivacy missing from liblightraw.so');
@@ -203,8 +255,8 @@ export default class EntryAbility extends RustAbility {
             req = null;
           }
           if (req !== null && typeof req['op'] === 'string') {
-            this.handleBridgeRequest(req, resolvePickFolder, resolvePickFiles, resolveSaveToGallery,
-              resolveSaveFileAs, resolvePrivacy, resolveOpenUrl, resolveRevokeGrants);
+            this.handleBridgeRequest(req, resolvePickFolder, resolvePickFiles, resolvePickFilesEx,
+              resolveSaveToGallery, resolveSaveFileAs, resolvePrivacy, resolveOpenUrl, resolveRevokeGrants);
             return;
           }
           switch (op) {
@@ -715,9 +767,9 @@ export default class EntryAbility extends RustAbility {
   private stageMediaUriForOpen(uri: string): void {
     const stagingDir: string = `${this.context.cacheDir}/import_staging/open_with`;
     try {
-      try {
-        fs.accessSync(stagingDir);
-      } catch (accessError) {
+      // accessSync returns a boolean and does NOT throw for missing paths —
+      // probing with try/catch never created the dir (see pickGalleryImages).
+      if (!fs.accessSync(stagingDir)) {
         fs.mkdirSync(stagingDir, true);
       }
       const name: string = this.galleryAssetName(uri, 0);
@@ -759,6 +811,7 @@ export default class EntryAbility extends RustAbility {
     req: Record<string, Object>,
     resolvePickFolder: ESObject,
     resolvePickFiles: ESObject,
+    resolvePickFilesEx: ESObject,
     resolveSaveToGallery: ESObject,
     resolveSaveFileAs: ESObject,
     resolvePrivacy: ESObject,
@@ -775,7 +828,7 @@ export default class EntryAbility extends RustAbility {
         this.pickFiles(req, requestId, resolvePickFiles);
         break;
       case 'pick_gallery_images':
-        this.pickGalleryImages(req, requestId, resolvePickFiles);
+        this.pickGalleryImages(req, requestId, resolvePickFiles, resolvePickFilesEx);
         break;
       case 'save_to_gallery':
         this.saveToGallery(req, requestId, resolveSaveToGallery);
@@ -1138,7 +1191,17 @@ export default class EntryAbility extends RustAbility {
   // on regular files, so the bytes are copied into the app cache first.
   // Unsupported extensions and duplicate URIs are dropped before copying, and
   // the caller removes the staged files once the import completes.
-  private pickGalleryImages(req: Record<string, Object>, requestId: number, resolvePickGallery: ESObject): void {
+  //
+  // resolvePickGalleryEx is the error-aware variant of the bridge resolver
+  // (ok/paths/error): it is used when none of the picked files could be
+  // opened even after retries, so the failure reaches the frontend as an
+  // error message instead of an empty, silently-dropped import.
+  private pickGalleryImages(
+    req: Record<string, Object>,
+    requestId: number,
+    resolvePickGallery: ESObject,
+    resolvePickGalleryEx: ESObject,
+  ): void {
     const wanted: Set<string> = new Set<string>();
     const extensions: Array<string> = (req['extensions'] as Array<string>) ?? [];
     for (const ext of extensions) {
@@ -1190,33 +1253,27 @@ export default class EntryAbility extends RustAbility {
 
       const stagingRoot: string = `${this.context.cacheDir}/import_staging`;
       const stagingDir: string = `${stagingRoot}/${requestId}`;
-      try {
-        try {
-          fs.accessSync(stagingRoot);
-        } catch (accessError) {
-          fs.mkdirSync(stagingRoot, true);
-        }
-        try {
-          fs.accessSync(stagingDir);
-        } catch (accessError) {
-          fs.mkdirSync(stagingDir, true);
-        }
-      } catch (e) {
-        console.error(`[RapidRAW] pick_gallery_images staging dir failed: ${JSON.stringify(e)}`);
-        resolvePickGallery(requestId, []);
-        return;
+      // CRITICAL: fs.accessSync RETURNS a boolean (false when the path is
+      // missing) — it does NOT throw for missing paths. The original
+      // try/catch pattern never ran mkdirSync, so the staging directories
+      // were never created and every copy to `<stagingDir>/<name>` failed
+      // with 13900002 (ENOENT) — the true root cause of the Mate 80
+      // "first album import shows nothing" chain (2026-11-25).
+      if (!fs.accessSync(stagingRoot)) {
+        fs.mkdirSync(stagingRoot, true);
+      }
+      if (!fs.accessSync(stagingDir)) {
+        fs.mkdirSync(stagingDir, true);
       }
 
-      const staged: Array<string> = [];
+      // Precompute the staging targets: keep the original display name so the
+      // import filename template ({original_filename}) still produces the
+      // expected name; duplicates within one pick get an index suffix; media
+      // URIs without a filename (e.g. "file://media/photo/12") get a .jpg
+      // fallback — the frontend extension filter needs a recognizable suffix.
+      const targets: Array<string> = [];
       const usedNames: Set<string> = new Set<string>();
-      const startedAt: number = Date.now();
       for (let i = 0; i < pickedUris.length; i++) {
-        // Keep the original display name so the import filename template
-        // ({original_filename}) still produces the expected name. Duplicates
-        // within one pick get an index suffix. Media URIs without a filename
-        // (e.g. "file://media/photo/12") get a .jpg fallback — the picker
-        // guarantees IMAGE_TYPE, and the frontend extension filter needs
-        // a recognizable suffix to let the file through.
         let name: string = pickedNames[i];
         if (!name.includes('.')) {
           name = `${name}.jpg`;
@@ -1228,27 +1285,194 @@ export default class EntryAbility extends RustAbility {
           name = `${stem}_${i}${extension}`;
         }
         usedNames.add(name);
-        const target: string = `${stagingDir}/${name}`;
-        try {
-          const source: fs.File = fs.openSync(pickedUris[i], fs.OpenMode.READ_ONLY);
-          try {
-            fs.copyFileSync(source.fd, target);
-          } finally {
-            fs.closeSync(source);
-          }
-          staged.push(target);
-        } catch (e) {
-          console.error(`[RapidRAW] pick_gallery_images copy failed for ${pickedUris[i]}: ${JSON.stringify(e)}`);
-        }
+        targets.push(`${stagingDir}/${name}`);
       }
-      console.info(
-        `[RapidRAW] pick_gallery_images staged ${staged.length}/${pickedUris.length} in ${Date.now() - startedAt}ms`,
-      );
-      resolvePickGallery(requestId, staged);
+
+      // Do NOT copy here. fs.openSync on the picked URI inside the select()
+      // callback fails with 13900002 (ENOENT) on current HarmonyOS builds —
+      // the grant only becomes usable after the picker callback returns. A
+      // previous pick parking in this slot cannot overlap the modal picker,
+      // but settle it defensively so its Rust oneshot never hangs.
+      if (this.galleryPickResolver !== null) {
+        const staleResolver: ESObject = this.galleryPickResolver;
+        const staleId: number = this.galleryPickRequestId;
+        const staleStaged: Array<string> = this.galleryPickStaged;
+        this.galleryPickResolver = null;
+        console.warn('[RapidRAW] pick_gallery_images: settling an earlier pick before staging a new one');
+        staleResolver(staleId, staleStaged);
+      }
+      this.galleryPickRequestId = requestId;
+      this.galleryPickResolver = resolvePickGallery;
+      this.galleryPickUris = pickedUris;
+      this.galleryPickTargets = targets;
+      this.galleryPickStaged = [];
+      this.galleryPickCopied = pickedUris.map((ignored: string): boolean => false);
+      this.galleryPickAttempt = 0;
+      console.info(`[RapidRAW] pick_gallery_images picked ${pickedUris.length}; deferring staging out of the picker callback`);
+      setTimeout(() => {
+        this.stageGalleryImages(resolvePickGalleryEx).catch((e: BusinessError) => {
+          console.error(`[RapidRAW] stageGalleryImages failed: ${JSON.stringify(e)}`);
+        });
+      }, EntryAbility.GALLERY_PICK_RETRY_DELAYS_MS[0]);
     }).catch((e: BusinessError) => {
       console.error(`[RapidRAW] gallery picker failed: ${JSON.stringify(e)}`);
       resolvePickGallery(requestId, []);
     });
+  }
+
+  // Copy the parked gallery pick into the staging directory, one timer hop
+  // outside the picker's select() callback (see pickGalleryImages). Each
+  // attempt retries only the files that have not been copied yet; if some
+  // still fail and attempts remain, re-schedule with a longer back-off. The
+  // parked request is resolved exactly once, with the staged paths (partial
+  // success imports what worked) or — when nothing could be staged — through
+  // the error-aware resolver so the import chain surfaces a failure instead
+  // of silently returning zero files.
+  private async stageGalleryImages(resolvePickGalleryEx: ESObject): Promise<void> {
+    const resolver: ESObject | null = this.galleryPickResolver;
+    if (resolver === null) {
+      return;
+    }
+    const requestId: number = this.galleryPickRequestId;
+    const uris: Array<string> = this.galleryPickUris;
+    const targets: Array<string> = this.galleryPickTargets;
+    const copied: Array<boolean> = this.galleryPickCopied;
+    try {
+      this.galleryPickAttempt += 1;
+      const attempt: number = this.galleryPickAttempt;
+      const startedAt: number = Date.now();
+      let remaining: number = 0;
+      for (let i = 0; i < uris.length; i++) {
+        if (copied[i]) {
+          continue;
+        }
+        const viaMediaRequest: boolean = await this.copyGalleryAsset(uris[i], targets[i]);
+        if (viaMediaRequest) {
+          copied[i] = true;
+          this.galleryPickStaged.push(targets[i]);
+        } else {
+          remaining += 1;
+        }
+      }
+      const staged: Array<string> = this.galleryPickStaged;
+      if (remaining === 0) {
+        console.info(
+          `[RapidRAW] pick_gallery_images staged ${staged.length}/${uris.length} on attempt ${attempt} in ${Date.now() - startedAt}ms`,
+        );
+        this.galleryPickResolver = null;
+        resolver(requestId, staged);
+        return;
+      }
+      if (attempt < EntryAbility.GALLERY_PICK_MAX_ATTEMPTS) {
+        const delay: number = EntryAbility.GALLERY_PICK_RETRY_DELAYS_MS[attempt];
+        console.warn(`[RapidRAW] pick_gallery_images: ${remaining} file(s) not copyable yet, retrying in ${delay}ms`);
+        setTimeout(() => {
+          this.stageGalleryImages(resolvePickGalleryEx).catch((e: BusinessError) => {
+            console.error(`[RapidRAW] stageGalleryImages retry failed: ${JSON.stringify(e)}`);
+          });
+        }, delay);
+        return;
+      }
+      console.error(
+        `[RapidRAW] pick_gallery_images gave up: staged ${staged.length}/${uris.length} after ${attempt} attempts`,
+      );
+      this.galleryPickResolver = null;
+      if (staged.length === 0) {
+        resolvePickGalleryEx(
+          requestId,
+          false,
+          staged,
+          'Failed to open the picked gallery images after several attempts. Please try importing again.',
+        );
+      } else {
+        resolver(requestId, staged);
+      }
+    } catch (e) {
+      // Never leave the parked Rust oneshot hanging on an internal error.
+      console.error(`[RapidRAW] stageGalleryImages failed: ${JSON.stringify(e)}`);
+      this.galleryPickResolver = null;
+      resolvePickGalleryEx(
+        requestId,
+        false,
+        this.galleryPickStaged,
+        `Gallery import staging failed: ${JSON.stringify(e)}`,
+      );
+    }
+  }
+
+  // Copy one picked media URI into its staging target. Two paths, in order:
+  // 1. Fast path — fs.openSync on the picker-granted URI + copyFileSync.
+  //    This is the documented default and keeps the ORIGINAL file bytes
+  //    (full EXIF). It is what older HarmonyOS builds (tablets/2in1 where the
+  //    album import was first verified) resolve natively.
+  // 2. Fallback — MediaAssetManager.requestImageData (official "指定URI获取
+  //    图片或视频资源" recipe). On HarmonyOS 6 (Mate 80, 2026-11-25) fs.open
+  //    fails with 13900002 (ENOENT) even seconds after the pick and fully
+  //    outside the picker callback — for moving photos (logical bundle dir in
+  //    the URI, e.g. file://media/Photo/4/IMG_..._003/IMG_...jpg) and for
+  //    cloud-synced assets alike; the fs layer simply cannot dereference
+  //    those logical URIs. requestImageData handles both (it prepares the
+  //    resource, downloading cloud assets on demand) and needs no extra
+  //    permission for picker-granted URIs. Cost: EXIF location/shooting
+  //    params are privacy-sanitized in this path (MEDIA_LOCATION-gated).
+  // Returns true when the target exists with the asset bytes.
+  private async copyGalleryAsset(uri: string, target: string): Promise<boolean> {
+    try {
+      const source: fs.File = fs.openSync(uri, fs.OpenMode.READ_ONLY);
+      try {
+        fs.copyFileSync(source.fd, target);
+      } finally {
+        fs.closeSync(source);
+      }
+      console.info(`[RapidRAW] gallery copy via fs fd: ${target}`);
+      return true;
+    } catch (e) {
+      console.warn(`[RapidRAW] gallery fs open failed for ${uri} (${JSON.stringify(e)}); trying MediaAssetManager`);
+    }
+
+    try {
+      const helper: photoAccessHelper.PhotoAccessHelper = photoAccessHelper.getPhotoAccessHelper(this.context);
+      const predicates: dataSharePredicates.DataSharePredicates = new dataSharePredicates.DataSharePredicates();
+      predicates.equalTo(photoAccessHelper.PhotoKeys.URI, uri);
+      const fetchOptions: photoAccessHelper.FetchOptions = {
+        fetchColumns: [photoAccessHelper.PhotoKeys.TITLE],
+        predicates: predicates,
+      };
+      const fetchResult: photoAccessHelper.FetchResult<photoAccessHelper.PhotoAsset> = await helper.getAssets(fetchOptions);
+      try {
+        const photoAsset: photoAccessHelper.PhotoAsset = await fetchResult.getFirstObject();
+        const requestOptions: photoAccessHelper.RequestOptions = {
+          deliveryMode: photoAccessHelper.DeliveryMode.HIGH_QUALITY_MODE,
+        };
+        const data: ArrayBuffer | null = await new Promise<ArrayBuffer | null>((resolve) => {
+          const handler: GalleryAssetDataHandler = new GalleryAssetDataHandler((prepared: ArrayBuffer | null) => {
+            resolve(prepared);
+          });
+          photoAccessHelper.MediaAssetManager.requestImageData(this.context, photoAsset, requestOptions, handler)
+            .catch((err: BusinessError) => {
+              console.error(`[RapidRAW] requestImageData failed for ${uri}: ${JSON.stringify(err)}`);
+              resolve(null);
+            });
+        });
+        if (data === null || data.byteLength === 0) {
+          console.error(`[RapidRAW] gallery media request returned no data for ${uri}`);
+          return false;
+        }
+        const file: fs.File = fs.openSync(target, fs.OpenMode.WRITE_ONLY | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+        try {
+          fs.writeSync(file.fd, data);
+        } finally {
+          fs.closeSync(file);
+        }
+        console.info(`[RapidRAW] gallery copy via MediaAssetManager: ${target} (${data.byteLength} bytes)`);
+        return true;
+      } finally {
+        fetchResult.close();
+      }
+    } catch (e) {
+      console.error(`[RapidRAW] gallery media request copy failed for ${uri}: ${JSON.stringify(e)}`);
+      return false;
+    }
   }
 
   // Display name for a media URI: strip the scheme/path, decode percent
@@ -1330,12 +1554,12 @@ export default class EntryAbility extends RustAbility {
     const stagedName: string = tempPath.substring(tempPath.lastIndexOf('/') + 1);
     const sandboxPath: string = `${sandboxDir}/${stagedName}`;
     try {
-      // OHOS mkdirSync is not idempotent: an existing directory throws
-      // 13900015 ("File exists") even with recursion enabled, so probe
-      // for existence first.
-      try {
-        fs.accessSync(sandboxDir);
-      } catch (accessError) {
+      // mkdirSync is not idempotent: an existing directory throws 13900015
+      // ("File exists") even with recursion enabled. Probe with accessSync —
+      // but note it RETURNS a boolean (false when missing) and does NOT throw
+      // for absent paths; a try/catch probe would never run the mkdir (the
+      // same bug that broke the album-import staging, 2026-11-25).
+      if (!fs.accessSync(sandboxDir)) {
         fs.mkdirSync(sandboxDir, true);
       }
       fs.copyFileSync(tempPath, sandboxPath);

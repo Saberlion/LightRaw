@@ -1501,6 +1501,9 @@
     "thumbnailSize": {
       "list": "リスト"
     },
+    "toasts": {
+      "importPickFailed": "インポートする画像の選択に失敗しました：{{err}}"
+    },
     "tooltips": {
       "communityPresets": "コミュニティプリセット",
       "goHome": "ホームへ移動",

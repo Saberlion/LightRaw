@@ -455,9 +455,13 @@ export function useFileOperations(
         }
       } catch (err) {
         console.error('Failed to open file dialog for import:', err);
+        // The OHOS album/FileKit pickers surface actionable failures as command
+        // errors (e.g. none of the picked gallery images could be opened); a
+        // bare console.error would repeat the old silent-import regression.
+        toast.error(t('library.toasts.importPickFailed', { err: typeof err === 'string' ? err : String(err) }));
       }
     },
-    [startImportFiles],
+    [startImportFiles, t],
   );
 
   const handlePasteFiles = useCallback(

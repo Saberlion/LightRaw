@@ -1576,6 +1576,9 @@
     "thumbnailSize": {
       "list": "Список"
     },
+    "toasts": {
+      "importPickFailed": "Не вдалося вибрати зображення для імпорту: {{err}}"
+    },
     "tooltips": {
       "communityPresets": "Пресети спільноти",
       "goHome": "На головну",

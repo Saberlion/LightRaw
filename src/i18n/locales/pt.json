@@ -1542,6 +1542,9 @@
     "thumbnailSize": {
       "list": "Lista"
     },
+    "toasts": {
+      "importPickFailed": "Falha ao selecionar imagens para importar: {{err}}"
+    },
     "tooltips": {
       "communityPresets": "Predefinições da Comunidade",
       "goHome": "Ir para Início",
