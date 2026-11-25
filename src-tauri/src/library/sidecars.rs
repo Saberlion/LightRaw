@@ -75,6 +75,7 @@ pub fn parse_virtual_path(virtual_path: &str) -> (PathBuf, PathBuf) {
 pub fn save_metadata_and_update_thumbnail(
     path: String,
     adjustments: Value,
+    update_thumbnail: Option<bool>,
     app_handle: AppHandle,
     state: tauri::State<AppState>,
 ) -> Result<(), String> {
@@ -112,6 +113,19 @@ pub fn save_metadata_and_update_thumbnail(
     {
         let create_if_missing = settings.create_xmp_if_missing.unwrap_or(false);
         sync_metadata_to_xmp(&source_path, &sidecar_path, &metadata, create_if_missing);
+    }
+
+    // The thumbnail regeneration is a second GPU render. Running it inside the
+    // 300ms auto-save meant every discrete adjustment change fired TWO renders
+    // (preview + thumbnail) that contend for the same GPU while the webview is
+    // still presenting the new preview - on Mate 80 each stall measured
+    // ~200ms of compositor jank, 2-3 times per change (CDP trace, 2026-11-25).
+    // Callers now persist the sidecar immediately (update_thumbnail: false)
+    // and request the thumbnail refresh separately, 200ms after the preview
+    // render has settled (debouncedThumbnailRefresh). Default keeps the
+    // legacy behaviour for every other caller.
+    if !update_thumbnail.unwrap_or(true) {
+        return Ok(());
     }
 
     let loaded_image_lock = state.original_image.lock().unwrap();

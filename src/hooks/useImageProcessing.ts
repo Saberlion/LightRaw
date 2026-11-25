@@ -9,7 +9,7 @@ import { useLibraryStore } from '../store/useLibraryStore';
 import { Adjustments, COPYABLE_ADJUSTMENT_KEYS } from '../utils/adjustments';
 import { Invokes } from '../types/invokes';
 import { Panel } from '../types/ui';
-import { debouncedSave, getOriginalAdjustments } from './useEditorActions';
+import { debouncedSave, debouncedThumbnailRefresh, getOriginalAdjustments } from './useEditorActions';
 import { globalImageCache } from '../utils/ImageLRUCache';
 import { prepareAdjustmentsPayload } from '../utils/backendPayload';
 import { calculateTargetResolution, getVisibleImageRegion } from '../utils/previewResolution';
@@ -181,6 +181,15 @@ export function useImageProcessing(
         markSent();
 
         if (currentPath !== selectedImagePathRef.current) return;
+
+        // Thumbnail refresh point: a full (non-interactive) render has just
+        // settled, so the preview is presented. Schedule the library
+        // thumbnail regeneration 200ms out - inside the editor the thumbnail
+        // render used to run inside debouncedSave and contend with the very
+        // preview render it follows (see debouncedThumbnailRefresh).
+        if (!dragging && buffer && buffer.byteLength > 0) {
+          debouncedThumbnailRefresh(currentPath, currentAdjustments);
+        }
 
         if (buffer && buffer.byteLength > 0 && jobId >= latestRenderedJobIdRef.current) {
           latestRenderedJobIdRef.current = jobId;
@@ -515,7 +524,11 @@ export function useImageProcessing(
         const hasAdjustmentsChanged = prev.adjustments !== adjustments;
 
         if (hasAdjustmentsChanged) {
-          debouncedSave(selectedImage.path, adjustments);
+          // Sidecar persist only - the thumbnail refresh is scheduled
+          // separately (debouncedThumbnailRefresh) once the preview render
+          // has settled, so its GPU render does not contend with the
+          // preview pipeline (see save_metadata_and_update_thumbnail).
+          debouncedSave(selectedImage.path, adjustments, false);
 
           const otherPaths = multiSelectedPaths.filter((p) => p !== selectedImage.path);
           if (appSettings?.copyPasteSettings?.autoSync && otherPaths.length > 0) {

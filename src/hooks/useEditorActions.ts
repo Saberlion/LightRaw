@@ -36,12 +36,25 @@ import { getDevicePixelRatio } from '../utils/displayScale';
 
 export { debouncedSetHistory };
 
-export const debouncedSave = debounce((path: string, adjustmentsToSave: Adjustments) => {
-  invoke(Invokes.SaveMetadataAndUpdateThumbnail, { path, adjustments: adjustmentsToSave }).catch((err) => {
+export const debouncedSave = debounce((path: string, adjustmentsToSave: Adjustments, updateThumbnail = true) => {
+  invoke(Invokes.SaveMetadataAndUpdateThumbnail, { path, adjustments: adjustmentsToSave, updateThumbnail }).catch((err) => {
     console.error('Auto-save failed:', err);
     toast.error(`Failed to save changes: ${err}`);
   });
 }, 300);
+
+// Thumbnail-only refresh, requested 200ms after a full (non-interactive)
+// preview render settles: the regeneration is a second GPU render, and
+// running it inside debouncedSave made every discrete adjustment change
+// queue two renders + three full-window compositor repaints back to back,
+// visibly stuttering the page on OHOS phones (~200ms raster stalls,
+// CDP-traced 2026-11-25). The 200ms gap lets the webview finish presenting
+// the new preview first; rapid changes collapse into the trailing edge.
+export const debouncedThumbnailRefresh = debounce((path: string, adjustmentsToSave: Adjustments) => {
+  invoke(Invokes.SaveMetadataAndUpdateThumbnail, { path, adjustments: adjustmentsToSave, updateThumbnail: true }).catch((err) => {
+    console.error('Thumbnail refresh failed:', err);
+  });
+}, 200);
 
 const AUTO_ADJUST_MODE_ICONS: Record<AutoAdjustMode, any> = {
   [AutoAdjustMode.Subtle]: SignalLow,
