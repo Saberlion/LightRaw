@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Cpu,
@@ -746,6 +746,11 @@ export default function SettingsPanel({
   });
   const [restartRequired, setRestartRequired] = useState(false);
   const [activeCategory, setActiveCategory] = useState('general');
+  // Vercel skill rerender-use-deferred-value: the category bubble animates
+  // urgently (small, 60fps) while the content swap is deferred — mounting a
+  // new settings section triggers 300-400 layout events (CDP-traced at
+  // 356-1256ms on Mate 80) that would otherwise freeze the bubble animation.
+  const deferredCategory = useDeferredValue(activeCategory);
   const [dpr, setDpr] = useState(() => getDevicePixelRatio());
   const [viewingDoc, setViewingDoc] = useState<AgreementDocKind | null>(null);
   const docViewerRef = useRef<HTMLDivElement | null>(null);
@@ -1212,14 +1217,15 @@ export default function SettingsPanel({
           </header>
 
           <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 -mr-2 custom-scrollbar">
-            <AnimatePresence mode="wait">
-              {activeCategory === 'general' && (
-                <motion.div
+            {/* Vercel skill rerender-use-deferred-value: the content uses
+                deferredCategory so the bubble animation runs at full frame
+                rate while the expensive section mount (300-400 layout
+                events, CDP-traced at 356-1256ms) is deferred. The previous
+                AnimatePresence mode="wait" doubled the cost by animating
+                both the exit AND the enter of each section. */}
+              {deferredCategory === 'general' && (
+                <div
                   key="general"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
                   className="space-y-10"
                 >
                   <div className="p-6 bg-surface rounded-xl shadow-md">
@@ -1870,15 +1876,11 @@ export default function SettingsPanel({
                       </li>
                     </Text>
                   </div>
-                </motion.div>
+                </div>
               )}
-              {activeCategory === 'processing' && (
-                <motion.div
+              {deferredCategory === 'processing' && (
+                <div
                   key="processing"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
                   className="space-y-10"
                 >
                   <div className="p-6 bg-surface rounded-xl shadow-md">
@@ -2640,16 +2642,12 @@ export default function SettingsPanel({
                       rootPaths={effectiveRootPaths}
                     />
                   </div>
-                </motion.div>
+                </div>
               )}
 
-              {activeCategory === 'shortcuts' && (
-                <motion.div
+              {deferredCategory === 'shortcuts' && (
+                <div
                   key="shortcuts"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
                   className="space-y-10"
                 >
                   <div className="p-6 bg-surface rounded-xl shadow-md">
@@ -2812,15 +2810,11 @@ export default function SettingsPanel({
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
-              {activeCategory === 'about' && (
-                <motion.div
+              {deferredCategory === 'about' && (
+                <div
                   key="about"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
                   className="space-y-10"
                 >
                   <div className="p-6 bg-surface rounded-xl shadow-md">
@@ -2959,9 +2953,9 @@ export default function SettingsPanel({
                       </Text>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
+
           </div>
         </div>
       </LayoutGroup>
