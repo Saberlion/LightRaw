@@ -1182,7 +1182,11 @@ export default function SettingsPanel({
                   key={category.id}
                   onClick={() => setActiveCategory(category.id)}
                   className={clsx(
-                    'relative flex-1 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                    // min-w-0 lets a narrow strip (phone settings) actually
+                    // shrink the tabs so the truncate labels engage; without
+                    // it flex-1 items keep their intrinsic width and the
+                    // last tab escapes the rounded box (phone splash host).
+                    'relative flex-1 min-w-0 flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
                     {
                       'text-text-primary hover:bg-surface': activeCategory !== category.id,
                       'text-button-text': activeCategory === category.id,

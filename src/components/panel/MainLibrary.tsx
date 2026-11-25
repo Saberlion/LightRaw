@@ -358,7 +358,19 @@ export default function MainLibrary(props: MainLibraryProps) {
               <div className="absolute inset-0 bg-bg-secondary/90"></div>
             </div>
 
-            <div className="w-full h-full flex flex-col p-8 lg:p-16 overflow-y-auto custom-scrollbar relative z-10">
+            <div
+              className={clsx(
+                'w-full h-full flex flex-col overflow-y-auto custom-scrollbar relative z-10',
+                // Phone settings opened from the welcome screen host: the
+                // desktop splash padding (p-8 lg:p-16 = 32px sides on a 366px
+                // viewport) squeezed the settings tab strip until the "about"
+                // tab left its rounded box, and it left no clearance for the
+                // floating capsule tab bar. Mirror the Tab-shell settings host
+                // (App.tsx renderSettings: p-4 pb-20); the welcome screen
+                // itself keeps its verified desktop padding.
+                isSettingsOpen && props.isPhoneLayout ? 'p-4 pb-20' : 'p-8 lg:p-16',
+              )}
+            >
               {isSettingsOpen && props.appSettings ? (
                 <SettingsPanel
                   appSettings={props.appSettings}
