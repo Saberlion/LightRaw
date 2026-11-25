@@ -925,7 +925,7 @@
         "importPresetsTitle": "Importa Predefiniti",
         "legacyPreset": "Predefinito Obsoleto",
         "presetFile": "File Predefinito",
-        "rapidRawPreset": "Predefinito RapidRAW"
+        "rapidRawPreset": "Predefinito LightRaw"
       },
       "menu": {
         "configurePreset": "Configura Predefinito",
@@ -989,7 +989,7 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "RapidRAW non è riuscito a decodificare questo file RAW, quindi stai vedendo e modificando l'anteprima JPEG incorporata della fotocamera. Aspettati una qualità inferiore e meno margine di modifica rispetto a un vero RAW."
+      "embeddedPreview": "LightRaw non è riuscito a decodificare questo file RAW, quindi stai vedendo e modificando l'anteprima JPEG incorporata della fotocamera. Aspettati una qualità inferiore e meno margine di modifica rispetto a un vero RAW."
     },
     "toolbar": {
       "history": "Cronologia",
@@ -1010,7 +1010,7 @@
     },
     "viewer": {
       "openFailed": "Impossibile aprire la seconda finestra: {{error}}",
-      "windowTitle": "Visualizzatore RapidRAW"
+      "windowTitle": "Visualizzatore LightRaw"
     }
   },
   "export": {
@@ -1169,7 +1169,7 @@
     "close": {
       "cancel": "Annulla",
       "closeAnyway": "Chiudi comunque",
-      "message": "Modifiche in attesa di Immich: {{number}}. Restano su questo computer e verranno inviate la prossima volta che RapidRAW è in esecuzione e Immich è raggiungibile.",
+      "message": "Modifiche in attesa di Immich: {{number}}. Restano su questo computer e verranno inviate la prossima volta che LightRaw è in esecuzione e Immich è raggiungibile.",
       "title": "Modifiche non ancora su Immich"
     },
     "export": {
@@ -1509,7 +1509,7 @@
     },
     "splash": {
       "addFolder": "Aggiungi Cartella",
-      "brand": "RapidRAW",
+      "brand": "LightRaw",
       "continueSession": "Continua Sessione",
       "contribute": "Contribuisci su GitHub",
       "descriptionAndroid": "Un editor di immagini RAW velocissimo e con accelerazione GPU. Apri la libreria per iniziare.",
@@ -2023,7 +2023,7 @@
       },
       "storageTitle": "Archiviazione",
       "title": "Gestione Dati",
-      "totalUsed": "RapidRAW sta usando {{size}} su questo dispositivo."
+      "totalUsed": "LightRaw sta usando {{size}} su questo dispositivo."
     },
     "general": {
       "createXmp": "Crea File XMP Mancanti",
@@ -2045,7 +2045,7 @@
       "hideCollapsedPanels": "Nascondi Pannelli Ridotti",
       "hideCollapsedPanelsDesc": "I pannelli laterali ridotti vengono nascosti completamente invece di lasciare una striscia stretta. Riaprili dalla barra inferiore o con le relative scorciatoie da tastiera.",
       "nativeTitlebar": "Barra del Titolo Nativa",
-      "nativeTitlebarDesc": "Usa la barra del titolo della finestra predefinita del tuo sistema invece di quella personalizzata di RapidRAW.",
+      "nativeTitlebarDesc": "Usa la barra del titolo della finestra predefinita del tuo sistema invece di quella personalizzata di LightRaw.",
       "neutralGreyCanvas": "Tela grigio neutro",
       "neutralGreyCanvasDesc": "Usa una tela grigio neutro per una correzione del colore e dell'esposizione più precisa senza cambiare il tema dell'app.",
       "poppins": "Poppins",
@@ -2174,7 +2174,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "Disattiva tutte le funzioni di IA. Tutti i controlli legati all'IA vengono nascosti dall'interfaccia, così RapidRAW funziona come un editor RAW puramente tradizionale.",
+          "description": "Disattiva tutte le funzioni di IA. Tutti i controlli legati all'IA vengono nascosti dall'interfaccia, così LightRaw funziona come un editor RAW puramente tradizionale.",
           "feature1": "Nessuna maschera IA, sfocatura dell'obiettivo o modifica generativa nell'interfaccia",
           "feature2": "Le modifiche IA esistenti continuano a essere visualizzate normalmente",
           "feature3": "Un'interfaccia più pulita e mirata",
@@ -2209,7 +2209,7 @@
         "connector": {
           "address": "Indirizzo Connettore AI",
           "addressDesc": "Inserisci l'indirizzo e la porta della tua istanza del Connettore AI in esecuzione. Richiesto per le funzionalità di AI generativa.",
-          "description": "Per gli utenti con una GPU in grado di offrire il massimo controllo, collega RapidRAW al tuo server Connettore personale. Questo ti offre il controllo completo per i flussi di lavoro tecnici.",
+          "description": "Per gli utenti con una GPU in grado di offrire il massimo controllo, collega LightRaw al tuo server Connettore personale. Questo ti offre il controllo completo per i flussi di lavoro tecnici.",
           "failed": "Connessione fallita.",
           "feature1": "Usa la tua istanza ComfyUI",
           "feature2": "Modifiche generative avanzate gratuite",
@@ -2217,10 +2217,10 @@
           "success": "Connessione riuscita!",
           "test": "Testa",
           "testing": "Test in corso...",
-          "title": "Self-Hosted (Connettore AI RapidRAW)"
+          "title": "Self-Hosted (Connettore AI LightRaw)"
         },
         "cpu": {
-          "description": "Integrate direttamente in RapidRAW, queste funzionalità funzionano interamente sul tuo computer. Sono veloci, gratuite e non richiedono alcuna configurazione, rendendole ideali per accelerare il flusso di lavoro quotidiano.",
+          "description": "Integrate direttamente in LightRaw, queste funzionalità funzionano interamente sul tuo computer. Sono veloci, gratuite e non richiedono alcuna configurazione, rendendole ideali per accelerare il flusso di lavoro quotidiano.",
           "feature1": "Mascheratura AI (Soggetto, Cielo, Primo Piano)",
           "feature2": "Tagging Automatico Immagini",
           "feature3": "Sostituzione Generativa semplice sul dispositivo",
@@ -2229,7 +2229,7 @@
           "gpuAccelerationLabel": "Usa la GPU per i modelli IA",
           "title": "AI Integrata"
         },
-        "description": "L'AI di RapidRAW è concepita per essere flessibile. Scegli il tuo flusso di lavoro ideale, da strumenti locali veloci a un potente self-hosting.",
+        "description": "L'AI di LightRaw è concepita per essere flessibile. Scegli il tuo flusso di lavoro ideale, da strumenti locali veloci a un potente self-hosting.",
         "providers": {
           "aiConnector": "Connettore AI",
           "aiFree": "Senza IA",
@@ -2449,7 +2449,7 @@
       "clearCustomTooltip": "Cancella Lista Tag AI",
       "clearShortcutsTooltip": "Cancella Lista Tag Scorciatoie",
       "customList": "Lista Tag AI Personalizzata",
-      "customListDesc": "Se fornito, l'AI utilizzerà SOLO i tag da questa lista, ignorando la lista predefinita di RapidRAW. Il tagging funziona solo in inglese.",
+      "customListDesc": "Se fornito, l'AI utilizzerà SOLO i tag da questa lista, ignorando la lista predefinita di LightRaw. Il tagging funziona solo in inglese.",
       "maxAiTags": "Tag AI Massimi",
       "maxAiTagsDesc": "Il numero massimo di tag da generare per immagine.",
       "noCustomTags": "Nessun tag AI personalizzato (Usando la lista integrata)",
@@ -2461,7 +2461,7 @@
       "title": "Tag"
     },
     "thanks": {
-      "description": "Un enorme grazie ai seguenti progetti che sono stati molto importanti nello sviluppo di RapidRAW:",
+      "description": "Un enorme grazie ai seguenti progetti che sono stati molto importanti nello sviluppo di LightRaw:",
       "list": {
         "birefnet": "Per il modello di segmentazione ad alta risoluzione che alimenta il rilevamento AI del primo piano.",
         "darktable": "Per alcune implementazioni di riferimento che hanno guidato parti di questo lavoro.",
@@ -2469,15 +2469,15 @@
         "efficientsam3": "Per l'efficiente modello di segmentazione guidato da prompt, distillato da SAM 3, che alimenta le maschere AI di cielo e testo.",
         "lama": "Per il potente e semplice modello di inpainting delle immagini, che permette il riempimento in base al contenuto e la rimozione di oggetti.",
         "lensfun": "Per la sua inestimabile libreria open source e il database completo per la correzione automatica dell'obiettivo.",
-        "libgphoto2": "Per la completa libreria di comunicazione con le fotocamere che alimenta il tethering e lo scatto remoto di RapidRAW.",
+        "libgphoto2": "Per la completa libreria di comunicazione con le fotocamere che alimenta il tethering e lo scatto remoto di LightRaw.",
         "mediapipe": "Per i rapidi modelli di punti del viso e segmentazione che alimentano le maschere viso IA.",
         "negpy": "Per l'ispirazione dietro alla logica di conversione dei negativi.",
-        "nind": "Per aver fornito i modelli AI che alimentano le capacità di riduzione del rumore AI in RapidRAW.",
+        "nind": "Per aver fornito i modelli AI che alimentano le capacità di riduzione del rumore AI in LightRaw.",
         "rawler": "Per l'eccellente crate Rust che fornisce le basi per l'elaborazione dei file RAW in questo progetto.",
         "sam2": "Per aver fornito il modello fondamentale usato per le funzionalità di rilevamento del soggetto tramite AI.",
-        "span": "Per il modello IA di base di RapidRes, l'ingrandimento 2x con IA di RapidRAW, perfezionato da RapidRAW sulla propria elaborazione RAW (di Philip Hofmann, CC BY 4.0).",
-        "spektrafilm": "Per le LUT di emulazione pellicola su base spettrale di Andrea Volpato, che alimentano le emulazioni integrate di RapidRAW. Concesse in licenza CC BY-SA 4.0.",
-        "you": "Per utilizzare e supportare RapidRAW. Il tuo interesse mantiene questo progetto vivo e in evoluzione.",
+        "span": "Per il modello IA di base di RapidRes, l'ingrandimento 2x con IA di LightRaw, perfezionato da LightRaw sulla propria elaborazione RAW (di Philip Hofmann, CC BY 4.0).",
+        "spektrafilm": "Per le LUT di emulazione pellicola su base spettrale di Andrea Volpato, che alimentano le emulazioni integrate di LightRaw. Concesse in licenza CC BY-SA 4.0.",
+        "you": "Per utilizzare e supportare LightRaw. Il tuo interesse mantiene questo progetto vivo e in evoluzione.",
         "youLabel": "Te"
       },
       "title": "Ringraziamenti Speciali"

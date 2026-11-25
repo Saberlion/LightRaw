@@ -897,7 +897,7 @@
         "importPresetsTitle": "导入预设",
         "legacyPreset": "旧版预设",
         "presetFile": "预设文件",
-        "rapidRawPreset": "RapidRAW 预设"
+        "rapidRawPreset": "LightRaw 预设"
       },
       "menu": {
         "configurePreset": "配置预设",
@@ -961,7 +961,7 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "RapidRAW 无法解码此 RAW 文件，因此您看到和编辑的是相机内嵌的 JPEG 预览。画质会低于真正的 RAW，可调整的空间也更小。"
+      "embeddedPreview": "LightRaw 无法解码此 RAW 文件，因此您看到和编辑的是相机内嵌的 JPEG 预览。画质会低于真正的 RAW，可调整的空间也更小。"
     },
     "toolbar": {
       "history": "历史记录",
@@ -982,7 +982,7 @@
     },
     "viewer": {
       "openFailed": "无法打开第二窗口：{{error}}",
-      "windowTitle": "RapidRAW 查看器"
+      "windowTitle": "LightRaw 查看器"
     }
   },
   "export": {
@@ -1139,7 +1139,7 @@
     "close": {
       "cancel": "取消",
       "closeAnyway": "仍然关闭",
-      "message": "等待同步到 Immich 的编辑：{{number}}。它们会保留在这台电脑上，并在下次运行 RapidRAW 且 Immich 可用时发送。",
+      "message": "等待同步到 Immich 的编辑：{{number}}。它们会保留在这台电脑上，并在下次运行 LightRaw 且 Immich 可用时发送。",
       "title": "编辑尚未同步到 Immich"
     },
     "export": {
@@ -1468,7 +1468,7 @@
     },
     "splash": {
       "addFolder": "添加文件夹",
-      "brand": "RapidRAW",
+      "brand": "LightRaw",
       "continueSession": "继续会话",
       "contribute": "在 GitHub 上贡献",
       "descriptionAndroid": "一款极速、GPU 加速的 RAW 图像编辑器。打开图库以开始。",
@@ -1971,7 +1971,7 @@
       },
       "storageTitle": "存储",
       "title": "数据管理",
-      "totalUsed": "RapidRAW 在此设备上占用了 {{size}}。"
+      "totalUsed": "LightRaw 在此设备上占用了 {{size}}。"
     },
     "general": {
       "createXmp": "创建缺失的 XMP 文件",
@@ -1993,7 +1993,7 @@
       "hideCollapsedPanels": "隐藏折叠的面板",
       "hideCollapsedPanelsDesc": "折叠的侧边面板将完全隐藏，而不是留下一道窄条。可通过底部栏或键盘快捷键重新打开。",
       "nativeTitlebar": "原生标题栏",
-      "nativeTitlebarDesc": "使用系统默认的窗口标题栏，而非 RapidRAW 的自定义标题栏。",
+      "nativeTitlebarDesc": "使用系统默认的窗口标题栏，而非 LightRaw 的自定义标题栏。",
       "neutralGreyCanvas": "中性灰画布",
       "neutralGreyCanvasDesc": "使用中性灰画布，以便在不更改应用主题的情况下进行更准确的色彩和曝光分级。",
       "poppins": "Poppins",
@@ -2122,7 +2122,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "关闭所有 AI 功能。所有与 AI 相关的控件都会从界面中隐藏，RapidRAW 将作为纯传统的 RAW 编辑器运行。",
+          "description": "关闭所有 AI 功能。所有与 AI 相关的控件都会从界面中隐藏，LightRaw 将作为纯传统的 RAW 编辑器运行。",
           "feature1": "界面中不显示 AI 蒙版、镜头模糊或生成式编辑",
           "feature2": "现有的 AI 编辑仍会正常渲染",
           "feature3": "更简洁、更专注的界面",
@@ -2157,7 +2157,7 @@
         "connector": {
           "address": "AI 连接器地址",
           "addressDesc": "输入您正在运行的 AI 连接器实例的地址和端口。这是使用生成式 AI 功能所必需的。",
-          "description": "对于拥有强大 GPU 且希望最大程度控制的用户，可以将 RapidRAW 连接到您自己的连接器服务器。这为您提供了技术工作流的完全控制。",
+          "description": "对于拥有强大 GPU 且希望最大程度控制的用户，可以将 LightRaw 连接到您自己的连接器服务器。这为您提供了技术工作流的完全控制。",
           "failed": "连接失败。",
           "feature1": "使用您自己的 ComfyUI 实例",
           "feature2": "免费的进阶生成式编辑",
@@ -2165,10 +2165,10 @@
           "success": "连接成功！",
           "test": "测试",
           "testing": "测试中...",
-          "title": "自托管（RapidRAW AI 连接器）"
+          "title": "自托管（LightRaw AI 连接器）"
         },
         "cpu": {
-          "description": "直接集成到 RapidRAW 中，这些功能完全在您的计算机上运行。它们快速、免费且无需设置，非常适合日常加速工作流程。",
+          "description": "直接集成到 LightRaw 中，这些功能完全在您的计算机上运行。它们快速、免费且无需设置，非常适合日常加速工作流程。",
           "feature1": "AI 蒙版（主体、天空、前景）",
           "feature2": "自动图像标签",
           "feature3": "简单的本地生成式替换",
@@ -2177,7 +2177,7 @@
           "gpuAccelerationLabel": "为 AI 模型使用 GPU",
           "title": "内置 AI"
         },
-        "description": "RapidRAW 的 AI 专为灵活性而设计。选择您理想的工作流程，从快速的本地工具到强大的自托管。",
+        "description": "LightRaw 的 AI 专为灵活性而设计。选择您理想的工作流程，从快速的本地工具到强大的自托管。",
         "providers": {
           "aiConnector": "AI 连接器",
           "aiFree": "无 AI",
@@ -2397,7 +2397,7 @@
       "clearCustomTooltip": "清除 AI 标签列表",
       "clearShortcutsTooltip": "清除快捷方式标签列表",
       "customList": "自定义 AI 标签列表",
-      "customListDesc": "如果提供，AI 将仅使用此列表中的标签，覆盖 RapidRAW 内置的标签列表。标签功能仅支持英文。",
+      "customListDesc": "如果提供，AI 将仅使用此列表中的标签，覆盖 LightRaw 内置的标签列表。标签功能仅支持英文。",
       "maxAiTags": "最大 AI 标签数",
       "maxAiTagsDesc": "每张图像生成的最大标签数量。",
       "noCustomTags": "无自定义 AI 标签（使用内置列表）",
@@ -2409,7 +2409,7 @@
       "title": "标签"
     },
     "thanks": {
-      "description": "衷心感谢以下项目，它们在 RapidRAW 的开发过程中非常重要：",
+      "description": "衷心感谢以下项目，它们在 LightRaw 的开发过程中非常重要：",
       "list": {
         "birefnet": "为提供高分辨率分割模型，用于 AI 前景检测功能。",
         "darktable": "为部分参考实现提供了指导。",
@@ -2417,15 +2417,15 @@
         "efficientsam3": "为提供从 SAM 3 蒸馏而来的高效提示式分割模型，用于 AI 天空和文本蒙版。",
         "lama": "为强大且简单的图像修复模型提供支持，实现了内容感知填充和对象移除。",
         "lensfun": "为无价的开源库和全面的数据库提供支持，实现了自动镜头校正。",
-        "libgphoto2": "感谢提供全面的相机通信库，为 RapidRAW 的联机拍摄与远程控制子系统提供支持。",
+        "libgphoto2": "感谢提供全面的相机通信库，为 LightRaw 的联机拍摄与远程控制子系统提供支持。",
         "mediapipe": "感谢其快速的面部关键点和分割模型，为 AI 面部蒙版提供支持。",
         "negpy": "为负片转换逻辑提供了灵感。",
-        "nind": "为 AI 模型提供支持，驱动了 RapidRAW 中的 AI 降噪功能。",
+        "nind": "为 AI 模型提供支持，驱动了 LightRaw 中的 AI 降噪功能。",
         "rawler": "为优秀的 Rust 库提供支持，构成了本项目 RAW 文件处理的基础。",
         "sam2": "为提供基础模型，用于 AI 主体检测功能。",
-        "span": "RapidRAW 的 AI 2 倍放大功能 RapidRes 的基础 AI 模型，由 RapidRAW 针对自身的 RAW 处理流程进行微调（作者 Philip Hofmann，CC BY 4.0）。",
-        "spektrafilm": "感谢 Andrea Volpato 提供基于光谱的胶片模拟 LUT，为 RapidRAW 的内置胶片模拟提供支持。采用 CC BY-SA 4.0 许可。",
-        "you": "感谢您使用和支持 RapidRAW。您的关注使本项目持续发展。",
+        "span": "LightRaw 的 AI 2 倍放大功能 RapidRes 的基础 AI 模型，由 LightRaw 针对自身的 RAW 处理流程进行微调（作者 Philip Hofmann，CC BY 4.0）。",
+        "spektrafilm": "感谢 Andrea Volpato 提供基于光谱的胶片模拟 LUT，为 LightRaw 的内置胶片模拟提供支持。采用 CC BY-SA 4.0 许可。",
+        "you": "感谢您使用和支持 LightRaw。您的关注使本项目持续发展。",
         "youLabel": "您"
       },
       "title": "特别鸣谢"

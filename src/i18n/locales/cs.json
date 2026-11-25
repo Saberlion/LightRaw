@@ -950,7 +950,7 @@
         "importPresetsTitle": "Importovat presety",
         "legacyPreset": "Starší preset",
         "presetFile": "Soubor s presetem",
-        "rapidRawPreset": "Preset RapidRAW"
+        "rapidRawPreset": "Preset LightRaw"
       },
       "menu": {
         "configurePreset": "Nakonfigurovat preset",
@@ -1014,7 +1014,7 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "RapidRAW nedokázal dekódovat tento soubor RAW, takže vidíte a upravujete vložený náhled JPEG z fotoaparátu. Počítejte s nižší kvalitou a menší rezervou pro úpravy než u skutečného RAW."
+      "embeddedPreview": "LightRaw nedokázal dekódovat tento soubor RAW, takže vidíte a upravujete vložený náhled JPEG z fotoaparátu. Počítejte s nižší kvalitou a menší rezervou pro úpravy než u skutečného RAW."
     },
     "toolbar": {
       "history": "Historie",
@@ -1035,7 +1035,7 @@
     },
     "viewer": {
       "openFailed": "Druhé okno nelze otevřít: {{error}}",
-      "windowTitle": "Prohlížeč RapidRAW"
+      "windowTitle": "Prohlížeč LightRaw"
     }
   },
   "export": {
@@ -1196,7 +1196,7 @@
     "close": {
       "cancel": "Zrušit",
       "closeAnyway": "Přesto zavřít",
-      "message": "Úpravy čekající na Immich: {{number}}. Zůstávají v tomto počítači a odešlou se, až RapidRAW příště poběží a Immich bude dostupný.",
+      "message": "Úpravy čekající na Immich: {{number}}. Zůstávají v tomto počítači a odešlou se, až LightRaw příště poběží a Immich bude dostupný.",
       "title": "Úpravy ještě nejsou v Immichi"
     },
     "export": {
@@ -1543,7 +1543,7 @@
     },
     "splash": {
       "addFolder": "Přidat složku",
-      "brand": "RapidRAW",
+      "brand": "LightRaw",
       "continueSession": "Pokračovat v relaci",
       "contribute": "Přispějte na GitHubu",
       "descriptionAndroid": "Ohromně rychlý editor snímků RAW s akcelerací GPU. Otevřete knihovnu a začněte.",
@@ -2068,7 +2068,7 @@
       },
       "storageTitle": "Úložiště",
       "title": "Správa dat",
-      "totalUsed": "RapidRAW na tomto zařízení zabírá {{size}}."
+      "totalUsed": "LightRaw na tomto zařízení zabírá {{size}}."
     },
     "general": {
       "createXmp": "Vytvořit chybějící soubory XMP",
@@ -2090,7 +2090,7 @@
       "hideCollapsedPanels": "Skrýt sbalené panely",
       "hideCollapsedPanelsDesc": "Sbalené boční panely se zcela skryjí, místo aby po nich zůstal úzký pruh. Znovu je otevřete ze spodní lišty nebo pomocí jejich klávesových zkratek.",
       "nativeTitlebar": "Nativní záhlaví",
-      "nativeTitlebarDesc": "Použijte výchozí záhlaví okna vašeho systému namísto vlastního okna RapidRAW.",
+      "nativeTitlebarDesc": "Použijte výchozí záhlaví okna vašeho systému namísto vlastního okna LightRaw.",
       "neutralGreyCanvas": "Neutrální šedé plátno",
       "neutralGreyCanvasDesc": "Použít neutrální šedé plátno pro přesnější hodnocení barev a expozice beze změny motivu aplikace.",
       "poppins": "Poppins",
@@ -2219,7 +2219,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "Vypne všechny funkce AI. Všechny ovládací prvky související s AI jsou v rozhraní skryty, takže RapidRAW funguje jako čistě tradiční editor RAW.",
+          "description": "Vypne všechny funkce AI. Všechny ovládací prvky související s AI jsou v rozhraní skryty, takže LightRaw funguje jako čistě tradiční editor RAW.",
           "feature1": "Žádné AI masky, rozostření objektivu ani generativní úpravy v rozhraní",
           "feature2": "Stávající AI úpravy se nadále zobrazují normálně",
           "feature3": "Přehlednější a soustředěnější rozhraní",
@@ -2254,7 +2254,7 @@
         "connector": {
           "address": "Adresa konektoru AI",
           "addressDesc": "Zadejte adresu a port vaší spuštěné instance AI Connectoru. Vyžadováno pro generativní funkce AI.",
-          "description": "Pro uživatele s výkonným GPU, kteří chtějí maximální kontrolu: připojte RapidRAW k vlastnímu serveru Connector. Získáte plnou kontrolu pro technické pracovní postupy.",
+          "description": "Pro uživatele s výkonným GPU, kteří chtějí maximální kontrolu: připojte LightRaw k vlastnímu serveru Connector. Získáte plnou kontrolu pro technické pracovní postupy.",
           "failed": "Připojení se nezdařilo.",
           "feature1": "Použijte svou vlastní instanci ComfyUI",
           "feature2": "Bezplatné pokročilé generativní úpravy",
@@ -2262,10 +2262,10 @@
           "success": "Připojení úspěšné!",
           "test": "Test",
           "testing": "Testování...",
-          "title": "Vlastní (konektor RapidRAW AI)"
+          "title": "Vlastní (konektor LightRaw AI)"
         },
         "cpu": {
-          "description": "Tyto funkce jsou integrovány přímo do RapidRAW a běží výhradně na vašem počítači. Jsou rychlé, zdarma a nevyžadují žádné nastavení, takže jsou ideální pro každodenní zrychlení práce.",
+          "description": "Tyto funkce jsou integrovány přímo do LightRaw a běží výhradně na vašem počítači. Jsou rychlé, zdarma a nevyžadují žádné nastavení, takže jsou ideální pro každodenní zrychlení práce.",
           "feature1": "Maskování AI (předmět, obloha, popředí)",
           "feature2": "Automatické označování snímků",
           "feature3": "Jednoduchá generativní výměna přímo v zařízení",
@@ -2274,7 +2274,7 @@
           "gpuAccelerationLabel": "Používat GPU pro modely AI",
           "title": "Vestavěná AI"
         },
-        "description": "AI v RapidRAW je vytvořena pro flexibilitu. Vyberte si ideální pracovní postup, od rychlých místních nástrojů po výkonný vlastní hosting.",
+        "description": "AI v LightRaw je vytvořena pro flexibilitu. Vyberte si ideální pracovní postup, od rychlých místních nástrojů po výkonný vlastní hosting.",
         "providers": {
           "aiConnector": "AI konektor",
           "aiFree": "Bez AI",
@@ -2494,7 +2494,7 @@
       "clearCustomTooltip": "Vymazat seznam značek AI",
       "clearShortcutsTooltip": "Vymazat seznam značek zkratek",
       "customList": "Vlastní seznam značek AI",
-      "customListDesc": "Pokud je k dispozici, AI použije POUZE značky z tohoto seznamu a přepíše vestavěný seznam RapidRAW. Značkování funguje pouze v angličtině.",
+      "customListDesc": "Pokud je k dispozici, AI použije POUZE značky z tohoto seznamu a přepíše vestavěný seznam LightRaw. Značkování funguje pouze v angličtině.",
       "maxAiTags": "Maximální počet značek AI",
       "maxAiTagsDesc": "Maximální počet značek vygenerovaných na snímek.",
       "noCustomTags": "Žádné vlastní značky AI (pomocí vestavěného seznamu)",
@@ -2506,7 +2506,7 @@
       "title": "Označování"
     },
     "thanks": {
-      "description": "Velké poděkování patří následujícím projektům, které byly velmi důležité při vývoji RapidRAW:",
+      "description": "Velké poděkování patří následujícím projektům, které byly velmi důležité při vývoji LightRaw:",
       "list": {
         "birefnet": "Za segmentační model s vysokým rozlišením, který pohání detekci popředí pomocí AI.",
         "darktable": "Pro některé referenční implementace, které vedly části této práce.",
@@ -2514,15 +2514,15 @@
         "efficientsam3": "Za efektivní segmentační model ovládaný textem, odvozený od SAM 3, který pohání AI masky oblohy a textu.",
         "lama": "Pro výkonný a jednoduchý model malování snímků, který umožňuje výplň a odstraňování objektů s ohledem na obsah.",
         "lensfun": "Pro svou neocenitelnou open-source knihovnu a komplexní databázi pro automatickou korekci objektivů.",
-        "libgphoto2": "Pro komplexní knihovnu pro komunikaci s fotoaparátem, která pohání tethering a vzdálené snímání v RapidRAW.",
+        "libgphoto2": "Pro komplexní knihovnu pro komunikaci s fotoaparátem, která pohání tethering a vzdálené snímání v LightRaw.",
         "mediapipe": "Za rychlé modely obličejových bodů a segmentace, které pohánějí AI masky obličeje.",
         "negpy": "Pro inspiraci negativní konverzní logiky.",
-        "nind": "Za poskytování modelů AI, které pohánějí funkce redukce šumu AI v RapidRAW.",
+        "nind": "Za poskytování modelů AI, které pohánějí funkce redukce šumu AI v LightRaw.",
         "rawler": "Za vynikající přepravku Rust, která poskytuje základ pro zpracování souborů RAW v tomto projektu.",
         "sam2": "Za poskytnutí základního modelu používaného pro schopnosti detekce předmětů AI.",
-        "span": "Za základní model AI pro RapidRes, 2x AI zvětšování v RapidRAW, který RapidRAW doladil na vlastním zpracování RAW (autor Philip Hofmann, CC BY 4.0).",
-        "spektrafilm": "Pro spektrálně založené filmové emulační LUT od Andrey Volpata, použité pro vestavěné filmové emulace v RapidRAW. Licence CC BY-SA 4.0.",
-        "you": "Za používání a podporu RapidRAW. Váš zájem udržuje tento projekt živý a rozvíjející se.",
+        "span": "Za základní model AI pro RapidRes, 2x AI zvětšování v LightRaw, který LightRaw doladil na vlastním zpracování RAW (autor Philip Hofmann, CC BY 4.0).",
+        "spektrafilm": "Pro spektrálně založené filmové emulační LUT od Andrey Volpata, použité pro vestavěné filmové emulace v LightRaw. Licence CC BY-SA 4.0.",
+        "you": "Za používání a podporu LightRaw. Váš zájem udržuje tento projekt živý a rozvíjející se.",
         "youLabel": "Vy"
       },
       "title": "Zvláštní poděkování"

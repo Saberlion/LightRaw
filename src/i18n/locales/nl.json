@@ -900,7 +900,7 @@
         "importPresetsTitle": "Voorinstellingen importeren",
         "legacyPreset": "Verouderde voorinstelling",
         "presetFile": "Voorinstellingsbestand",
-        "rapidRawPreset": "RapidRAW-voorinstelling"
+        "rapidRawPreset": "LightRaw-voorinstelling"
       },
       "menu": {
         "configurePreset": "Voorinstelling configureren",
@@ -964,7 +964,7 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "RapidRAW kon dit RAW-bestand niet decoderen, dus je ziet en bewerkt de ingesloten JPEG-preview van de camera. Verwacht een lagere kwaliteit en minder bewerkingsruimte dan bij een echte RAW."
+      "embeddedPreview": "LightRaw kon dit RAW-bestand niet decoderen, dus je ziet en bewerkt de ingesloten JPEG-preview van de camera. Verwacht een lagere kwaliteit en minder bewerkingsruimte dan bij een echte RAW."
     },
     "toolbar": {
       "history": "Geschiedenis",
@@ -985,7 +985,7 @@
     },
     "viewer": {
       "openFailed": "Kan het tweede venster niet openen: {{error}}",
-      "windowTitle": "RapidRAW-viewer"
+      "windowTitle": "LightRaw-viewer"
     }
   },
   "export": {
@@ -1142,7 +1142,7 @@
     "close": {
       "cancel": "Annuleren",
       "closeAnyway": "Toch sluiten",
-      "message": "Bewerkingen die op Immich wachten: {{number}}. Ze blijven op deze computer en worden verstuurd zodra RapidRAW weer draait en Immich bereikbaar is.",
+      "message": "Bewerkingen die op Immich wachten: {{number}}. Ze blijven op deze computer en worden verstuurd zodra LightRaw weer draait en Immich bereikbaar is.",
       "title": "Bewerkingen nog niet in Immich"
     },
     "export": {
@@ -1475,7 +1475,7 @@
     },
     "splash": {
       "addFolder": "Map toevoegen",
-      "brand": "RapidRAW",
+      "brand": "LightRaw",
       "continueSession": "Sessie voortzetten",
       "contribute": "Bijdragen op GitHub",
       "descriptionAndroid": "Een razendsnelle, GPU-versnelde RAW-beeldeditor. Open de bibliotheek om te beginnen.",
@@ -1978,7 +1978,7 @@
       },
       "storageTitle": "Opslag",
       "title": "Gegevensbeheer",
-      "totalUsed": "RapidRAW gebruikt {{size}} op dit apparaat."
+      "totalUsed": "LightRaw gebruikt {{size}} op dit apparaat."
     },
     "general": {
       "createXmp": "Ontbrekende XMP-bestanden maken",
@@ -2000,7 +2000,7 @@
       "hideCollapsedPanels": "Ingeklapte panelen verbergen",
       "hideCollapsedPanelsDesc": "Ingeklapte zijpanelen worden volledig verborgen in plaats van een smalle strook achter te laten. Open ze opnieuw via de onderste balk of met hun sneltoetsen.",
       "nativeTitlebar": "Systeemeigen titelbalk",
-      "nativeTitlebarDesc": "Gebruik de standaard venstertitelbalk van uw systeem in plaats van de aangepaste titelbalk van RapidRAW.",
+      "nativeTitlebarDesc": "Gebruik de standaard venstertitelbalk van uw systeem in plaats van de aangepaste titelbalk van LightRaw.",
       "neutralGreyCanvas": "Neutraal grijs canvas",
       "neutralGreyCanvasDesc": "Gebruik een neutraal grijs canvas voor nauwkeurigere kleur- en belichtingsgradering zonder het thema van de app te wijzigen.",
       "poppins": "Poppins",
@@ -2129,7 +2129,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "Schakelt alle AI-functies uit. Alle AI-gerelateerde bedieningselementen worden verborgen, zodat RapidRAW werkt als een puur traditionele RAW-editor.",
+          "description": "Schakelt alle AI-functies uit. Alle AI-gerelateerde bedieningselementen worden verborgen, zodat LightRaw werkt als een puur traditionele RAW-editor.",
           "feature1": "Geen AI-maskers, lensonscherpte of generatieve bewerkingen in de interface",
           "feature2": "Bestaande AI-bewerkingen worden nog gewoon weergegeven",
           "feature3": "Een overzichtelijkere, meer gerichte interface",
@@ -2164,7 +2164,7 @@
         "connector": {
           "address": "AI-verbindingsadres",
           "addressDesc": "Voer het adres en poort in van uw actieve AI-verbindingsinstantie. Vereist voor generatieve AI-functies.",
-          "description": "Voor gebruikers met een krachtige GPU die maximale controle willen, verbindt u RapidRAW met uw eigen Connector-server. Dit geeft u volledige controle voor technische workflows.",
+          "description": "Voor gebruikers met een krachtige GPU die maximale controle willen, verbindt u LightRaw met uw eigen Connector-server. Dit geeft u volledige controle voor technische workflows.",
           "failed": "Verbinding mislukt.",
           "feature1": "Gebruik uw eigen ComfyUI-instantie",
           "feature2": "Kostenloze geavanceerde generatieve bewerkingen",
@@ -2172,10 +2172,10 @@
           "success": "Verbinding geslaagd!",
           "test": "Testen",
           "testing": "Testen...",
-          "title": "Zelfgehost (RapidRAW AI Connector)"
+          "title": "Zelfgehost (LightRaw AI Connector)"
         },
         "cpu": {
-          "description": "Rechtstreeks geïntegreerd in RapidRAW, draaien deze functies volledig op uw computer. Ze zijn snel, gratis en vereisen geen installatie, waardoor ze ideaal zijn voor dagelijkse workflowversnelling.",
+          "description": "Rechtstreeks geïntegreerd in LightRaw, draaien deze functies volledig op uw computer. Ze zijn snel, gratis en vereisen geen installatie, waardoor ze ideaal zijn voor dagelijkse workflowversnelling.",
           "feature1": "AI-maskering (onderwerp, lucht, voorgrond)",
           "feature2": "Automatische afbeeldingstagging",
           "feature3": "Eenvoudige generatieve vervanging op het apparaat",
@@ -2184,7 +2184,7 @@
           "gpuAccelerationLabel": "GPU gebruiken voor AI-modellen",
           "title": "Ingebouwde AI"
         },
-        "description": "De AI van RapidRAW is gebouwd voor flexibiliteit. Kies uw ideale workflow, van snelle lokale tools tot krachtige zelfhosting.",
+        "description": "De AI van LightRaw is gebouwd voor flexibiliteit. Kies uw ideale workflow, van snelle lokale tools tot krachtige zelfhosting.",
         "providers": {
           "aiConnector": "AI-verbinding",
           "aiFree": "Zonder AI",
@@ -2404,7 +2404,7 @@
       "clearCustomTooltip": "Aangepaste AI-taglijst wissen",
       "clearShortcutsTooltip": "Snelkoppelingstaglijst wissen",
       "customList": "Aangepaste AI-taglijst",
-      "customListDesc": "Als opgegeven, gebruikt de AI ALLEEN tags uit deze lijst, waardoor de ingebouwde lijst van RapidRAW wordt overschreven. Tagging werkt alleen in het Engels.",
+      "customListDesc": "Als opgegeven, gebruikt de AI ALLEEN tags uit deze lijst, waardoor de ingebouwde lijst van LightRaw wordt overschreven. Tagging werkt alleen in het Engels.",
       "maxAiTags": "Maximum AI-tags",
       "maxAiTagsDesc": "Het maximale aantal tags dat per afbeelding wordt gegenereerd.",
       "noCustomTags": "Geen aangepaste AI-tags (ingebouwde lijst gebruiken)",
@@ -2416,7 +2416,7 @@
       "title": "Tagging"
     },
     "thanks": {
-      "description": "Veel dank aan de volgende projecten die zeer belangrijk waren bij de ontwikkeling van RapidRAW:",
+      "description": "Veel dank aan de volgende projecten die zeer belangrijk waren bij de ontwikkeling van LightRaw:",
       "list": {
         "birefnet": "Voor het segmentatiemodel met hoge resolutie dat de AI-voorgronddetectie aandrijft.",
         "darktable": "Voor enkele referentie-implementaties die delen van dit werk hebben geleid.",
@@ -2424,15 +2424,15 @@
         "efficientsam3": "Voor het efficiënte, uit SAM 3 gedistilleerde segmentatiemodel met tekstprompts dat de AI-lucht- en tekstmaskers aandrijft.",
         "lama": "Voor het krachtige en eenvoudige afbeeldingsinpainting-model dat inhoudsgebaseerde opvulling en objectverwijdering mogelijk maakt.",
         "lensfun": "Voor de onschatbare open-source bibliotheek en uitgebreide database voor automatische lenscorrectie.",
-        "libgphoto2": "Voor de uitgebreide cameracommuicatiebibliotheek die het tethering- en afstandsbedieningssysteem van RapidRAW aandrijft.",
+        "libgphoto2": "Voor de uitgebreide cameracommuicatiebibliotheek die het tethering- en afstandsbedieningssysteem van LightRaw aandrijft.",
         "mediapipe": "Voor de snelle gezichtslandmark- en segmentatiemodellen achter de AI-gezichtsmaskers.",
         "negpy": "Voor de inspiratie achter de negatief-omzetlogica.",
-        "nind": "Voor het leveren van AI-modellen die de AI-ruisonderdrukkingmogelijkheden in RapidRAW aandrijven.",
+        "nind": "Voor het leveren van AI-modellen die de AI-ruisonderdrukkingmogelijkheden in LightRaw aandrijven.",
         "rawler": "Voor de uitstekende Rust-crate die de basis vormt voor RAW-bestandsverwerking in dit project.",
         "sam2": "Voor het leveren van het basismodel dat wordt gebruikt voor de AI-onderwerpdetectiemogelijkheden.",
-        "span": "Voor het basis-AI-model achter RapidRes, de 2x AI-vergroting van RapidRAW, door RapidRAW verfijnd op de eigen RAW-verwerking (door Philip Hofmann, CC BY 4.0).",
-        "spektrafilm": "Voor de spectraalgebaseerde filmemulatie-LUT's door Andrea Volpato, gebruikt voor de ingebouwde filmemulaties van RapidRAW. Gelicenseerd onder CC BY-SA 4.0.",
-        "you": "Voor het gebruiken en ondersteunen van RapidRAW. Uw interesse houdt dit project levend en evoluerend.",
+        "span": "Voor het basis-AI-model achter RapidRes, de 2x AI-vergroting van LightRaw, door LightRaw verfijnd op de eigen RAW-verwerking (door Philip Hofmann, CC BY 4.0).",
+        "spektrafilm": "Voor de spectraalgebaseerde filmemulatie-LUT's door Andrea Volpato, gebruikt voor de ingebouwde filmemulaties van LightRaw. Gelicenseerd onder CC BY-SA 4.0.",
+        "you": "Voor het gebruiken en ondersteunen van LightRaw. Uw interesse houdt dit project levend en evoluerend.",
         "youLabel": "U"
       },
       "title": "Speciale dank"

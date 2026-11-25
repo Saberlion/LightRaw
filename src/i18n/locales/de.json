@@ -900,7 +900,7 @@
         "importPresetsTitle": "Vorgaben importieren",
         "legacyPreset": "Alte Vorgabe",
         "presetFile": "Vorgabendatei",
-        "rapidRawPreset": "RapidRAW Vorgabe"
+        "rapidRawPreset": "LightRaw Vorgabe"
       },
       "menu": {
         "configurePreset": "Vorgabe konfigurieren",
@@ -964,7 +964,7 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "RapidRAW konnte diese RAW-Datei nicht dekodieren, daher siehst und bearbeitest du die eingebettete JPEG-Vorschau der Kamera. Rechne mit geringerer Qualität und weniger Bearbeitungsspielraum als bei einem echten RAW."
+      "embeddedPreview": "LightRaw konnte diese RAW-Datei nicht dekodieren, daher siehst und bearbeitest du die eingebettete JPEG-Vorschau der Kamera. Rechne mit geringerer Qualität und weniger Bearbeitungsspielraum als bei einem echten RAW."
     },
     "toolbar": {
       "history": "Verlauf",
@@ -985,7 +985,7 @@
     },
     "viewer": {
       "openFailed": "Das zweite Fenster konnte nicht geöffnet werden: {{error}}",
-      "windowTitle": "RapidRAW-Betrachter"
+      "windowTitle": "LightRaw-Betrachter"
     }
   },
   "export": {
@@ -1142,7 +1142,7 @@
     "close": {
       "cancel": "Abbrechen",
       "closeAnyway": "Trotzdem schließen",
-      "message": "Bearbeitungen, die auf Immich warten: {{number}}. Sie bleiben auf diesem Rechner und werden gesendet, sobald RapidRAW das nächste Mal läuft und Immich erreichbar ist.",
+      "message": "Bearbeitungen, die auf Immich warten: {{number}}. Sie bleiben auf diesem Rechner und werden gesendet, sobald LightRaw das nächste Mal läuft und Immich erreichbar ist.",
       "title": "Bearbeitungen noch nicht in Immich"
     },
     "export": {
@@ -1475,7 +1475,7 @@
     },
     "splash": {
       "addFolder": "Ordner hinzufügen",
-      "brand": "RapidRAW",
+      "brand": "LightRaw",
       "continueSession": "Sitzung fortsetzen",
       "contribute": "Auf GitHub beitragen",
       "descriptionAndroid": "Ein blitzschneller, GPU-beschleunigter RAW-Bildeditor. Öffnen Sie die Bibliothek, um zu beginnen.",
@@ -1978,7 +1978,7 @@
       },
       "storageTitle": "Speicher",
       "title": "Datenverwaltung",
-      "totalUsed": "RapidRAW belegt {{size}} auf diesem Gerät."
+      "totalUsed": "LightRaw belegt {{size}} auf diesem Gerät."
     },
     "general": {
       "createXmp": "Fehlende XMP-Dateien erstellen",
@@ -2000,7 +2000,7 @@
       "hideCollapsedPanels": "Eingeklappte Panels ausblenden",
       "hideCollapsedPanelsDesc": "Eingeklappte Seitenpanels werden vollständig ausgeblendet, statt einen schmalen Streifen zu hinterlassen. Öffnen Sie sie über die untere Leiste oder mit ihren Tastenkürzeln wieder.",
       "nativeTitlebar": "Native Titelleiste",
-      "nativeTitlebarDesc": "Verwenden Sie die Standard-Fenstertitelleiste Ihres Systems anstelle der benutzerdefinierten von RapidRAW.",
+      "nativeTitlebarDesc": "Verwenden Sie die Standard-Fenstertitelleiste Ihres Systems anstelle der benutzerdefinierten von LightRaw.",
       "neutralGreyCanvas": "Neutralgraue Arbeitsfläche",
       "neutralGreyCanvasDesc": "Verwenden Sie eine neutralgraue Arbeitsfläche für eine genauere Farb- und Belichtungskorrektur, ohne das App-Design zu ändern.",
       "poppins": "Poppins",
@@ -2129,7 +2129,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "Schaltet alle KI-Funktionen aus. Sämtliche KI-Bedienelemente werden ausgeblendet, sodass RapidRAW als rein klassischer RAW-Editor arbeitet.",
+          "description": "Schaltet alle KI-Funktionen aus. Sämtliche KI-Bedienelemente werden ausgeblendet, sodass LightRaw als rein klassischer RAW-Editor arbeitet.",
           "feature1": "Keine KI-Masken, Linsenunschärfe oder generativen Edits in der Oberfläche",
           "feature2": "Vorhandene KI-Bearbeitungen werden weiterhin normal dargestellt",
           "feature3": "Eine aufgeräumtere, fokussiertere Oberfläche",
@@ -2164,7 +2164,7 @@
         "connector": {
           "address": "AI Connector Adresse",
           "addressDesc": "Geben Sie die Adresse und den Port Ihrer laufenden AI Connector Instanz ein. Erforderlich für generative KI-Funktionen.",
-          "description": "Für Benutzer mit einer fähigen GPU, die maximale Kontrolle wünschen. Verbinden Sie RapidRAW mit Ihrem eigenen Connector-Server.",
+          "description": "Für Benutzer mit einer fähigen GPU, die maximale Kontrolle wünschen. Verbinden Sie LightRaw mit Ihrem eigenen Connector-Server.",
           "failed": "Verbindung fehlgeschlagen.",
           "feature1": "Verwenden Sie Ihre eigene ComfyUI Instanz",
           "feature2": "Kostenlose erweiterte generative Bearbeitungen",
@@ -2172,10 +2172,10 @@
           "success": "Verbindung erfolgreich!",
           "test": "Testen",
           "testing": "Wird getestet...",
-          "title": "Selbstgehostet (RapidRAW AI Connector)"
+          "title": "Selbstgehostet (LightRaw AI Connector)"
         },
         "cpu": {
-          "description": "Diese Funktionen sind direkt in RapidRAW integriert und laufen vollständig auf Ihrem Computer. Sie sind schnell, kostenlos und erfordern keine Einrichtung.",
+          "description": "Diese Funktionen sind direkt in LightRaw integriert und laufen vollständig auf Ihrem Computer. Sie sind schnell, kostenlos und erfordern keine Einrichtung.",
           "feature1": "KI-Maskierung (Motiv, Himmel, Vordergrund)",
           "feature2": "Automatisches Bild-Tagging",
           "feature3": "Einfaches generatives Ersetzen auf dem Gerät",
@@ -2184,7 +2184,7 @@
           "gpuAccelerationLabel": "GPU für KI-Modelle verwenden",
           "title": "Integrierte KI"
         },
-        "description": "Die KI von RapidRAW ist auf Flexibilität ausgelegt. Wählen Sie Ihren idealen Workflow.",
+        "description": "Die KI von LightRaw ist auf Flexibilität ausgelegt. Wählen Sie Ihren idealen Workflow.",
         "providers": {
           "aiConnector": "AI Connector",
           "aiFree": "KI-frei",
@@ -2416,7 +2416,7 @@
       "title": "Tagging"
     },
     "thanks": {
-      "description": "Ein großes Dankeschön an die folgenden Projekte, die für die Entwicklung von RapidRAW sehr wichtig waren:",
+      "description": "Ein großes Dankeschön an die folgenden Projekte, die für die Entwicklung von LightRaw sehr wichtig waren:",
       "list": {
         "birefnet": "Für das hochauflösende Segmentierungsmodell der KI-Vordergrunderkennung.",
         "darktable": "Für Referenzimplementierungen, die Teile dieser Arbeit leiteten.",
@@ -2424,15 +2424,15 @@
         "efficientsam3": "Für das effiziente, aus SAM 3 destillierte Segmentierungsmodell der KI-Himmel- und Textmasken.",
         "lama": "Für das leistungsstarke Bild-Inpainting-Modell.",
         "lensfun": "Für die unschätzbare Open-Source-Bibliothek für Objektivkorrektur.",
-        "libgphoto2": "Für die umfassende Kamera-Kommunikationsbibliothek, die RapidRAWs Tethering und Fernauslösung ermöglicht.",
+        "libgphoto2": "Für die umfassende Kamera-Kommunikationsbibliothek, die LightRaws Tethering und Fernauslösung ermöglicht.",
         "mediapipe": "Für die schnellen Gesichtslandmarken- und Segmentierungsmodelle, die die KI-Gesichtsmasken ermöglichen.",
         "negpy": "Für die Inspiration hinter der Negativumwandlungslogik.",
         "nind": "Für die Bereitstellung von KI-Modellen für die Rauschreduzierung.",
         "rawler": "Für die hervorragende Rust-Crate zur RAW-Bildverarbeitung.",
         "sam2": "Für das grundlegende Modell der KI-Motiverkennung.",
-        "span": "Für das KI-Basismodell von RapidRes, der 2x-KI-Hochskalierung in RapidRAW, von RapidRAW auf die eigene RAW-Pipeline feinabgestimmt (von Philip Hofmann, CC BY 4.0).",
-        "spektrafilm": "Für die spektralbasierten Filmemulations-LUTs von Andrea Volpato, die RapidRAWs integrierte Filmemulationen ermöglichen. Lizenziert unter CC BY-SA 4.0.",
-        "you": "Dafür, dass Sie RapidRAW nutzen. Ihr Interesse hält dieses Projekt am Leben.",
+        "span": "Für das KI-Basismodell von RapidRes, der 2x-KI-Hochskalierung in LightRaw, von LightRaw auf die eigene RAW-Pipeline feinabgestimmt (von Philip Hofmann, CC BY 4.0).",
+        "spektrafilm": "Für die spektralbasierten Filmemulations-LUTs von Andrea Volpato, die LightRaws integrierte Filmemulationen ermöglichen. Lizenziert unter CC BY-SA 4.0.",
+        "you": "Dafür, dass Sie LightRaw nutzen. Ihr Interesse hält dieses Projekt am Leben.",
         "youLabel": "Ihnen"
       },
       "title": "Besonderer Dank"

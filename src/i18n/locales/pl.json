@@ -950,7 +950,7 @@
         "importPresetsTitle": "Importuj presety",
         "legacyPreset": "Przestarzały preset",
         "presetFile": "Plik presetu",
-        "rapidRawPreset": "Preset RapidRAW"
+        "rapidRawPreset": "Preset LightRaw"
       },
       "menu": {
         "configurePreset": "Konfiguruj preset",
@@ -1014,7 +1014,7 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "RapidRAW nie mógł zdekodować tego pliku RAW, więc widzisz i edytujesz osadzony podgląd JPEG z aparatu. Spodziewaj się niższej jakości i mniejszego zapasu do edycji niż w prawdziwym pliku RAW."
+      "embeddedPreview": "LightRaw nie mógł zdekodować tego pliku RAW, więc widzisz i edytujesz osadzony podgląd JPEG z aparatu. Spodziewaj się niższej jakości i mniejszego zapasu do edycji niż w prawdziwym pliku RAW."
     },
     "toolbar": {
       "history": "Historia",
@@ -1035,7 +1035,7 @@
     },
     "viewer": {
       "openFailed": "Nie można otworzyć drugiego okna: {{error}}",
-      "windowTitle": "Przeglądarka RapidRAW"
+      "windowTitle": "Przeglądarka LightRaw"
     }
   },
   "export": {
@@ -1196,7 +1196,7 @@
     "close": {
       "cancel": "Anuluj",
       "closeAnyway": "Zamknij mimo to",
-      "message": "Edycje czekające na Immich: {{number}}. Pozostają na tym komputerze i zostaną wysłane przy następnym uruchomieniu RapidRAW, gdy Immich będzie dostępny.",
+      "message": "Edycje czekające na Immich: {{number}}. Pozostają na tym komputerze i zostaną wysłane przy następnym uruchomieniu LightRaw, gdy Immich będzie dostępny.",
       "title": "Edycje jeszcze nie w Immich"
     },
     "export": {
@@ -1543,7 +1543,7 @@
     },
     "splash": {
       "addFolder": "Dodaj folder",
-      "brand": "RapidRAW",
+      "brand": "LightRaw",
       "continueSession": "Kontynuuj sesję",
       "contribute": "Współtwórz na GitHubie",
       "descriptionAndroid": "Niewiarygodnie szybki, akcelerowany przez GPU edytor obrazów RAW. Otwórz bibliotekę, aby rozpocząć.",
@@ -2068,7 +2068,7 @@
       },
       "storageTitle": "Pamięć",
       "title": "Zarządzanie danymi",
-      "totalUsed": "RapidRAW zajmuje {{size}} na tym urządzeniu."
+      "totalUsed": "LightRaw zajmuje {{size}} na tym urządzeniu."
     },
     "general": {
       "createXmp": "Twórz brakujące pliki XMP",
@@ -2090,7 +2090,7 @@
       "hideCollapsedPanels": "Ukryj zwinięte panele",
       "hideCollapsedPanelsDesc": "Zwinięte panele boczne chowają się całkowicie zamiast zostawiać wąski pasek. Otwórz je ponownie z dolnego paska lub za pomocą ich skrótów klawiszowych.",
       "nativeTitlebar": "Natywny pasek tytułu",
-      "nativeTitlebarDesc": "Użyj domyślnego paska tytułu okna twojego systemu zamiast niestandardowego w RapidRAW.",
+      "nativeTitlebarDesc": "Użyj domyślnego paska tytułu okna twojego systemu zamiast niestandardowego w LightRaw.",
       "neutralGreyCanvas": "Neutralne szare płótno",
       "neutralGreyCanvasDesc": "Użyj neutralnego, szarego płótna do dokładniejszej korekcji kolorów i ekspozycji bez zmiany motywu aplikacji.",
       "poppins": "Poppins",
@@ -2219,7 +2219,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "Wyłącza wszystkie funkcje AI. Wszystkie elementy sterujące związane z AI są ukryte w interfejsie, dzięki czemu RapidRAW działa jak czysto tradycyjny edytor RAW.",
+          "description": "Wyłącza wszystkie funkcje AI. Wszystkie elementy sterujące związane z AI są ukryte w interfejsie, dzięki czemu LightRaw działa jak czysto tradycyjny edytor RAW.",
           "feature1": "Brak masek AI, rozmycia obiektywu i edycji generatywnych w interfejsie",
           "feature2": "Istniejące edycje AI nadal są normalnie renderowane",
           "feature3": "Czytelniejszy, bardziej skoncentrowany interfejs",
@@ -2254,7 +2254,7 @@
         "connector": {
           "address": "Adres Złącza AI",
           "addressDesc": "Wprowadź adres i port swojej uruchomionej instancji Złącza AI. Wymagane dla funkcji generatywnego AI.",
-          "description": "Dla użytkowników z odpowiednią kartą graficzną, którzy pragną pełnej kontroli: połącz RapidRAW z własnym serwerem Connector. Zapewnia to całkowitą kontrolę nad przepływem pracy.",
+          "description": "Dla użytkowników z odpowiednią kartą graficzną, którzy pragną pełnej kontroli: połącz LightRaw z własnym serwerem Connector. Zapewnia to całkowitą kontrolę nad przepływem pracy.",
           "failed": "Połączenie nie powiodło się.",
           "feature1": "Użyj własnej instancji ComfyUI",
           "feature2": "Darmowe, zaawansowane edycje generatywne",
@@ -2262,10 +2262,10 @@
           "success": "Połączenie powiodło się!",
           "test": "Testuj",
           "testing": "Testowanie...",
-          "title": "Własny serwer (RapidRAW AI Connector)"
+          "title": "Własny serwer (LightRaw AI Connector)"
         },
         "cpu": {
-          "description": "Zintegrowane bezpośrednio z RapidRAW, te funkcje działają całkowicie na Twoim komputerze. Są szybkie, bezpłatne i nie wymagają konfiguracji, stanowiąc idealne usprawnienie dla codziennej pracy.",
+          "description": "Zintegrowane bezpośrednio z LightRaw, te funkcje działają całkowicie na Twoim komputerze. Są szybkie, bezpłatne i nie wymagają konfiguracji, stanowiąc idealne usprawnienie dla codziennej pracy.",
           "feature1": "Maskowanie AI (Temat, Niebo, Pierwszy plan)",
           "feature2": "Automatyczne tagowanie obrazów",
           "feature3": "Proste zastępowanie generatywne na urządzeniu",
@@ -2274,7 +2274,7 @@
           "gpuAccelerationLabel": "Używaj GPU dla modeli AI",
           "title": "Wbudowane AI"
         },
-        "description": "AI w RapidRAW została zbudowana z myślą o elastyczności. Wybierz swój idealny przepływ pracy, od szybkich lokalnych narzędzi po potężne rozwiązania serwerowe.",
+        "description": "AI w LightRaw została zbudowana z myślą o elastyczności. Wybierz swój idealny przepływ pracy, od szybkich lokalnych narzędzi po potężne rozwiązania serwerowe.",
         "providers": {
           "aiConnector": "Złącze AI",
           "aiFree": "Bez AI",
@@ -2494,7 +2494,7 @@
       "clearCustomTooltip": "Wyczyść listę tagów AI",
       "clearShortcutsTooltip": "Wyczyść listę skrótów do tagów",
       "customList": "Niestandardowa lista tagów AI",
-      "customListDesc": "Jeżeli ją podasz, sztuczna inteligencja wygeneruje TYLKO tagi obecne na tej liście, omijając domyślną listę RapidRAW. Tagowanie działa jedynie w języku angielskim.",
+      "customListDesc": "Jeżeli ją podasz, sztuczna inteligencja wygeneruje TYLKO tagi obecne na tej liście, omijając domyślną listę LightRaw. Tagowanie działa jedynie w języku angielskim.",
       "maxAiTags": "Maksymalna liczba tagów AI",
       "maxAiTagsDesc": "Maksymalna liczba wygenerowanych tagów na jeden obraz.",
       "noCustomTags": "Brak własnych tagów (używana domyślna lista)",
@@ -2506,7 +2506,7 @@
       "title": "Tagowanie"
     },
     "thanks": {
-      "description": "Ogromne podziękowania dla następujących projektów, które były niezwykle ważne przy tworzeniu RapidRAW:",
+      "description": "Ogromne podziękowania dla następujących projektów, które były niezwykle ważne przy tworzeniu LightRaw:",
       "list": {
         "birefnet": "Za model segmentacji w wysokiej rozdzielczości, który napędza wykrywanie pierwszego planu przez AI.",
         "darktable": "Za kilka referencyjnych implementacji, które posłużyły za wskazówki.",
@@ -2514,15 +2514,15 @@
         "efficientsam3": "Za wydajny model segmentacji sterowany tekstem, wydestylowany z SAM 3, który napędza maski nieba i tekstu AI.",
         "lama": "Za niesamowity model do inpaintingu obrazu, umożliwiający usuwanie obiektów z uwzględnieniem kontekstu.",
         "lensfun": "Za nieocenioną bibliotekę open-source z bogatą bazą obiektywów do automatycznej korekcji.",
-        "libgphoto2": "Za kompleksową bibliotekę komunikacji z aparatami, napędzającą tethering i zdalne wyzwalanie w RapidRAW.",
+        "libgphoto2": "Za kompleksową bibliotekę komunikacji z aparatami, napędzającą tethering i zdalne wyzwalanie w LightRaw.",
         "mediapipe": "Za szybkie modele punktów charakterystycznych twarzy i segmentacji, które napędzają maski twarzy AI.",
         "negpy": "Za inspirację stojącą za rozwiązaniem do inwersji negatywów.",
-        "nind": "Za dostarczenie modeli AI, które stanowią silnik odszumiający RapidRAW.",
+        "nind": "Za dostarczenie modeli AI, które stanowią silnik odszumiający LightRaw.",
         "rawler": "Za świetną bibliotekę w Rust, dostarczającą fundament dla przetwarzania plików RAW w tym projekcie.",
         "sam2": "Za dostarczenie bazowego modelu do wykrywania i wycinania obiektów za pomocą AI.",
-        "span": "Za bazowy model AI w RapidRes, powiększaniu 2x AI w RapidRAW, dostrojony przez RapidRAW do własnego przetwarzania RAW (autor Philip Hofmann, CC BY 4.0).",
-        "spektrafilm": "Za oparte na danych spektralnych LUT-y emulacji filmu autorstwa Andrei Volpato, napędzające wbudowane emulacje filmowe RapidRAW. Licencja CC BY-SA 4.0.",
-        "you": "Za to, że używasz i wspierasz RapidRAW. Twoje zainteresowanie sprawia, że ten projekt nadal ewoluuje.",
+        "span": "Za bazowy model AI w RapidRes, powiększaniu 2x AI w LightRaw, dostrojony przez LightRaw do własnego przetwarzania RAW (autor Philip Hofmann, CC BY 4.0).",
+        "spektrafilm": "Za oparte na danych spektralnych LUT-y emulacji filmu autorstwa Andrei Volpato, napędzające wbudowane emulacje filmowe LightRaw. Licencja CC BY-SA 4.0.",
+        "you": "Za to, że używasz i wspierasz LightRaw. Twoje zainteresowanie sprawia, że ten projekt nadal ewoluuje.",
         "youLabel": "Ty"
       },
       "title": "Szczególne podziękowania"

@@ -925,7 +925,7 @@
         "importPresetsTitle": "Importar ajustos preestablerts",
         "legacyPreset": "Ajust preestablert antic",
         "presetFile": "Fitxer d'ajust preestablert",
-        "rapidRawPreset": "Ajust preestablert de RapidRAW"
+        "rapidRawPreset": "Ajust preestablert de LightRaw"
       },
       "menu": {
         "configurePreset": "Configurar ajust preestablert",
@@ -989,7 +989,7 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "RapidRAW no ha pogut descodificar aquest fitxer RAW, així que estàs veient i editant la previsualització JPEG incrustada de la càmera. Espera menys qualitat i menys marge d'edició que amb un RAW real."
+      "embeddedPreview": "LightRaw no ha pogut descodificar aquest fitxer RAW, així que estàs veient i editant la previsualització JPEG incrustada de la càmera. Espera menys qualitat i menys marge d'edició que amb un RAW real."
     },
     "toolbar": {
       "history": "Historial",
@@ -1010,7 +1010,7 @@
     },
     "viewer": {
       "openFailed": "No s'ha pogut obrir la segona finestra: {{error}}",
-      "windowTitle": "Visor del RapidRAW"
+      "windowTitle": "Visor del LightRaw"
     }
   },
   "export": {
@@ -1169,7 +1169,7 @@
     "close": {
       "cancel": "Cancel·la",
       "closeAnyway": "Tanca igualment",
-      "message": "Edicions pendents d'enviar a Immich: {{number}}. Es queden en aquest ordinador i s'enviaran la propera vegada que RapidRAW s'executi i Immich estigui disponible.",
+      "message": "Edicions pendents d'enviar a Immich: {{number}}. Es queden en aquest ordinador i s'enviaran la propera vegada que LightRaw s'executi i Immich estigui disponible.",
       "title": "Edicions encara no a Immich"
     },
     "export": {
@@ -1509,7 +1509,7 @@
     },
     "splash": {
       "addFolder": "Afegir carpeta",
-      "brand": "RapidRAW",
+      "brand": "LightRaw",
       "continueSession": "Continuar sessió",
       "contribute": "Contribuir a GitHub",
       "descriptionAndroid": "Un editor d'imatges RAW increïblement ràpid i accelerat per GPU. Obriu la biblioteca per començar.",
@@ -2023,7 +2023,7 @@
       },
       "storageTitle": "Emmagatzematge",
       "title": "Gestió de dades",
-      "totalUsed": "RapidRAW està fent servir {{size}} en aquest dispositiu."
+      "totalUsed": "LightRaw està fent servir {{size}} en aquest dispositiu."
     },
     "general": {
       "createXmp": "Crear fitxers XMP que falten",
@@ -2045,7 +2045,7 @@
       "hideCollapsedPanels": "Amagar els panells plegats",
       "hideCollapsedPanelsDesc": "Els panells laterals plegats s'amaguen completament en lloc de deixar una franja estreta. Torneu-los a obrir des de la barra inferior o amb les seves dreceres de teclat.",
       "nativeTitlebar": "Barra de títol nativa",
-      "nativeTitlebarDesc": "Utilitzar la barra de títol de la finestra predeterminada del sistema en lloc de la personalitzada de RapidRAW.",
+      "nativeTitlebarDesc": "Utilitzar la barra de títol de la finestra predeterminada del sistema en lloc de la personalitzada de LightRaw.",
       "neutralGreyCanvas": "Llenç gris neutre",
       "neutralGreyCanvasDesc": "Utilitzeu un llenç gris neutre per a una gradació de color i exposició més precisa sense canviar el tema de l'aplicació.",
       "poppins": "Poppins",
@@ -2174,7 +2174,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "Desactiva totes les funcions d'IA. Tots els controls relacionats amb la IA s'oculten de la interfície perquè RapidRAW funcioni com un editor RAW purament tradicional.",
+          "description": "Desactiva totes les funcions d'IA. Tots els controls relacionats amb la IA s'oculten de la interfície perquè LightRaw funcioni com un editor RAW purament tradicional.",
           "feature1": "Sense màscares d'IA, desenfocament de lent ni edicions generatives a la interfície",
           "feature2": "Les edicions d'IA existents es continuen mostrant amb normalitat",
           "feature3": "Una interfície més neta i enfocada",
@@ -2209,7 +2209,7 @@
         "connector": {
           "address": "Adreça de l'AI Connector",
           "addressDesc": "Introduïu l'adreça i el port de la vostra instància d'AI Connector en execució. Requerit per a les funcions d'IA generativa.",
-          "description": "Per a usuaris amb una GPU potent que vulguin el màxim control, connecteu RapidRAW al vostre propi servidor Connector. Això us dona un control total per als fluxos de treball tècnics.",
+          "description": "Per a usuaris amb una GPU potent que vulguin el màxim control, connecteu LightRaw al vostre propi servidor Connector. Això us dona un control total per als fluxos de treball tècnics.",
           "failed": "La connexió ha fallat.",
           "feature1": "Utilitzeu la vostra pròpia instància de ComfyUI",
           "feature2": "Edicions generatives avançades gratuïtes",
@@ -2217,10 +2217,10 @@
           "success": "Connexió correcta!",
           "test": "Prova",
           "testing": "S'està provant...",
-          "title": "Autoallotjat (RapidRAW AI Connector)"
+          "title": "Autoallotjat (LightRaw AI Connector)"
         },
         "cpu": {
-          "description": "Integrades directament a RapidRAW, aquestes funcions s'executen completament al vostre ordinador. Són ràpides, gratuïtes i no requereixen cap configuració, cosa que les fa ideals per accelerar el flux de treball diari.",
+          "description": "Integrades directament a LightRaw, aquestes funcions s'executen completament al vostre ordinador. Són ràpides, gratuïtes i no requereixen cap configuració, cosa que les fa ideals per accelerar el flux de treball diari.",
           "feature1": "Emmascarament d'IA (Subjecte, Cel, Primer pla)",
           "feature2": "Etiquetatge automàtic d'imatges",
           "feature3": "Substitució generativa simple al dispositiu",
@@ -2229,7 +2229,7 @@
           "gpuAccelerationLabel": "Utilitza la GPU per als models d'IA",
           "title": "IA integrada"
         },
-        "description": "L'IA de RapidRAW està dissenyada per ser flexible. Trieu el vostre flux de treball ideal, des d'eines locals ràpides fins a un autoallotjament potent.",
+        "description": "L'IA de LightRaw està dissenyada per ser flexible. Trieu el vostre flux de treball ideal, des d'eines locals ràpides fins a un autoallotjament potent.",
         "providers": {
           "aiConnector": "AI Connector",
           "aiFree": "Sense IA",
@@ -2449,7 +2449,7 @@
       "clearCustomTooltip": "Esborrar la llista d'etiquetes d'IA",
       "clearShortcutsTooltip": "Esborrar la llista d'etiquetes de drecera",
       "customList": "Llista d'etiquetes d'IA personalitzada",
-      "customListDesc": "Si s'especifica, la IA NOMÉS utilitzarà les etiquetes d'aquesta llista, ignorant la llista integrada a RapidRAW. L'etiquetatge només funciona en anglès.",
+      "customListDesc": "Si s'especifica, la IA NOMÉS utilitzarà les etiquetes d'aquesta llista, ignorant la llista integrada a LightRaw. L'etiquetatge només funciona en anglès.",
       "maxAiTags": "Màxim d'etiquetes d'IA",
       "maxAiTagsDesc": "El nombre màxim d'etiquetes que es generaran per imatge.",
       "noCustomTags": "Cap etiqueta d'IA personalitzada (S'utilitza la llista integrada)",
@@ -2461,7 +2461,7 @@
       "title": "Etiquetatge"
     },
     "thanks": {
-      "description": "Un enorme agraïment als projectes següents que van ser molt importants per al desenvolupament de RapidRAW:",
+      "description": "Un enorme agraïment als projectes següents que van ser molt importants per al desenvolupament de LightRaw:",
       "list": {
         "birefnet": "Pel model de segmentació d'alta resolució que impulsa la detecció de primer pla per IA.",
         "darktable": "Per algunes implementacions de referència que van guiar certes parts d'aquest treball.",
@@ -2469,15 +2469,15 @@
         "efficientsam3": "Pel model de segmentació eficient basat en indicacions, destil·lat de SAM 3, que impulsa les màscares de cel i de text per IA.",
         "lama": "Per al potent i senzill model d'inpainting d'imatges, que permet el farciment i l'eliminació d'objectes segons el contingut.",
         "lensfun": "Per la seva inestimable biblioteca de codi obert i la completa base de dades per a la correcció automàtica d'objectius.",
-        "libgphoto2": "Per la completa biblioteca de comunicació amb càmeres que impulsa el sistema de tethering i captura remota de RapidRAW.",
+        "libgphoto2": "Per la completa biblioteca de comunicació amb càmeres que impulsa el sistema de tethering i captura remota de LightRaw.",
         "mediapipe": "Pels models ràpids de punts facials i segmentació que impulsen les màscares de cara amb IA.",
         "negpy": "Per la inspiració que hi ha darrere de la lògica de conversió de negatius.",
-        "nind": "Per proporcionar els models d'IA que impulsen les capacitats de reducció de soroll per IA a RapidRAW.",
+        "nind": "Per proporcionar els models d'IA que impulsen les capacitats de reducció de soroll per IA a LightRaw.",
         "rawler": "Per l'excel·lent component de Rust que proporciona la base per al processament de fitxers RAW en aquest projecte.",
         "sam2": "Per proporcionar el model de base utilitzat per a les capacitats de detecció de subjectes per IA.",
-        "span": "Pel model d'IA base de RapidRes, l'ampliació 2x amb IA de RapidRAW, ajustat per RapidRAW al seu propi processament RAW (de Philip Hofmann, CC BY 4.0).",
-        "spektrafilm": "Per les LUTs d'emulació de pel·lícula basades en espectres, d'Andrea Volpato, que impulsen les emulacions integrades de RapidRAW. Amb llicència CC BY-SA 4.0.",
-        "you": "A vosaltres, per utilitzar i donar suport a RapidRAW. El vostre interès manté aquest projecte viu i en evolució.",
+        "span": "Pel model d'IA base de RapidRes, l'ampliació 2x amb IA de LightRaw, ajustat per LightRaw al seu propi processament RAW (de Philip Hofmann, CC BY 4.0).",
+        "spektrafilm": "Per les LUTs d'emulació de pel·lícula basades en espectres, d'Andrea Volpato, que impulsen les emulacions integrades de LightRaw. Amb llicència CC BY-SA 4.0.",
+        "you": "A vosaltres, per utilitzar i donar suport a LightRaw. El vostre interès manté aquest projecte viu i en evolució.",
         "youLabel": "Vosaltres"
       },
       "title": "Agraïments especials"

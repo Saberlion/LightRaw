@@ -897,7 +897,7 @@
         "importPresetsTitle": "プリセットをインポート",
         "legacyPreset": "レガシープリセット",
         "presetFile": "プリセットファイル",
-        "rapidRawPreset": "RapidRAWプリセット"
+        "rapidRawPreset": "LightRawプリセット"
       },
       "menu": {
         "configurePreset": "プリセットを構成",
@@ -961,7 +961,7 @@
       }
     },
     "toasts": {
-      "embeddedPreview": "RapidRAW はこの RAW ファイルをデコードできなかったため、カメラに埋め込まれた JPEG プレビューを表示・編集しています。本来の RAW より画質が低く、編集の余裕も少なくなります。"
+      "embeddedPreview": "LightRaw はこの RAW ファイルをデコードできなかったため、カメラに埋め込まれた JPEG プレビューを表示・編集しています。本来の RAW より画質が低く、編集の余裕も少なくなります。"
     },
     "toolbar": {
       "history": "履歴",
@@ -982,7 +982,7 @@
     },
     "viewer": {
       "openFailed": "セカンドウィンドウを開けませんでした: {{error}}",
-      "windowTitle": "RapidRAW ビューアー"
+      "windowTitle": "LightRaw ビューアー"
     }
   },
   "export": {
@@ -1139,7 +1139,7 @@
     "close": {
       "cancel": "キャンセル",
       "closeAnyway": "このまま閉じる",
-      "message": "Immich への送信待ちの編集: {{number}}。編集内容はこのコンピューターに残り、次回 RapidRAW を起動して Immich に接続できたときに送信されます。",
+      "message": "Immich への送信待ちの編集: {{number}}。編集内容はこのコンピューターに残り、次回 LightRaw を起動して Immich に接続できたときに送信されます。",
       "title": "Immich に未送信の編集"
     },
     "export": {
@@ -1468,7 +1468,7 @@
     },
     "splash": {
       "addFolder": "フォルダを追加",
-      "brand": "RapidRAW",
+      "brand": "LightRaw",
       "continueSession": "セッションを続行",
       "contribute": "GitHubで貢献する",
       "descriptionAndroid": "圧倒的に高速な、GPUアクセラレーション対応RAW画像エディタ。ライブラリを開いて始めましょう。",
@@ -1971,7 +1971,7 @@
       },
       "storageTitle": "ストレージ",
       "title": "データ管理",
-      "totalUsed": "RapidRAW はこのデバイスで {{size}} を使用しています。"
+      "totalUsed": "LightRaw はこのデバイスで {{size}} を使用しています。"
     },
     "general": {
       "createXmp": "見つからないXMPファイルを作成",
@@ -1993,7 +1993,7 @@
       "hideCollapsedPanels": "折りたたんだパネルを非表示",
       "hideCollapsedPanelsDesc": "折りたたんだサイドパネルを細い帯として残さず、完全に非表示にします。下部バーまたはキーボードショートカットで再び開けます。",
       "nativeTitlebar": "OS標準のタイトルバー",
-      "nativeTitlebarDesc": "RapidRAWカスタムのもの代わりに、システムのデフォルトのウィンドウタイトルバーを使用します。",
+      "nativeTitlebarDesc": "LightRawカスタムのもの代わりに、システムのデフォルトのウィンドウタイトルバーを使用します。",
       "neutralGreyCanvas": "ニュートラルグレーのキャンバス",
       "neutralGreyCanvasDesc": "アプリのテーマを変更せずに、より正確な色と露出のグレーディングを行うために、ニュートラルグレーのキャンバスを使用します。",
       "poppins": "Poppins",
@@ -2122,7 +2122,7 @@
       },
       "ai": {
         "aiFree": {
-          "description": "すべてのAI機能をオフにします。AI関連のコントロールはすべてインターフェースから非表示になり、RapidRAWは純粋な従来型のRAWエディターとして動作します。",
+          "description": "すべてのAI機能をオフにします。AI関連のコントロールはすべてインターフェースから非表示になり、LightRawは純粋な従来型のRAWエディターとして動作します。",
           "feature1": "AIマスク、レンズぼかし、生成編集をUIに表示しません",
           "feature2": "既存のAI編集は引き続き通常どおり反映されます",
           "feature3": "よりすっきりとした集中しやすいインターフェース",
@@ -2157,7 +2157,7 @@
         "connector": {
           "address": "AI Connectorのアドレス",
           "addressDesc": "起動中の AI Connector インスタンスのアドレスとポートを入力してください。生成AI機能に必要です。",
-          "description": "十分なスペックのGPUを搭載し、フルコントロールを行いたいユーザー向けの機能です。RapidRAWをご自身の Connector サーバーに接続します。",
+          "description": "十分なスペックのGPUを搭載し、フルコントロールを行いたいユーザー向けの機能です。LightRawをご自身の Connector サーバーに接続します。",
           "failed": "接続に失敗しました。",
           "feature1": "自身の ComfyUI インスタンスを使用可能",
           "feature2": "追加コスト不要の高度な生成編集",
@@ -2165,10 +2165,10 @@
           "success": "接続に成功しました！",
           "test": "テスト",
           "testing": "テスト中...",
-          "title": "セルフホスト (RapidRAW AI Connector)"
+          "title": "セルフホスト (LightRaw AI Connector)"
         },
         "cpu": {
-          "description": "RapidRAWに直接内蔵されており、お使いのコンピューター上のみで動作します。高速かつ無料でセットアップも不要です。",
+          "description": "LightRawに直接内蔵されており、お使いのコンピューター上のみで動作します。高速かつ無料でセットアップも不要です。",
           "feature1": "AIマスク機能 (被写体、空、手前)",
           "feature2": "自動画像タグ付け機能",
           "feature3": "デバイス上での簡易生成塗りつぶし",
@@ -2177,7 +2177,7 @@
           "gpuAccelerationLabel": "AIモデルにGPUを使用",
           "title": "内蔵AI"
         },
-        "description": "RapidRAWのAIは、優れた柔軟性を備えています。高速なローカル処理から本格的なセルフホストまで、最適なワークフローを選択してください。",
+        "description": "LightRawのAIは、優れた柔軟性を備えています。高速なローカル処理から本格的なセルフホストまで、最適なワークフローを選択してください。",
         "providers": {
           "aiConnector": "AI Connector",
           "aiFree": "AIなし",
@@ -2397,7 +2397,7 @@
       "clearCustomTooltip": "AIタグリストをクリア",
       "clearShortcutsTooltip": "ショートカットリストをクリア",
       "customList": "カスタムAIタグリスト",
-      "customListDesc": "タグを指定した場合、AIはリスト内のタグのみを使用し、RapidRAWの内蔵リストは使用されません。タグ付け機能は英語のみ対応しています。",
+      "customListDesc": "タグを指定した場合、AIはリスト内のタグのみを使用し、LightRawの内蔵リストは使用されません。タグ付け機能は英語のみ対応しています。",
       "maxAiTags": "最大AIタグ数",
       "maxAiTagsDesc": "画像ごとに生成されるAIタグの最大数。",
       "noCustomTags": "カスタムAIタグなし（内蔵リストを使用中）",
@@ -2409,7 +2409,7 @@
       "title": "タグ付け"
     },
     "thanks": {
-      "description": "RapidRAWの開発において、非常に重要な役割を果たしてくれた以下のプロジェクトに心より感謝いたします:",
+      "description": "LightRawの開発において、非常に重要な役割を果たしてくれた以下のプロジェクトに心より感謝いたします:",
       "list": {
         "birefnet": "AIによる手前の自動検出を支える、高解像度のセグメンテーションモデルを提供しています。",
         "darktable": "一部の実装において参考にさせていただきました。",
@@ -2417,15 +2417,15 @@
         "efficientsam3": "AIによる空とテキストのマスクを支える、SAM 3から蒸留された効率的なプロンプト対応セグメンテーションモデルを提供しています。",
         "lama": "コンテンツに応じた塗りつぶしやオブジェクト削除を実現する、シンプルかつ強力な画像インペインティングモデルを提供しています。",
         "lensfun": "自動レンズ補正に不可欠な、オープンソースライブラリと膨大なデータベースを提供しています。",
-        "libgphoto2": "RapidRAW のテザリングおよびリモート撮影機能を支える、包括的なカメラ通信ライブラリを提供してくださったことに。",
+        "libgphoto2": "LightRaw のテザリングおよびリモート撮影機能を支える、包括的なカメラ通信ライブラリを提供してくださったことに。",
         "mediapipe": "AI顔マスクを支える高速な顔ランドマークおよびセグメンテーションモデルに。",
         "negpy": "ネガ反転アルゴリズムのヒントとなりました。",
         "nind": "AIノイズ低減機能を支えるAIモデルを提供しています。",
         "rawler": "RAWファイル処理の基盤となる優れたRustライブラリを提供しています。",
         "sam2": "AI被写体検出機能の基盤となるモデルを提供しています。",
-        "span": "RapidRAWのAI 2倍拡大機能RapidResのベースとなるAIモデルです。RapidRAWが独自のRAW処理に合わせてファインチューニングしています（Philip Hofmann作、CC BY 4.0）。",
-        "spektrafilm": "RapidRAW の内蔵フィルムエミュレーションを支える、Andrea Volpato 氏によるスペクトルベースのフィルムエミュレーション LUT を提供してくださったことに。ライセンスは CC BY-SA 4.0 です。",
-        "you": "RapidRAWをご利用、ご支援いただきありがとうございます。皆様のご関心こそが、プロジェクトの存続と発展の支えです。",
+        "span": "LightRawのAI 2倍拡大機能RapidResのベースとなるAIモデルです。LightRawが独自のRAW処理に合わせてファインチューニングしています（Philip Hofmann作、CC BY 4.0）。",
+        "spektrafilm": "LightRaw の内蔵フィルムエミュレーションを支える、Andrea Volpato 氏によるスペクトルベースのフィルムエミュレーション LUT を提供してくださったことに。ライセンスは CC BY-SA 4.0 です。",
+        "you": "LightRawをご利用、ご支援いただきありがとうございます。皆様のご関心こそが、プロジェクトの存続と発展の支えです。",
         "youLabel": "皆様"
       },
       "title": "特別な謝辞"
