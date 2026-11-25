@@ -100,7 +100,16 @@ pub fn shader_features(adjustments: &AllAdjustments) -> u32 {
         g.chromatic_aberration_red_cyan.abs() > 0.000001
             || g.chromatic_aberration_blue_yellow.abs() > 0.000001,
     );
-    set(F_AGX, g.tonemapper_mode == 1);
+    // AgX is a runtime tone-mapper MODE, not a pipeline specialization: the
+    // shader already gates the AgX branch on `adjustments.global.tonemapper_mode
+    // == 1u` (shader.wgsl display_transform). Making it a feature bit forced a
+    // fresh shader/pipeline compile on the FIRST basic<->agx switch, and that
+    // driver compile stalls the whole compositor on OHOS (observed on Mate 80,
+    // 2026-11-25: the page's animations stutter while a newly specialized
+    // pipeline is built). Keeping the bit always set costs one uniform branch
+    // per pixel - the generic pipeline already compiles every branch - and
+    // removes the stall entirely.
+    set(F_AGX, true);
     set(F_MONOCHROME, g.monochrome.enabled == 1);
     features
 }
