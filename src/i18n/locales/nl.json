@@ -1319,6 +1319,7 @@
       "albumsEmpty": "Rechtermuisknop om een album te maken.",
       "collapseSection": "{{section}} inklappen",
       "expandSection": "{{section}} uitklappen",
+      "internalLibraryName": "App-bibliotheek (aanbevolen)",
       "loading": "Mappen laden...",
       "noFoldersFound": "Geen mappen gevonden.",
       "openFolderInstruction": "Open een map om de structuur te zien.",
@@ -1510,7 +1511,8 @@
     },
     "toasts": {
       "importFailed": "Importeren mislukt: {{err}}",
-      "importPickFailed": "Selecteren van afbeeldingen voor import mislukt: {{err}}"
+      "importPickFailed": "Selecteren van afbeeldingen voor import mislukt: {{err}}",
+      "importTargetInternal": "Bezig met importeren naar de app-bibliotheek (de aanbevolen standaardlocatie op dit apparaat)."
     },
     "tooltips": {
       "communityPresets": "Community-voorinstellingen",

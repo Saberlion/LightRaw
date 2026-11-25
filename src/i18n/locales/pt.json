@@ -1348,6 +1348,7 @@
       "albumsEmpty": "Clique com o botão direito para criar um álbum.",
       "collapseSection": "Recolher {{section}}",
       "expandSection": "Expandir {{section}}",
+      "internalLibraryName": "Biblioteca do aplicativo (recomendada)",
       "loading": "Carregando pastas...",
       "noFoldersFound": "Nenhuma pasta encontrada.",
       "openFolderInstruction": "Abra uma pasta para ver sua estrutura.",
@@ -1544,7 +1545,8 @@
     },
     "toasts": {
       "importFailed": "Falha na importação: {{err}}",
-      "importPickFailed": "Falha ao selecionar imagens para importar: {{err}}"
+      "importPickFailed": "Falha ao selecionar imagens para importar: {{err}}",
+      "importTargetInternal": "Importando para a biblioteca do aplicativo (local recomendado neste dispositivo)."
     },
     "tooltips": {
       "communityPresets": "Predefinições da Comunidade",

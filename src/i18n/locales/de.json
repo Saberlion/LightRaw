@@ -1319,6 +1319,7 @@
       "albumsEmpty": "Rechtsklick, um ein Album zu erstellen.",
       "collapseSection": "{{section}} minimieren",
       "expandSection": "{{section}} erweitern",
+      "internalLibraryName": "App-Mediathek (empfohlen)",
       "loading": "Ordner werden geladen...",
       "noFoldersFound": "Keine Ordner gefunden.",
       "openFolderInstruction": "Einen Ordner öffnen, um die Struktur zu sehen.",
@@ -1510,7 +1511,8 @@
     },
     "toasts": {
       "importFailed": "Import fehlgeschlagen: {{err}}",
-      "importPickFailed": "Bildauswahl für Import fehlgeschlagen: {{err}}"
+      "importPickFailed": "Bildauswahl für Import fehlgeschlagen: {{err}}",
+      "importTargetInternal": "Import in die App-Mediathek (empfohlener Standardort auf diesem Gerät)."
     },
     "tooltips": {
       "communityPresets": "Community-Vorgaben",

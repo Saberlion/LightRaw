@@ -1314,6 +1314,7 @@
       "albumsEmpty": "右键单击以创建相册。",
       "collapseSection": "折叠 {{section}}",
       "expandSection": "展开 {{section}}",
+      "internalLibraryName": "应用图库(推荐)",
       "loading": "加载文件夹中...",
       "noFoldersFound": "未找到文件夹。",
       "openFolderInstruction": "打开一个文件夹以查看其结构。",
@@ -1503,7 +1504,8 @@
     },
     "toasts": {
       "importFailed": "导入失败：{{err}}",
-      "importPickFailed": "导入选择图片失败：{{err}}"
+      "importPickFailed": "导入选择图片失败：{{err}}",
+      "importTargetInternal": "正在导入到应用图库(本设备推荐默认位置)。"
     },
     "tooltips": {
       "communityPresets": "社区预设",

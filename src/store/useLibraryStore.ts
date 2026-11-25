@@ -30,6 +30,13 @@ interface LibraryState {
   expandedFolders: Set<string>;
   folderTrees: any[];
   pinnedFolderTrees: any[];
+  /**
+   * The app-internal library root (OHOS sandbox, `el2/base/files/appdata/
+   * library`). Resolved once per session by the folder tree on the OHOS
+   * phone form factor so its root node can carry the localized
+   * "App Library" label; empty everywhere else (docs §6.41).
+   */
+  internalLibraryPath: string;
 
   // Albums
   albumTree: AlbumItem[];
@@ -76,6 +83,7 @@ export const useLibraryStore = create<LibraryState>((set) => ({
   expandedFolders: new Set<string>(),
   folderTrees: [],
   pinnedFolderTrees: [],
+  internalLibraryPath: '',
 
   albumTree: [],
   activeAlbumId: null,

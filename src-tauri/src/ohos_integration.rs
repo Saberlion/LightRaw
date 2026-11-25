@@ -800,15 +800,35 @@ pub fn cleanup_ohos_import_staging(
     {
         let cache = crate::app_paths::app_cache_dir(&app_handle)
             .map_err(|e| format!("Failed to resolve the app cache dir: {e}"))?;
-        let root = cache.join("import_staging");
+        // OHOS has TWO distinct cache directories per app (official
+        // "应用沙箱目录" doc, file-management/app-sandbox-directory.md):
+        // the App-level dirs (`/data/storage/el2/base/{files,cache,temp}`,
+        // what ApplicationContext exposes — what the Rust `app_paths` helper
+        // hand-composes, physically `/data/app/el2/<uid>/base/<bundle>/cache`)
+        // and the HAP-level dirs (`/data/storage/el2/base/haps/<module>/
+        // {files,cache,temp}`, what UIAbilityContext — i.e. the EntryAbility
+        // staging code — exposes). They are DIFFERENT physical directories,
+        // and the doc explicitly forbids hand-composing sub-level paths, so
+        // the two sides of this app must meet on one root: the prefix check
+        // has to accept BOTH, or every staged file (which always carries the
+        // HAP-level alias) is refused and the staging dirs are never cleaned
+        // (observed on Mate 80, 2026-11-25 third round: import attempts
+        // 3/4/5 piled up because cleanup refused each one).
+        let mut import_staging_roots = vec![cache.join("import_staging")];
+        if let Some(base) = cache.parent() {
+            import_staging_roots.push(base.join("haps/entry/cache/import_staging"));
+        }
         let mut parents: std::collections::HashSet<std::path::PathBuf> =
             std::collections::HashSet::new();
         for path in paths {
             let path = std::path::PathBuf::from(path);
-            if !path.starts_with(&root) {
+            if !import_staging_roots
+                .iter()
+                .any(|root| path.starts_with(root))
+            {
                 return Err(format!(
                     "Refusing to remove a path outside {:?}: {:?}",
-                    root, path
+                    import_staging_roots[0], path
                 ));
             }
             if let Some(parent) = path.parent() {
@@ -823,8 +843,10 @@ pub fn cleanup_ohos_import_staging(
         for parent in parents {
             let _ = std::fs::remove_dir(parent);
         }
-        // Best effort: the root is shared by concurrent picks.
-        let _ = std::fs::remove_dir(&root);
+        // Best effort: the roots are shared by concurrent picks.
+        for root in &import_staging_roots {
+            let _ = std::fs::remove_dir(root);
+        }
         Ok(())
     }
     #[cfg(not(target_env = "ohos"))]

@@ -578,7 +578,20 @@ pub async fn list_images_in_dir(
                     .entry(entry.path().with_file_name(source_filename))
                     .or_default()
                     .push(copy_id.map(str::to_string));
-            } else if is_supported_image_file(&file_name) {
+            } else if is_supported_image_file(&file_name)
+                // A 0-byte file is never a valid image. HarmonyOS "optimized
+                // storage" offloads cloud-synced assets as exactly these
+                // empty local stubs; listing them renders permanent grey
+                // placeholder cards that fail to decode on every open (the
+                // user's Download library root was full of them, Mate 80,
+                // 2026-11-25). Hide them at scan time — importing the real
+                // bytes (or the cloud layer materializing the file) brings
+                // the entry back as a working photo.
+                && entry
+                    .metadata()
+                    .map(|metadata| metadata.len() > 0)
+                    .unwrap_or(true)
+            {
                 images.push((entry, file_name));
             }
         }
@@ -624,7 +637,14 @@ pub async fn list_images_recursive(
                     .entry(entry.path().with_file_name(source_filename))
                     .or_default()
                     .push(copy_id.map(str::to_string));
-            } else if is_supported_image_file(file_name.as_ref()) {
+            } else if is_supported_image_file(file_name.as_ref())
+                // Same empty-stub rule as list_images_in_dir: 0-byte cloud
+                // placeholders never decode, so they must not be listed.
+                && entry
+                    .metadata()
+                    .map(|metadata| metadata.len() > 0)
+                    .unwrap_or(true)
+            {
                 images.push(entry);
             }
         }

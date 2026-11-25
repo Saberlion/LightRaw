@@ -1348,6 +1348,7 @@
       "albumsEmpty": "Feu clic amb el botó dret per crear un àlbum.",
       "collapseSection": "Contraure {{section}}",
       "expandSection": "Expandir {{section}}",
+      "internalLibraryName": "Biblioteca de l'aplicació (recomanada)",
       "loading": "S'estan carregant les carpetes...",
       "noFoldersFound": "No s'han trobat carpetes.",
       "openFolderInstruction": "Obriu una carpeta per veure la seva estructura.",
@@ -1544,7 +1545,8 @@
     },
     "toasts": {
       "importFailed": "La importació ha fallat: {{err}}",
-      "importPickFailed": "Ha fallat el selector d'imatges per importar: {{err}}"
+      "importPickFailed": "Ha fallat el selector d'imatges per importar: {{err}}",
+      "importTargetInternal": "S'està important a la biblioteca de l'aplicació (ubicació recomanada en aquest dispositiu)."
     },
     "tooltips": {
       "communityPresets": "Ajustos preestablerts de la comunitat",

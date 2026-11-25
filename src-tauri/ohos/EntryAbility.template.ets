@@ -1,6 +1,6 @@
 import { RustAbility } from '@ohos-rs/ability'
 import Want from '@ohos.app.ability.Want'
-import { AbilityConstant, Configuration, ConfigurationConstant, common } from '@kit.AbilityKit';
+import { AbilityConstant, Configuration, ConfigurationConstant, common, abilityAccessCtrl, Permissions } from '@kit.AbilityKit';
 import { BusinessError, commonEventManager } from '@kit.BasicServicesKit';
 import { KeyboardAvoidMode } from '@ohos.arkui.UIContext';
 import window from '@ohos.window';
@@ -73,6 +73,10 @@ export default class EntryAbility extends RustAbility {
   private galleryPickStaged: Array<string> = [];
   private galleryPickCopied: Array<boolean> = [];
   private galleryPickAttempt: number = 0;
+  // User-grant permissions already attempted this session — requestUserPermissionsOnce
+  // consults this so each permission prompts at most once per session (the
+  // system additionally remembers refusals across sessions, §6.43).
+  private requestedPermissions: Set<string> = new Set<string>();
   // Copy attempts per pick and the back-off ladder between them. The first
   // attempt runs ~200ms after the picker closes (grant registration is
   // asynchronous); retries cover slower devices. Total worst case ~7.7s, but
@@ -188,6 +192,10 @@ export default class EntryAbility extends RustAbility {
     } catch (e) {
       console.error(`[RapidRAW] setKeyboardAvoidMode failed: ${JSON.stringify(e)}`);
     }
+    // Startup user-grant permission requests: deliberately NOT done here —
+    // permissions are requested on demand at their actual point of use
+    // instead (requestUserPermissionsOnce; triggers live in pickFolder and
+    // copyGalleryAsset), per HarmonyOS UX guidance.
     // Keep the system window decoration VISIBLE. We previously hid it
     // (setWindowDecorVisible(false) retry loop) so the custom webview
     // titlebar could own the whole window, but that is unsafe: hiding the
@@ -199,6 +207,78 @@ export default class EntryAbility extends RustAbility {
     // own button cluster on OHOS (TitleBar.tsx) and window dragging goes
     // through the startMoving bridge. Machine-local post-init patch — see
     // docs/HARMONYOS_PORTING.md 6.4.
+  }
+
+  // On-demand user-grant permission request, one attempt per permission per
+  // session (the system additionally remembers refusals permanently). The
+  // resolved promise never rejects: a failed or refused request degrades the
+  // calling feature silently instead of breaking it.
+  //
+  // Trigger points (§6.43 on-demand revision):
+  //   - MEDIA_LOCATION: right before the MediaAssetManager.requestImageData
+  //     cloud-materialization fallback in copyGalleryAsset — it gates the
+  //     location/shooting-params EXIF in the prepared bytes; awaited so the
+  //     grant (if given) applies to the very request that follows.
+  //   - READ_WRITE_{DOWNLOAD,DOCUMENTS,DESKTOP}_DIRECTORY: after a picked
+  //     library root resolves inside one of the public user-storage
+  //     directories (directoryPermissionForPath) — a granted blanket
+  //     permission frees later launches from the per-launch fileShare
+  //     activation chain; fire-and-forget.
+  //   - WRITE_IMAGEVIDEO is deliberately never requested: the gallery-save
+  //     flow uses the user-consent creation dialog and needs no permission.
+  private requestUserPermissionsOnce(permissions: Array<Permissions>): Promise<void> {
+    const pending: Array<Permissions> =
+      permissions.filter((permission: Permissions): boolean => !this.requestedPermissions.has(permission));
+    if (pending.length === 0) {
+      return Promise.resolve();
+    }
+    pending.forEach((permission: Permissions): void => {
+      this.requestedPermissions.add(permission);
+    });
+    try {
+      const atManager = abilityAccessCtrl.createAtManager();
+      return atManager
+        .requestPermissionsFromUser(this.context, pending)
+        .then((result: ESObject) => {
+          const statuses: Array<number> = result.grantStatus as Array<number>;
+          const granted: Array<string> = [];
+          const denied: Array<string> = [];
+          pending.forEach((permission: string, index: number) => {
+            if (statuses[index] === 0) {
+              granted.push(permission);
+            } else {
+              denied.push(permission);
+            }
+          });
+          console.info(
+            `[RapidRAW] on-demand permissions: granted=${JSON.stringify(granted)} denied=${JSON.stringify(denied)}`,
+          );
+        })
+        .catch((e: BusinessError) => {
+          console.error(`[RapidRAW] requestPermissionsFromUser failed: ${JSON.stringify(e)}`);
+        });
+    } catch (e) {
+      console.error(`[RapidRAW] requestPermissionsFromUser threw: ${JSON.stringify(e)}`);
+      return Promise.resolve();
+    }
+  }
+
+  // Map a picked library root under a public user-storage directory to the
+  // blanket directory permission covering that whole tree (both p7b profiles
+  // carry all of them in their allowed-acls). A subfolder of Download is
+  // covered by the DOWNLOAD permission just as well as the root.
+  private directoryPermissionForPath(path: string): Permissions | null {
+    const normalized: string = path.endsWith('/') ? path : `${path}/`;
+    if (normalized.includes('/Download/')) {
+      return 'ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY';
+    }
+    if (normalized.includes('/Documents/')) {
+      return 'ohos.permission.READ_WRITE_DOCUMENTS_DIRECTORY';
+    }
+    if (normalized.includes('/Desktop/')) {
+      return 'ohos.permission.READ_WRITE_DESKTOP_DIRECTORY';
+    }
+    return null;
   }
 
   // Machine-local post-init patch — see docs/HARMONYOS_PORTING.md 6.4.
@@ -1145,6 +1225,16 @@ export default class EntryAbility extends RustAbility {
           } catch (e) {
             console.error(`[RapidRAW] persistFolderGrant threw: ${JSON.stringify(e)}`);
           }
+          // On-demand directory permission (§6.43): a root inside a public
+          // user-storage directory is covered blanket by the matching
+          // restricted permission (p7b allowed-acls include all of them).
+          // Granted → later launches read the folder directly and stop
+          // depending on the per-launch fileShare activation chain;
+          // refused → nothing changes, the picker grant keeps working.
+          const dirPermission: Permissions | null = this.directoryPermissionForPath(resolved);
+          if (dirPermission !== null) {
+            this.requestUserPermissionsOnce([dirPermission]);
+          }
         }
       }
       resolvePickFolder(requestId, resolved);
@@ -1430,11 +1520,15 @@ export default class EntryAbility extends RustAbility {
       // cloud and replaces the local file with a 0-byte stub: openSync +
       // copyFileSync succeed but copy nothing. Staging such a file would
       // import as a permanent broken entry (no thumbnail, the editor cannot
-      // open it; observed on Mate 80, 2026-11-25). Treat an empty result as a
-      // fast-path miss so the MediaAssetManager fallback below runs - it
-      // materialises the cloud bytes.
+      // open it; observed on Mate 80, 2026-11-25). Treat an empty result —
+      // or ANY size mismatch, which is what a lazily-materialized cloud
+      // file yields when the FUSE read returns EOF early without an error
+      // (Mate 80, 2026-11-25 second round: a partially staged screenshot
+      // imported as a grey placeholder failing "Failed to decode image") —
+      // as a fast-path miss so the MediaAssetManager fallback below runs:
+      // it materialises the complete cloud bytes.
       const stagedSize: number = fs.statSync(target).size;
-      if (sourceSize > 0 && stagedSize > 0) {
+      if (sourceSize > 0 && stagedSize === sourceSize) {
         console.info(`[RapidRAW] gallery copy via fs fd: ${target} (${stagedSize} bytes)`);
         return true;
       }
@@ -1449,6 +1543,13 @@ export default class EntryAbility extends RustAbility {
     } catch (e) {
       console.warn(`[RapidRAW] gallery fs open failed for ${uri} (${JSON.stringify(e)}); trying MediaAssetManager`);
     }
+
+    // MEDIA_LOCATION gates the location/shooting-params EXIF in the bytes
+    // requestImageData prepares: without it they are privacy-sanitized.
+    // Requested on demand here — once per session, and awaited so a granted
+    // permission applies to the very request that follows (§6.43). A refusal
+    // only means location-less EXIF, never a failed import.
+    await this.requestUserPermissionsOnce(['ohos.permission.MEDIA_LOCATION']);
 
     try {
       const helper: photoAccessHelper.PhotoAccessHelper = photoAccessHelper.getPhotoAccessHelper(this.context);

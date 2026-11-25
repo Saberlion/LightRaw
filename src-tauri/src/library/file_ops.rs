@@ -850,6 +850,86 @@ fn copy_sidecar_companion(source: &Path, dest: &Path) {
     }
 }
 
+/// An empty file at the import destination is never a real photo — it is a
+/// cloud "optimized storage" stub (HarmonyOS offloads leave 0-byte locals in
+/// cloud-synced folders) or the corpse of an interrupted write. Failing the
+/// import with "File already exists" against such a placeholder kept the
+/// real bytes out and the broken entry in place forever (Mate 80,
+/// 2026-11-25: the Download library root carried exactly one, every album
+/// import bounced off it). Replace it: remove the stub so the copy below can
+/// land the real bytes. Returns false when the destination is a real (non-
+/// empty) file and the caller must keep the exists-guard.
+fn heal_empty_destination(dest_file_path: &Path) -> bool {
+    let is_empty = fs::metadata(dest_file_path)
+        .map(|metadata| metadata.len() == 0)
+        .unwrap_or(false);
+    if !is_empty {
+        return false;
+    }
+    if let Err(error) = fs::remove_file(dest_file_path) {
+        log::warn!(
+            "[import] could not remove the empty placeholder at {}: {}",
+            dest_file_path.display(),
+            error
+        );
+        return false;
+    }
+    log::info!(
+        "[import] replacing empty placeholder at destination: {}",
+        dest_file_path.display()
+    );
+    true
+}
+
+/// Structural completeness probe for freshly imported copies. A size match
+/// cannot catch a source that was ALREADY truncated on disk: interrupted
+/// cloud/USB/MTP transfers leave partial files that are neither empty nor
+/// complete, and they sail past the empty-file guard (Mate 80, 2026-11-25
+/// second round: a partially materialized Download screenshot imported as a
+/// permanent grey placeholder failing "Failed to decode image" on every
+/// open). The container tails can catch them: a JPEG must end in an EOI
+/// marker and a PNG in an IEND chunk, both searched within the last 16 bytes
+/// to tolerate filesystem padding after the real end of the stream.
+///
+/// Returns `Ok(false)` for formats without a verifiable tail (RAW containers
+/// among them) — those keep relying on the size checks.
+fn is_truncated_image_file(path: &Path) -> Result<bool, String> {
+    use std::io::{Read, Seek, SeekFrom};
+
+    const HEAD: usize = 32;
+    const TAIL: usize = 16;
+    const JPEG_EOI: [u8; 2] = [0xFF, 0xD9];
+    const PNG_IEND: [u8; 8] = [0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
+
+    let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
+    let len = file.metadata().map_err(|e| e.to_string())?.len();
+    if len < TAIL as u64 {
+        // Tiny files are either caught by the empty guard or will fail to
+        // decode with the size-annotated error; no tail to inspect.
+        return Ok(false);
+    }
+    let mut head = vec![0u8; HEAD];
+    let head_len = file.read(&mut head).map_err(|e| e.to_string())?;
+    let jpeg = head[..head_len].starts_with(&[0xFF, 0xD8, 0xFF]);
+    let png = head[..head_len].starts_with(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]);
+    if !jpeg && !png {
+        return Ok(false);
+    }
+    file.seek(SeekFrom::End(-(TAIL as i64)))
+        .map_err(|e| e.to_string())?;
+    let mut tail = vec![0u8; TAIL];
+    let tail_len = file.read(&mut tail).map_err(|e| e.to_string())?;
+    let tail = &tail[..tail_len];
+    let complete = if jpeg {
+        tail.windows(JPEG_EOI.len())
+            .any(|window| window == JPEG_EOI)
+    } else {
+        tail.windows(PNG_IEND.len())
+            .any(|window| window == PNG_IEND)
+    };
+    Ok(!complete)
+}
+
 #[tauri::command]
 pub async fn import_files(
     source_paths: Vec<String>,
@@ -913,7 +993,7 @@ pub async fn import_files(
                     let new_filename = format!("{}.{}", new_stem, extension);
                     let dest_file_path = final_dest_folder.join(new_filename);
 
-                    if dest_file_path.exists() {
+                    if dest_file_path.exists() && !heal_empty_destination(&dest_file_path) {
                         return Err(format!(
                             "File already exists at destination: {}",
                             dest_file_path.display()
@@ -921,6 +1001,27 @@ pub async fn import_files(
                     }
 
                     fs::write(&dest_file_path, source_bytes).map_err(|e| e.to_string())?;
+                    // The bytes came from the content resolver in full, but
+                    // the SOURCE itself may be a truncated transfer — probe
+                    // the container tail before the file enters the library.
+                    // Fail-open for the same FUSE/EPERM reason as the path
+                    // branch: a probe that cannot run must not reject the
+                    // import, only a positive detection may.
+                    match is_truncated_image_file(&dest_file_path) {
+                        Ok(true) => {
+                            let _ = fs::remove_file(&dest_file_path);
+                            return Err(format!(
+                                "The source file appears to be truncated/incomplete (no end marker in a JPEG/PNG stream): {} - an interrupted cloud or USB transfer leaves exactly these files behind. Re-transfer or re-download it, then import again",
+                                source_path_str
+                            ));
+                        }
+                        Ok(false) => {}
+                        Err(error) => log::warn!(
+                            "[import] completeness probe failed for {} (proceeding): {}",
+                            dest_file_path.display(),
+                            error
+                        ),
+                    }
 
                     if settings.delete_after_import {
                         log::info!(
@@ -943,16 +1044,14 @@ pub async fn import_files(
                 // transfer imported as a permanent broken grid item,
                 // 2026-11-25). Reject them up front — import-error surfaces
                 // the message to the user instead of a silent broken entry.
-                if source_path
+                let source_len = source_path
                     .metadata()
-                    .map(|meta| meta.len() == 0)
-                    .unwrap_or(false)
-                {
-                    return Err(format!(
-                        "Refusing to import an empty (0-byte) file: {}",
-                        source_path_str
-                    ));
-                }
+                    .ok()
+                    .map(|meta| meta.len())
+                    .filter(|len| *len > 0)
+                    .ok_or_else(|| {
+                        format!("Refusing to import an empty (0-byte) file: {source_path_str}")
+                    })?;
 
                 let file_date = exif_processing::get_creation_date_from_path(&source_path);
 
@@ -984,14 +1083,62 @@ pub async fn import_files(
                 let new_filename = format!("{}.{}", new_stem, extension);
                 let dest_file_path = final_dest_folder.join(new_filename);
 
-                if dest_file_path.exists() {
+                if dest_file_path.exists() && !heal_empty_destination(&dest_file_path) {
                     return Err(format!(
                         "File already exists at destination: {}",
                         dest_file_path.display()
                     ));
                 }
 
-                fs::copy(&source_path, &dest_file_path).map_err(|e| e.to_string())?;
+                let copied = match fs::copy(&source_path, &dest_file_path) {
+                    Ok(copied) => copied,
+                    Err(error) => {
+                        // fs::copy can leave a partial destination behind
+                        // when the source read fails mid-stream — clean it up
+                        // instead of leaving a permanent broken entry.
+                        let _ = fs::remove_file(&dest_file_path);
+                        return Err(error.to_string());
+                    }
+                };
+                // FUSE-backed sources (cloud-synced folders on HarmonyOS,
+                // network shares on desktop) can return EOF early without an
+                // error; fs::copy then "succeeds" with fewer bytes and the
+                // partial file would sit in the library forever as a broken
+                // entry. A SHRUNK copy is definitely incomplete — reject and
+                // roll back. (The reverse — copied > source_len — means the
+                // source grew during the copy, e.g. a cloud file finishing
+                // its materialization mid-import; the tail probe below gets
+                // the final say on that one.)
+                if copied < source_len {
+                    let _ = fs::remove_file(&dest_file_path);
+                    return Err(format!(
+                        "Failed to copy the file completely ({copied} of {source_len} bytes): {source_path_str} - the source may be a partially materialized cloud file. Open it once in Files/Gallery (triggers the full download), then import again"
+                    ));
+                }
+                // The source itself may already be a truncated transfer on
+                // disk (non-zero but incomplete); probe the container tail
+                // before the copy enters the library. The probe MUST be
+                // fail-open: library folders sit on FUSE mounts that throw
+                // EPERM at ordinary fs ops (the same "operator not permitted"
+                // that app_paths works around — observed on Mate 80,
+                // 2026-11-25 third round follow-up: the probe's read-back
+                // aborted imports that would otherwise succeed). Only a
+                // POSITIVE truncation detection rejects; probe errors log
+                // and let the import proceed.
+                match is_truncated_image_file(&dest_file_path) {
+                    Ok(true) => {
+                        let _ = fs::remove_file(&dest_file_path);
+                        return Err(format!(
+                            "The source file appears to be truncated/incomplete (no end marker in a JPEG/PNG stream): {source_path_str} - an interrupted cloud or USB transfer leaves exactly these files behind. Re-transfer or re-download it, then import again"
+                        ));
+                    }
+                    Ok(false) => {}
+                    Err(error) => log::warn!(
+                        "[import] completeness probe failed for {} (proceeding): {}",
+                        dest_file_path.display(),
+                        error
+                    ),
+                }
                 if source_sidecar.exists()
                     && let Some(dest_str) = dest_file_path.to_str()
                 {

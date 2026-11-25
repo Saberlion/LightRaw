@@ -504,6 +504,8 @@ function TreeNode({
   const isOpen = isExpanded && hasChildren;
   const isSelected = node.path === selectedPath;
   const isPinned = pinnedFolders.includes(node.path);
+  const { t } = useTranslation();
+  const internalLibraryPath = useLibraryStore((state) => state.internalLibraryPath);
 
   const { setNodeRef, isOver, active } = useDroppable({
     id: `folder-${sectionId}-${node.path}`,
@@ -598,7 +600,11 @@ function TreeNode({
         </div>
 
         <span onDoubleClick={handleNameDoubleClick} className="min-w-0 flex-1 select-none">
-          <span className="block truncate">{node.name}</span>
+          <span className="block truncate">
+            {internalLibraryPath && node.path === internalLibraryPath
+              ? t('library.folders.internalLibraryName')
+              : node.name}
+          </span>
         </span>
 
         {typeof node.imageCount === 'number' && node.imageCount > 0 && (
@@ -737,6 +743,20 @@ export default function FolderTree({
 
   useEffect(() => {
     invoke(Invokes.GetAlbums).then((res: any) => useLibraryStore.getState().setLibrary({ albumTree: res }));
+  }, []);
+
+  // OHOS phone form factor: resolve the app-internal library root once so the
+  // tree can label it as the recommended default (docs §6.41 — the sandbox
+  // is the designed default on phones; user-storage roots are opt-in and
+  // carry the cloud-stub/grant caveats of porting doc §6.40).
+  useEffect(() => {
+    const { isOhos, ohosDeviceType } = useSettingsStore.getState();
+    if (!isOhos || ohosDeviceType !== 'phone') return;
+    invoke<string>(Invokes.GetOrCreateInternalLibraryRoot)
+      .then((path) => {
+        if (path) useLibraryStore.getState().setLibrary({ internalLibraryPath: path });
+      })
+      .catch((err) => console.warn('Failed to resolve the internal library root:', err));
   }, []);
 
   const toggleSection = (section: string) => {

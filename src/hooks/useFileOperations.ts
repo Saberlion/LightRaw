@@ -395,8 +395,28 @@ export function useFileOperations(
           }
           if (validFiles.length === 0) return;
 
+          // Phone form factor: album imports always land in the app-internal
+          // library root (the sandbox, el2/base/files/appdata/library) rather
+          // than the folder the user happens to be browsing. User-storage
+          // roots (FileKit grants) are FUSE mounts: cloud-sync stubs surface
+          // as 0-byte grey placeholders, writes need an actively re-activated
+          // grant, and a cloud-synced root collides with its own stubs
+          // ("File already exists" — porting doc §6.40). This mirrors the
+          // welcome screen, which opens the internal root on phones.
+          let importTarget = targetPath;
+          const { ohosDeviceType } = useSettingsStore.getState();
+          if (ohosDeviceType === 'phone') {
+            const internalRoot = await invoke<string>(Invokes.GetOrCreateInternalLibraryRoot);
+            if (internalRoot) {
+              importTarget = internalRoot;
+              if (internalRoot !== targetPath) {
+                toast.info(t('library.toasts.importTargetInternal'));
+              }
+            }
+          }
+
           setOhosImportStaging(albumPaths);
-          await startImportFiles(validFiles, targetPath, DEFAULT_IMPORT_SETTINGS);
+          await startImportFiles(validFiles, importTarget, DEFAULT_IMPORT_SETTINGS);
           return;
         }
 

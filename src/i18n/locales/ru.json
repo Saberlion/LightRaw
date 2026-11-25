@@ -1377,6 +1377,7 @@
       "albumsEmpty": "Нажмите правой кнопкой мыши для создания альбома.",
       "collapseSection": "Свернуть {{section}}",
       "expandSection": "Развернуть {{section}}",
+      "internalLibraryName": "Библиотека приложения (рекомендуется)",
       "loading": "Загрузка папок...",
       "noFoldersFound": "Папки не найдены.",
       "openFolderInstruction": "Откройте папку, чтобы просмотреть ее структуру.",
@@ -1578,7 +1579,8 @@
     },
     "toasts": {
       "importFailed": "Не удалось импортировать: {{err}}",
-      "importPickFailed": "Не удалось выбрать изображения для импорта: {{err}}"
+      "importPickFailed": "Не удалось выбрать изображения для импорта: {{err}}",
+      "importTargetInternal": "Импорт в библиотеку приложения (рекомендуемое место по умолчанию на этом устройстве)."
     },
     "tooltips": {
       "communityPresets": "Пресеты сообщества",

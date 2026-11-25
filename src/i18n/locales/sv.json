@@ -1323,6 +1323,7 @@
       "albumsEmpty": "Högerklicka för att skapa ett album.",
       "collapseSection": "Fäll ihop {{section}}",
       "expandSection": "Fäll ut {{section}}",
+      "internalLibraryName": "Appbibliotek (rekommenderas)",
       "loading": "Läser in mappar…",
       "noFoldersFound": "Inga mappar hittades.",
       "openFolderInstruction": "Öppna en mapp för att se dess struktur.",
@@ -1519,7 +1520,8 @@
     },
     "toasts": {
       "importFailed": "Importen misslyckades: {{err}}",
-      "importPickFailed": "Misslyckades med att välja bilder för import: {{err}}"
+      "importPickFailed": "Misslyckades med att välja bilder för import: {{err}}",
+      "importTargetInternal": "Importerar till appbiblioteket (rekommenderad standardplats på den här enheten)."
     },
     "tooltips": {
       "communityPresets": "Användarnas förinställningar",

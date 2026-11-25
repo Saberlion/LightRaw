@@ -1377,6 +1377,7 @@
       "albumsEmpty": "Kliknutím pravým tlačítkem myši vytvoříte album.",
       "collapseSection": "Sbalit {{section}}",
       "expandSection": "Rozbalit {{section}}",
+      "internalLibraryName": "Knihovna aplikace (doporučeno)",
       "loading": "Načítání složek...",
       "noFoldersFound": "Nebyly nalezeny žádné složky.",
       "openFolderInstruction": "Otevřete složku a zobrazte její strukturu.",
@@ -1578,7 +1579,8 @@
     },
     "toasts": {
       "importFailed": "Import se nezdařil: {{err}}",
-      "importPickFailed": "Selhal výběr obrázků k importu: {{err}}"
+      "importPickFailed": "Selhal výběr obrázků k importu: {{err}}",
+      "importTargetInternal": "Importuje se do knihovny aplikace (doporučené výchozí umístění v tomto zařízení)."
     },
     "tooltips": {
       "communityPresets": "Presety komunity",

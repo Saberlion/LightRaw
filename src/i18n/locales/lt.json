@@ -1416,6 +1416,7 @@
       "albumsEmpty": "Spustelėkite dešiniuoju pelės klavišu, kad sukurtumėte albumą.",
       "collapseSection": "Suskleisti {{section}}",
       "expandSection": "Išskleisti {{section}}",
+      "internalLibraryName": "Programos biblioteka (rekomenduojama)",
       "loading": "Įkeliami aplankai...",
       "noFoldersFound": "Aplankų nerasta.",
       "openFolderInstruction": "Atidarykite aplanką, norėdami pamatyti jo struktūrą.",
@@ -1617,7 +1618,8 @@
     },
     "toasts": {
       "importFailed": "Importuoti nepavyko: {{err}}",
-      "importPickFailed": "Nepavyko pasirinkti importuotinų vaizdų: {{err}}"
+      "importPickFailed": "Nepavyko pasirinkti importuotinų vaizdų: {{err}}",
+      "importTargetInternal": "Importuojama į programos biblioteką (rekomenduojama numatytoji vieta šiame įrenginyje)."
     },
     "tooltips": {
       "communityPresets": "Bendruomenės nustatymai",

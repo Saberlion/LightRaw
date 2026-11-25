@@ -1314,6 +1314,7 @@
       "albumsEmpty": "右鍵單擊以建立相簿。",
       "collapseSection": "摺疊 {{section}}",
       "expandSection": "展開 {{section}}",
+      "internalLibraryName": "應用圖庫(推薦)",
       "loading": "載入資料夾中...",
       "noFoldersFound": "未找到資料夾。",
       "openFolderInstruction": "開啟一個資料夾以檢視其結構。",
@@ -1503,7 +1504,8 @@
     },
     "toasts": {
       "importFailed": "匯入失敗：{{err}}",
-      "importPickFailed": "匯入選取圖片失敗：{{err}}"
+      "importPickFailed": "匯入選取圖片失敗：{{err}}",
+      "importTargetInternal": "正在匯入到應用圖庫(本裝置建議的預設位置)。"
     },
     "tooltips": {
       "communityPresets": "社群預設",

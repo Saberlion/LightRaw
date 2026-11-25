@@ -692,6 +692,25 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         }
       }
 
+      // FUSE user-storage roots (Download etc., via FileKit grants) are
+      // cloud-synced mounts: "optimized storage" offloads surface as 0-byte
+      // stubs that render as permanent grey placeholder cards, and writes
+      // depend on a grant that must be re-activated on every launch (the
+      // entire failure chain of porting doc §6.40). The app-internal library
+      // root is the recommended default. Warn once — not on every launch.
+      const isFuseUserStorage = (p: string) =>
+        p.startsWith('/storage/Users/') || p.startsWith('/storage/media/');
+      if (
+        rootFolders.some(isFuseUserStorage) &&
+        !localStorage.getItem('lightraw.fuse-root-notice')
+      ) {
+        localStorage.setItem('lightraw.fuse-root-notice', '1');
+        toast.info(
+          'Cloud-synced folders (e.g. Download) can contain offloaded, empty file stubs that show up as broken placeholders, and their access grant must be re-activated on every launch. The built-in app library is the recommended default location for imports.',
+          { autoClose: 10000 },
+        );
+      }
+
       setLibrary({ rootPaths: rootFolders });
 
       if (folderState?.expandedFolders) {

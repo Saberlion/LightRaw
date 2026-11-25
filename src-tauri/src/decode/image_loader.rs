@@ -516,6 +516,19 @@ fn exif_orientation(exif: Option<&exif::Exif>) -> Option<Orientation> {
     .map(|orientation| Orientation::from_u16(orientation as u16))
 }
 
+/// A byte-level fingerprint for decode-failure errors: the size plus the
+/// first bytes, enough to tell a truncated JPEG from a misnamed HEIF/DNG or
+/// any other impostor without pulling the file again — the load-error toast
+/// carries it, so an on-device report is self-diagnosing.
+fn byte_prefix(bytes: &[u8]) -> String {
+    let head: Vec<String> = bytes
+        .iter()
+        .take(16)
+        .map(|byte| format!("{byte:02X}"))
+        .collect();
+    format!("{} bytes, first bytes: {}", bytes.len(), head.join(" "))
+}
+
 fn source_profile(icc: Option<Vec<u8>>, exif: Option<&exif::Exif>) -> Option<ColorProfile> {
     match icc {
         Some(icc) => ColorProfile::new_from_slice(&icc).ok(),
@@ -555,16 +568,19 @@ fn decode_with_orientation(
     let cursor = Cursor::new(bytes);
     let mut reader = ImageReader::new(cursor.clone())
         .with_guessed_format()
-        .context("Failed to guess image format")?;
+        .with_context(|| format!("Failed to guess image format ({})", byte_prefix(bytes)))?;
 
     reader.no_limits();
 
     check_cancel()?;
 
-    let mut decoder = reader.into_decoder().context("Failed to decode image")?;
+    let mut decoder = reader
+        .into_decoder()
+        .with_context(|| format!("Failed to decode image ({})", byte_prefix(bytes)))?;
     let icc_profile = decoder.icc_profile().ok().flatten();
     let source_color = decoder.color_type();
-    let image = DynamicImage::from_decoder(decoder).context("Failed to decode image")?;
+    let image = DynamicImage::from_decoder(decoder)
+        .with_context(|| format!("Failed to decode image ({})", byte_prefix(bytes)))?;
     check_cancel()?;
 
     let exif = ExifReader::new()

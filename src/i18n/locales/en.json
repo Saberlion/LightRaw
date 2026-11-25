@@ -1319,6 +1319,7 @@
       "albumsEmpty": "Right-click to create an album.",
       "collapseSection": "Collapse {{section}}",
       "expandSection": "Expand {{section}}",
+      "internalLibraryName": "App Library (recommended)",
       "loading": "Loading folders...",
       "noFoldersFound": "No folders found.",
       "openFolderInstruction": "Open a folder to see its structure.",
@@ -1510,7 +1511,8 @@
     },
     "toasts": {
       "importFailed": "Import failed: {{err}}",
-      "importPickFailed": "Import picker failed: {{err}}"
+      "importPickFailed": "Import picker failed: {{err}}",
+      "importTargetInternal": "Importing into the app library (the recommended default on this device)."
     },
     "tooltips": {
       "communityPresets": "Community Presets",
