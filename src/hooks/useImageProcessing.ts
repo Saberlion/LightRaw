@@ -35,6 +35,29 @@ const releasePreviewUrl = (url: string | null | undefined) => {
   }
 };
 
+// ---- Event-driven discrete render scheduling (Vercel skill
+// rerender-move-effect-to-event) ----
+// The hook runs inside a headless manager component, so its return value
+// is not reachable from the panel tree. Panels import and call the
+// module-level triggerDiscreteRender() directly from their event handlers;
+// the hook registers a listener that does the actual scheduling.
+type DiscreteRenderListener = (delay: number) => void;
+let discreteRenderListener: DiscreteRenderListener | null = null;
+
+/**
+ * Fire this from an adjustment panel's event handler (button click,
+ * dropdown change) to schedule a deferred preview render without going
+ * through the useEffect dependency chain. The hook registers the actual
+ * scheduling logic.
+ *
+ * Example (tone mapper switch):
+ *   setAdjustments(prev => ({ ...prev, toneMapper: 'agx' }));
+ *   triggerDiscreteRender(600);
+ */
+export const triggerDiscreteRender = (delay: number = 600) => {
+  discreteRenderListener?.(delay);
+};
+
 export function useImageProcessing(
   transformWrapperRef: any,
   prevAdjustmentsRef: React.RefObject<any>,
@@ -80,6 +103,16 @@ export function useImageProcessing(
   useEffect(() => {
     selectedImagePathRef.current = selectedImage?.path ?? null;
   }, [selectedImage?.path]);
+
+  // Vercel skill rerender-move-effect-to-event: interaction-driven renders are
+  // scheduled directly from event handlers (see scheduleDiscreteRender), not
+  // via a useEffect watching state. This flag lets the effect know a render
+  // was already scheduled so it can skip and avoid double-firing.
+  const discreteRenderScheduledRef = useRef(false);
+  // Separate timer from the effect's dragIdleTimer: the effect clears
+  // dragIdleTimer at its top, which would cancel the event-handler's
+  // timer before the skip flag check runs (race condition, traced 2026-11-25).
+  const discreteRenderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const calculateROI = useCallback(() => {
     if (!transformWrapperRef.current) return null;
@@ -380,6 +413,56 @@ export function useImageProcessing(
     [appSettings, fittedDisplayMax, transformWrapperRef, originalSize, adjustments.aiUpscaleEnabled],
   );
 
+  // Event-handler-driven render scheduling for discrete changes (tone
+  // mapper, preset, LUT). Reads the store at fire time so callers don't
+  // need to pass the new adjustments value. Must be defined after
+  // calculateTargetRes and applyAdjustments (dependency order).
+  const scheduleDiscreteRender = useCallback(
+    (delay: number = 600) => {
+      if (!selectedImage?.isReady) return;
+
+      // Tell the effect not to re-schedule (we own this render now).
+      discreteRenderScheduledRef.current = true;
+
+      if (discreteRenderTimer.current) clearTimeout(discreteRenderTimer.current);
+      const targetRes = calculateTargetRes();
+
+      discreteRenderTimer.current = setTimeout(() => {
+        currentResRef.current = targetRes;
+
+        const state = useEditorStore.getState();
+        const renderAdj = state.previewOverride ?? state.adjustments;
+        const path = state.selectedImage?.path;
+        if (!path) return;
+
+        applyAdjustments(renderAdj, false, targetRes);
+
+        const prev = prevAdjustmentsRef.current;
+        if (!prev || prev.path !== path) {
+          prevAdjustmentsRef.current = { path, adjustments: state.adjustments };
+          return;
+        }
+        if (prev.adjustments !== state.adjustments) {
+          debouncedSave(path, state.adjustments, false);
+          prevAdjustmentsRef.current = { path, adjustments: state.adjustments };
+        }
+      }, delay);
+    },
+    [selectedImage?.isReady, calculateTargetRes, applyAdjustments],
+  );
+
+  // Register the module-level listener so panels can call
+  // triggerDiscreteRender() from their event handlers (Vercel skill
+  // rerender-move-effect-to-event). No prop threading needed.
+  useEffect(() => {
+    discreteRenderListener = (delay: number) => {
+      scheduleDiscreteRender(delay);
+    };
+    return () => {
+      discreteRenderListener = null;
+    };
+  }, [scheduleDiscreteRender]);
+
   const uncroppedTargetRes = useMemo(() => {
     const { width: baseWidth, containerWidth, containerHeight } = baseRenderSize;
     const isSwapped = (adjustments.orientationSteps || 0) % 2 === 1;
@@ -509,6 +592,15 @@ export function useImageProcessing(
         applyAdjustments(renderAdjustments, true, targetRes);
       }
     } else {
+      // Vercel skill rerender-move-effect-to-event: if an event handler
+      // already scheduled this render (scheduleDiscreteRender), skip —
+      // the effect is only the fallback for panels that haven't migrated
+      // to the direct-call pattern yet.
+      if (discreteRenderScheduledRef.current) {
+        discreteRenderScheduledRef.current = false;
+        return;
+      }
+
       // Defer the render until the spring animation (600ms) has finished.
       // On OHOS phones every preview response triggers a ~200ms full-window
       // compositor raster (GPU contention with the wgpu-direct render,
@@ -591,5 +683,6 @@ export function useImageProcessing(
   return {
     applyAdjustments,
     executeApplyAdjustments,
+    scheduleDiscreteRender,
   };
 }

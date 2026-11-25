@@ -5,6 +5,7 @@ import { Adjustments, BasicAdjustment } from '../../utils/adjustments';
 import { useEffect, useRef, useState, useMemo, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { areSectionPropsEqual } from '../../utils/adjustments';
+import { triggerDiscreteRender } from '../../hooks/useImageProcessing';
 
 interface BasicAdjustmentsProps {
   adjustments: Adjustments;
@@ -171,11 +172,16 @@ function BasicAdjustments({
     setAdjustments((prev: Partial<Adjustments>) => ({ ...prev, [key]: numericValue }));
   };
 
+  // Vercel skill rerender-move-effect-to-event: schedule the preview render
+  // directly from the click handler instead of relying on the useEffect
+  // dependency chain in useImageProcessing. The 600ms delay lets the
+  // spring animation finish without GPU contention from the render.
   const handleToneMapperChange = (mapper: string) => {
     setAdjustments((prev: Partial<Adjustments>) => ({
       ...prev,
       toneMapper: mapper as 'basic' | 'agx',
     }));
+    triggerDiscreteRender(600);
   };
 
   const hideTonemapper = isForMask || appSettings?.tonemapperOverrideEnabled;
