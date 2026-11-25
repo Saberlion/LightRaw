@@ -509,6 +509,14 @@ export function useImageProcessing(
         applyAdjustments(renderAdjustments, true, targetRes);
       }
     } else {
+      // Defer the render until the spring animation (600ms) has finished.
+      // On OHOS phones every preview response triggers a ~200ms full-window
+      // compositor raster (GPU contention with the wgpu-direct render,
+      // CDP-traced 2026-11-25); firing inside the animation window makes
+      // the spring stutter badly. Delaying past the animation gives the
+      // user a butter-smooth toggle first, then the photo change follows
+      // as a natural settle - one raster stall instead of competing with
+      // a running animation.
       dragIdleTimer.current = setTimeout(() => {
         currentResRef.current = targetRes;
 
@@ -551,7 +559,7 @@ export function useImageProcessing(
 
           prevAdjustmentsRef.current = { path: selectedImage.path, adjustments };
         }
-      }, 50);
+      }, 600);
     }
 
     return () => {
