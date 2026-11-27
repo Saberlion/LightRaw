@@ -2,14 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys, TFunction } from 'i18next';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import clsx from 'clsx';
 import { useShallow } from 'zustand/react/shallow';
 import { ChevronDown, ChevronRight, Download, Loader2, Package, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
 import Text from '../../ui/Text';
+import Switch from '../../ui/Switch';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { Invokes } from '../../../types/invokes';
+import type { AppSettings } from '../../../types/settings';
 import { formatBytes } from '../../../utils/formatBytes';
 import { isJobActive, JobKind, useProcessStore } from '../../../store/useProcessStore';
+import { useSettingsStore } from '../../../store/useSettingsStore';
 import type { DataConfirmRequest } from './DataManagementSettings';
 
 /**
@@ -113,6 +117,41 @@ function statusColor(model: AiModelInfo): string | undefined {
 
 interface AiModelsSettingsProps {
   onRequestConfirm(request: DataConfirmRequest): void;
+  appSettings: AppSettings | null;
+  onSettingsChange(settings: AppSettings): void | Promise<void>;
+}
+
+type AutoDownloadState = 'disabled' | 'blockedNetwork' | 'blockedBusy' | 'waitingIdle' | 'upToDate' | 'running';
+
+interface AutoDownloadStatus {
+  state: AutoDownloadState;
+  done: number;
+  total: number;
+  current: string | null;
+}
+
+const AUTO_STATUS_KEYS: Record<AutoDownloadState, ParseKeys> = {
+  disabled: 'settings.aiModels.autoStatus.waitingIdle',
+  blockedNetwork: 'settings.aiModels.autoStatus.blockedNetwork',
+  blockedBusy: 'settings.aiModels.autoStatus.blockedBusy',
+  waitingIdle: 'settings.aiModels.autoStatus.waitingIdle',
+  upToDate: 'settings.aiModels.autoStatus.upToDate',
+  running: 'settings.aiModels.autoStatus.running',
+};
+
+function describeAutoStatus(status: AutoDownloadStatus, t: TFunction): string {
+  switch (status.state) {
+    case 'running':
+      return t('settings.aiModels.autoStatus.running', {
+        name: status.current ?? '',
+        done: status.done,
+        total: status.total,
+      });
+    case 'waitingIdle':
+      return t('settings.aiModels.autoStatus.waitingIdle', { count: status.total });
+    default:
+      return t(AUTO_STATUS_KEYS[status.state]);
+  }
 }
 
 interface RowContext {
@@ -366,14 +405,36 @@ const Section = ({ sectionKey, title, description, groups, ctx, t, collapsed, on
   </div>
 );
 
-export default function AiModelsSettings({ onRequestConfirm }: AiModelsSettingsProps) {
+export default function AiModelsSettings({ onRequestConfirm, appSettings, onSettingsChange }: AiModelsSettingsProps) {
   const { t } = useTranslation();
+  const isOhos = useSettingsStore((s) => s.isOhos);
   const [models, setModels] = useState<AiModelInfo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pending, setPending] = useState<Record<string, 'download' | 'delete'>>({});
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [autoStatus, setAutoStatus] = useState<AutoDownloadStatus | null>(null);
+
+  // Idle auto-download scheduler status: seed once, then follow the
+  // `ai-auto-download` events (the page is not always open when the
+  // scheduler ticks, so the command doubles as event replay).
+  useEffect(() => {
+    if (!isOhos) return;
+    let disposed = false;
+    invoke<AutoDownloadStatus>(Invokes.GetAutoDownloadStatus)
+      .then((status) => {
+        if (!disposed) setAutoStatus(status);
+      })
+      .catch((err) => console.error('Failed to get auto-download status:', err));
+    const unlisten = listen<AutoDownloadStatus>('ai-auto-download', (event) => {
+      setAutoStatus(event.payload);
+    });
+    return () => {
+      disposed = true;
+      unlisten.then((dispose) => dispose()).catch(() => undefined);
+    };
+  }, [isOhos]);
 
   // Live download progress from the global job store: ModelDownload jobs
   // keyed by the model's display name (event payload), unique since the
@@ -549,6 +610,29 @@ export default function AiModelsSettings({ onRequestConfirm }: AiModelsSettingsP
           <RefreshCw size={14} className={clsx(isRefreshing && 'animate-spin')} />
         </button>
       </div>
+
+      {isOhos && (
+        <div className="mb-4">
+          <Switch
+            checked={appSettings?.autoDownloadModels ?? true}
+            id="auto-download-models-toggle"
+            label={t('settings.aiModels.autoDownload')}
+            onChange={(checked) => onSettingsChange({ ...appSettings, autoDownloadModels: checked } as AppSettings)}
+          />
+          <Text variant={TextVariants.small} color={TextColors.secondary} className="mt-1.5">
+            {t('settings.aiModels.autoDownloadDesc')}
+          </Text>
+          {autoStatus && (appSettings?.autoDownloadModels ?? true) && (
+            <Text
+              variant={TextVariants.small}
+              color={autoStatus.state === 'running' ? TextColors.success : undefined}
+              className="mt-0.5"
+            >
+              {describeAutoStatus(autoStatus, t)}
+            </Text>
+          )}
+        </div>
+      )}
 
       {models === null && !error && (
         <Text variant={TextVariants.small} color={TextColors.secondary}>

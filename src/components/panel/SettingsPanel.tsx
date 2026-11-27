@@ -2396,6 +2396,8 @@ export default function SettingsPanel({
                        per-model nind .om/.ms rows here. */}
                    <div className="p-6 bg-surface rounded-xl shadow-md">
                      <AiModelsSettings
+                       appSettings={appSettings}
+                       onSettingsChange={onSettingsChange}
                        onRequestConfirm={(request) =>
                          setConfirmModalState({ ...request, confirmVariant: 'destructive', isOpen: true })
                        }

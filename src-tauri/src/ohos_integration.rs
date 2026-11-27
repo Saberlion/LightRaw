@@ -326,6 +326,150 @@ mod system_bridge {
     pub(super) fn with_handle<R>(f: impl FnOnce(&tauri::AppHandle) -> R) -> Option<R> {
         APP_HANDLE.get().map(f)
     }
+
+    // ---- idle auto-download bridge (docs/AI_MODEL_AUTO_DOWNLOAD.md) ----
+    //
+    // EntryAbility pushes the two condition groups the scheduler needs:
+    //  - network state, collected from wifiManager (isWifiActive /
+    //    getLinkedInfoSync / isHotspotActive + the three `on(...)` change
+    //    subscriptions);
+    //  - idle signals from system APIs: window focus (`windowStageEvent`
+    //    INACTIVE/ACTIVE), ability lifecycle (onForeground/onBackground) and
+    //    the SCREEN_ON/SCREEN_OFF common events.
+    // The Rust side owns the thresholds and the state machine; the frontend
+    // only displays the resulting `ai-auto-download` events.
+
+    #[derive(Clone, Copy, Default)]
+    struct IdleSignals {
+        screen_off: bool,
+        window_inactive_since: Option<std::time::Instant>,
+        backgrounded_since: Option<std::time::Instant>,
+    }
+
+    static IDLE: Mutex<IdleSignals> = Mutex::new(IdleSignals {
+        screen_off: false,
+        window_inactive_since: None,
+        backgrounded_since: None,
+    });
+
+    /// Seconds the app has been idle; `f64::INFINITY` when the screen is off
+    /// (idle by definition), `0.0` when the window is focused and the app is
+    /// foregrounded.
+    pub fn idle_seconds() -> f64 {
+        let idle = IDLE.lock().unwrap();
+        if idle.screen_off {
+            return f64::INFINITY;
+        }
+        let now = std::time::Instant::now();
+        let window_age = idle
+            .window_inactive_since
+            .map(|since| (now - since).as_secs_f64());
+        let background_age = idle
+            .backgrounded_since
+            .map(|since| (now - since).as_secs_f64());
+        match (window_age, background_age) {
+            (Some(a), Some(b)) => a.max(b),
+            (Some(a), None) | (None, Some(a)) => a,
+            (None, None) => 0.0,
+        }
+    }
+
+    /// Whether the ability is backgrounded (phone idle: the scheduler must
+    /// hold the dataTransfer continuous task to survive the freezer).
+    pub fn backgrounded() -> bool {
+        IDLE.lock().unwrap().backgrounded_since.is_some()
+    }
+
+    /// NAPI export (ArkTS name: `notifyOhosIdleEvent`). EntryAbility pushes
+    /// idle-relevant system signals: `kind` is one of `screen` (active =
+    /// screen on), `window` (active = focused) or `lifecycle` (active =
+    /// foreground). `active = false` marks the idle transition and starts the
+    /// threshold clock.
+    #[napi_derive_ohos::napi]
+    pub fn notify_ohos_idle_event(kind: String, active: bool) -> Result<()> {
+        let mut idle = IDLE.lock().unwrap();
+        let changed = match kind.as_str() {
+            "screen" => {
+                let changed = idle.screen_off == active;
+                idle.screen_off = !active;
+                changed
+            }
+            "window" => {
+                let changed = idle.window_inactive_since.is_some() != !active;
+                idle.window_inactive_since = (!active).then(std::time::Instant::now);
+                changed
+            }
+            "lifecycle" => {
+                let changed = idle.backgrounded_since.is_some() != !active;
+                idle.backgrounded_since = (!active).then(std::time::Instant::now);
+                changed
+            }
+            _ => false,
+        };
+        drop(idle);
+        if changed {
+            log::info!("[auto-download] idle signal '{kind}': active={active}");
+            emit(
+                "ohos-idle-changed",
+                serde_json::json!({ "kind": kind, "active": active }),
+            );
+        }
+        Ok(())
+    }
+
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    struct NetworkState {
+        wifi_active: bool,
+        connected: bool,
+        hotspot_active: bool,
+    }
+
+    static NETWORK: Mutex<NetworkState> = Mutex::new(NetworkState {
+        wifi_active: false,
+        connected: false,
+        hotspot_active: false,
+    });
+
+    /// Whether Wi-Fi is up with a live connection while the device hotspot is
+    /// off — the auto-download precondition.
+    pub fn network_ready() -> bool {
+        let network = NETWORK.lock().unwrap();
+        network.wifi_active && network.connected && !network.hotspot_active
+    }
+
+    /// NAPI export (ArkTS name: `notifyOhosNetworkState`). EntryAbility pushes
+    /// the wifiManager verdict on startup and on every state/connection/
+    /// hotspot change; `connected` mirrors `getLinkedInfoSync`.
+    #[napi_derive_ohos::napi]
+    pub fn notify_ohos_network_state(
+        wifi_active: bool,
+        connected: bool,
+        hotspot_active: bool,
+    ) -> Result<()> {
+        let next = NetworkState {
+            wifi_active,
+            connected,
+            hotspot_active,
+        };
+        let mut network = NETWORK.lock().unwrap();
+        let changed = *network != next;
+        *network = next;
+        drop(network);
+        if changed {
+            log::info!(
+                "[auto-download] network state: wifi={wifi_active} connected={connected} hotspot={hotspot_active}"
+            );
+            emit(
+                "ohos-network-state",
+                serde_json::json!({
+                    "wifiActive": wifi_active,
+                    "connected": connected,
+                    "hotspotActive": hotspot_active,
+                }),
+            );
+        }
+        Ok(())
+    }
 }
 
 /// Emit a tauri event to the webview from a NAPI callback, where no AppHandle
@@ -342,6 +486,59 @@ pub fn emit_to_webview(event: &str, payload: serde_json::Value) {
 #[cfg(target_env = "ohos")]
 pub fn with_app_handle<R>(f: impl FnOnce(&tauri::AppHandle) -> R) -> Option<R> {
     system_bridge::with_handle(f)
+}
+
+// ---- idle auto-download accessors (docs/AI_MODEL_AUTO_DOWNLOAD.md) ----
+// cfg-gated thin wrappers so `ai::auto_download` compiles unchanged on every
+// platform; off OHOS the preconditions are never met and the scheduler exits.
+
+/// Wi-Fi connected and the device hotspot off, as reported by the ArkTS side
+/// through `notifyOhosNetworkState`. Always `false` off OHOS.
+#[cfg(target_env = "ohos")]
+pub fn auto_download_network_ready() -> bool {
+    system_bridge::network_ready()
+}
+
+#[cfg(not(target_env = "ohos"))]
+pub fn auto_download_network_ready() -> bool {
+    false
+}
+
+/// Seconds since the last idle transition (window focus loss, backgrounding
+/// or screen off). Always `0.0` off OHOS.
+#[cfg(target_env = "ohos")]
+pub fn auto_download_idle_seconds() -> f64 {
+    system_bridge::idle_seconds()
+}
+
+#[cfg(not(target_env = "ohos"))]
+pub fn auto_download_idle_seconds() -> f64 {
+    0.0
+}
+
+/// Whether the ability is backgrounded. Always `false` off OHOS.
+#[cfg(target_env = "ohos")]
+pub fn auto_download_backgrounded() -> bool {
+    system_bridge::backgrounded()
+}
+
+#[cfg(not(target_env = "ohos"))]
+pub fn auto_download_backgrounded() -> bool {
+    false
+}
+
+/// Dispatch a JSON bridge request to the ArkTS EntryAbility (the
+/// `window_controller` ThreadsafeFunction; see the privacy/window ops for the
+/// payload contract). The idle auto-download scheduler uses it to hold and
+/// release the dataTransfer continuous task. Fails harmlessly off OHOS.
+#[cfg(target_env = "ohos")]
+pub fn dispatch_bridge_event(payload: &str) -> Result<(), String> {
+    window_controller::dispatch_event(payload)
+}
+
+#[cfg(not(target_env = "ohos"))]
+pub fn dispatch_bridge_event(_payload: &str) -> Result<(), String> {
+    Err("ArkTS bridge unavailable off OpenHarmony".to_string())
 }
 
 /// Latest OHOS system color mode reported by the ArkTS side, or `None` when

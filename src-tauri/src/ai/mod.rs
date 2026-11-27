@@ -1,3 +1,4 @@
+pub mod auto_download;
 pub mod base_cache;
 pub mod bm3d;
 pub mod commands;

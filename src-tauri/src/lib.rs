@@ -295,6 +295,11 @@ pub fn run() {
                 });
             }
 
+            // Idle auto-download scheduler: pre-downloads the model set when
+            // the device is idle on Wi-Fi with the hotspot off (OHOS only;
+            // the loop self-exits elsewhere). docs/AI_MODEL_AUTO_DOWNLOAD.md.
+            crate::ai::auto_download::spawn(app_handle.clone());
+
             // Start the file logger before the GPU backend decisions below: their
             // warnings (crash fallback, backend reset) are the first thing support
             // needs when a device renders nothing. setup_logging only needs
@@ -897,6 +902,7 @@ pub fn run() {
             ai::model_registry::list_ai_models,
             ai::model_registry::download_ai_model,
             ai::model_registry::delete_ai_model,
+            ai::auto_download::get_auto_download_status,
             library::sidecars::set_color_label_for_paths,
             library::sidecars::set_rating_for_paths,
             library::sidecars::set_flag_for_paths,

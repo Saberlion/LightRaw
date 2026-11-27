@@ -1862,6 +1862,16 @@
         "download": "下載",
         "redownload": "重新下載"
       },
+      "autoDownload": "閒置時自動下載",
+      "autoDownloadDesc": "Wi-Fi 連線且未開熱點時，閒置後自動下載全部缺失的模型。",
+      "autoStatus": {
+        "blockedBusy": "AI 工作工作執行中，暫緩自動下載。",
+        "blockedNetwork": "等待 Wi-Fi 連線且熱點關閉…",
+        "running": "正在下載 {{name}}（{{done}}/{{total}}）",
+        "upToDate": "全部模型已就緒，無需自動下載。",
+        "waitingIdle": "等待閒置…（待下載 {{count}} 個）",
+        "waitingIdle_other": "等待閒置…（待下載 {{count}} 個）"
+      },
       "bundledBadge": "內建",
       "bundledExtracted": "已提取到本機 · {{size}}",
       "bundledReady": "從應用程式套件載入",

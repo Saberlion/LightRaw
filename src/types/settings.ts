@@ -99,6 +99,8 @@ export interface AppSettings {
   thumbnailCacheLimitGb?: number;
   aiConnectorAddress?: string;
   aiGpuAcceleration?: boolean;
+  /** Idle auto-download of the model set (OHOS only; docs/AI_MODEL_AUTO_DOWNLOAD.md). */
+  autoDownloadModels?: boolean;
   aiProvider?: string;
   decorations?: any;
   editorPreviewResolution?: number;

@@ -1869,6 +1869,17 @@
         "download": "Download",
         "redownload": "Re-download"
       },
+      "autoDownload": "Download models while idle",
+      "autoDownloadDesc": "When connected to Wi-Fi with the hotspot off, missing models are downloaded automatically while the device is idle.",
+      "autoStatus": {
+        "blockedBusy": "AI tasks are running — auto-download deferred.",
+        "blockedNetwork": "Waiting for Wi-Fi (connected, hotspot off)…",
+        "running": "Downloading {{name}} ({{done}}/{{total}})",
+        "upToDate": "All models are ready — nothing to auto-download.",
+        "waitingIdle": "Waiting for idle… ({{count}} model(s) pending)",
+        "waitingIdle_one": "Waiting for idle… ({{count}} model pending)",
+        "waitingIdle_other": "Waiting for idle… ({{count}} models pending)"
+      },
       "bundledBadge": "Built-in",
       "bundledExtracted": "Extracted locally · {{size}}",
       "bundledReady": "Loaded from the app package",

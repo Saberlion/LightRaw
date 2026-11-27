@@ -42,6 +42,7 @@ export enum Invokes {
   ListAiModels = 'list_ai_models',
   DownloadAiModel = 'download_ai_model',
   DeleteAiModel = 'delete_ai_model',
+  GetAutoDownloadStatus = 'get_auto_download_status',
   ClearAiMapsCache = 'clear_ai_maps_cache',
   ClearAiModels = 'clear_ai_models',
   ClearImmichCache = 'clear_immich_cache',

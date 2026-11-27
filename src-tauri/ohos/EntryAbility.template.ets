@@ -13,6 +13,8 @@ import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { dataSharePredicates } from '@kit.ArkData';
 import { privacyManager } from '@kit.AppGalleryKit';
 import usbManager from '@ohos.usbManager';
+import { wifiManager } from '@kit.ConnectivityKit';
+import { backgroundTaskManager } from '@kit.BackgroundTasksKit';
 
 // Media Library Kit resource handler for the gallery-import fallback path
 // (see EntryAbility.stageGalleryImages): MediaAssetManager.requestImageData
@@ -150,6 +152,21 @@ export default class EntryAbility extends RustAbility {
       console.info('[RapidRAW] avoidAreaChange subscribed');
     } catch (e) {
       console.error(`[RapidRAW] avoidAreaChange subscribe failed: ${JSON.stringify(e)}`);
+    }
+    // Idle auto-download (docs/AI_MODEL_AUTO_DOWNLOAD.md): focus loss on a
+    // 2in1 multi-window desktop is a system-provided idle signal. ACTIVE =
+    // focused (idle clock reset), INACTIVE = unfocused (clock starts).
+    try {
+      windowStage.on('windowStageEvent', (stageEvent: window.WindowStageEventType) => {
+        const focused: boolean = stageEvent === window.WindowStageEventType.ACTIVE;
+        const unfocused: boolean = stageEvent === window.WindowStageEventType.INACTIVE;
+        if (focused || unfocused) {
+          this.pushIdleEvent('window', focused);
+        }
+      });
+      console.info('[RapidRAW] windowStageEvent subscribed');
+    } catch (e) {
+      console.error(`[RapidRAW] windowStageEvent subscribe failed: ${JSON.stringify(e)}`);
     }
     // RapidRAW's custom titlebar drives window controls through tauri
     // commands into ohos_integration.rs, which calls back into the JS
@@ -392,9 +409,129 @@ export default class EntryAbility extends RustAbility {
       this.subscribePrivacyEvents();
       this.startTetherUsbBridge();
       this.subscribeUsbHotplug();
+      // Seed the auto-download scheduler conditions now that the module
+      // handle exists; the wifi/screen subscriptions re-push on changes.
+      this.pushNetworkState();
+      this.subscribeAutoDownloadWifi();
+      this.subscribeScreenEvents();
       console.info('[RapidRAW] OHOS window controller registered');
     } catch (e) {
       console.error(`[RapidRAW] window-controller registration failed: ${JSON.stringify(e)}`);
+    }
+  }
+
+  // ---- Idle auto-download bridge (docs/AI_MODEL_AUTO_DOWNLOAD.md) ----
+  //
+  // Pushes the two condition groups the Rust scheduler needs: network
+  // state (wifiManager: Wi-Fi up + connected + hotspot off) and idle
+  // signals (window focus / ability lifecycle / screen on-off). Rust
+  // owns thresholds and the state machine; the webview only renders the
+  // resulting ai-auto-download events.
+  private screenSubscriber: commonEventManager.CommonEventSubscriber | null = null;
+  private continuousTaskWanted: boolean = false;
+
+  private pushNetworkState(): void {
+    const mod: ESObject | null = this.rapidrawModule;
+    const notify: ESObject = mod?.notifyOhosNetworkState ?? mod?.default?.notifyOhosNetworkState;
+    if (typeof notify !== 'function') {
+      return; // module not loaded yet; the subscriptions below re-push
+    }
+    let wifiActive: boolean = false;
+    let connected: boolean = false;
+    let hotspotActive: boolean = false;
+    try {
+      wifiActive = wifiManager.isWifiActive();
+    } catch (e) {
+      console.error(`[RapidRAW] isWifiActive failed: ${JSON.stringify(e)}`);
+    }
+    try {
+      connected = wifiManager.isConnected();
+    } catch (e) {
+      console.error(`[RapidRAW] isConnected failed: ${JSON.stringify(e)}`);
+    }
+    try {
+      hotspotActive = wifiManager.isHotspotActive();
+    } catch (e) {
+      console.error(`[RapidRAW] isHotspotActive failed: ${JSON.stringify(e)}`);
+    }
+    notify(wifiActive, connected, hotspotActive);
+  }
+
+  private pushIdleEvent(kind: string, active: boolean): void {
+    const mod: ESObject | null = this.rapidrawModule;
+    const notify: ESObject = mod?.notifyOhosIdleEvent ?? mod?.default?.notifyOhosIdleEvent;
+    if (typeof notify !== 'function') {
+      return; // pre-module events are covered by the next push
+    }
+    notify(kind, active);
+  }
+
+  private subscribeAutoDownloadWifi(): void {
+    const rePush = (): void => {
+      this.pushNetworkState();
+    };
+    try {
+      wifiManager.on('wifiStateChange', rePush);
+      wifiManager.on('wifiConnectionChange', rePush);
+      wifiManager.on('hotspotStateChange', rePush);
+      console.info('[RapidRAW] auto-download wifi subscriptions registered');
+    } catch (e) {
+      console.error(`[RapidRAW] wifi subscribe failed: ${JSON.stringify(e)}`);
+    }
+  }
+
+  private subscribeScreenEvents(): void {
+    // Screen-off is idle by definition and bypasses the threshold on the
+    // Rust side; subscribe both directions so the clock resets on wake.
+    const info: commonEventManager.CommonEventSubscribeInfo =
+      { events: ['usual.event.SCREEN_ON', 'usual.event.SCREEN_OFF'] };
+    commonEventManager.createSubscriber(info)
+      .then((subscriber: commonEventManager.CommonEventSubscriber) => {
+        this.screenSubscriber = subscriber;
+        try {
+          commonEventManager.subscribe(subscriber, (err, data) => {
+            if (err) {
+              console.error(`[RapidRAW] screen event failed: ${JSON.stringify(err)}`);
+              return;
+            }
+            this.pushIdleEvent('screen', data?.event === 'usual.event.SCREEN_ON');
+          });
+          console.info('[RapidRAW] screen on/off subscribed');
+        } catch (e) {
+          console.error(`[RapidRAW] screen subscribe threw: ${JSON.stringify(e)}`);
+        }
+      })
+      .catch((e: BusinessError) => {
+        console.error(`[RapidRAW] screen subscriber failed: ${JSON.stringify(e)}`);
+      });
+  }
+
+  private setAutoDownloadContinuousTask(hold: boolean): void {
+    if (this.continuousTaskWanted === hold) {
+      return;
+    }
+    this.continuousTaskWanted = hold;
+    try {
+      if (hold) {
+        backgroundTaskManager.startBackgroundRunning(this.context,
+          backgroundTaskManager.BackgroundMode.DATA_TRANSFER)
+          .then(() => {
+            console.info('[RapidRAW] dataTransfer continuous task started');
+          })
+          .catch((e: BusinessError) => {
+            console.error(`[RapidRAW] continuous task start failed: ${JSON.stringify(e)}`);
+          });
+      } else {
+        backgroundTaskManager.stopBackgroundRunning(this.context)
+          .then(() => {
+            console.info('[RapidRAW] dataTransfer continuous task stopped');
+          })
+          .catch((e: BusinessError) => {
+            console.error(`[RapidRAW] continuous task stop failed: ${JSON.stringify(e)}`);
+          });
+      }
+    } catch (e) {
+      console.error(`[RapidRAW] continuous task threw: ${JSON.stringify(e)}`);
     }
   }
 
@@ -657,6 +794,19 @@ export default class EntryAbility extends RustAbility {
         }
       });
     }, 500);
+  }
+
+  // Ability lifecycle = the phone idle signal: backgrounded apps get
+  // frozen unless they hold a continuous task, so the Rust scheduler
+  // holds one for the whole download session (docs/AI_MODEL_AUTO_DOWNLOAD.md).
+  onForeground(): void {
+    super.onForeground();
+    this.pushIdleEvent('lifecycle', true);
+  }
+
+  onBackground(): void {
+    super.onBackground();
+    this.pushIdleEvent('lifecycle', false);
   }
 
   onConfigurationUpdate(newConfig: Configuration): void {
@@ -927,6 +1077,11 @@ export default class EntryAbility extends RustAbility {
         break;
       case 'open_url':
         this.openUrl(req, requestId, resolveOpenUrl);
+        break;
+      case 'auto_download_task':
+        // Hold/release the dataTransfer continuous task. Fire-and-forget:
+        // the Rust scheduler does not park a oneshot for this op.
+        this.setAutoDownloadContinuousTask(req['hold'] === true);
         break;
       case 'revoke_folder_grants':
         this.handleRevokeFolderGrants(req, requestId, resolveRevokeGrants);

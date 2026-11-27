@@ -575,6 +575,12 @@ pub fn default_ai_gpu_acceleration() -> bool {
     true
 }
 
+/// Settings → AI models: pre-download every downloadable model when the
+/// device is idle on Wi-Fi (OHOS only; docs/AI_MODEL_AUTO_DOWNLOAD.md).
+pub fn default_auto_download_models() -> bool {
+    true
+}
+
 pub fn default_ai_cache_limit_gb() -> u32 {
     25
 }
@@ -655,6 +661,8 @@ pub struct AppSettings {
     pub ai_provider: Option<String>,
     #[serde(default = "default_ai_gpu_acceleration")]
     pub ai_gpu_acceleration: bool,
+    #[serde(default = "default_auto_download_models")]
+    pub auto_download_models: bool,
     #[serde(default = "default_open_tree_sections")]
     pub open_tree_sections: Vec<String>,
     #[serde(default)]
@@ -905,6 +913,7 @@ impl Default for AppSettings {
             thumbnail_aspect_ratio: Some("contain".to_string()),
             ai_provider: Some("cpu".to_string()),
             ai_gpu_acceleration: default_ai_gpu_acceleration(),
+            auto_download_models: default_auto_download_models(),
             open_tree_sections: default_open_tree_sections(),
             copy_paste_settings: CopyPasteSettings::default(),
             raw_highlight_compression: Some(2.5),
