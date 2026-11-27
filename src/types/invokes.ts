@@ -100,6 +100,7 @@ export enum Invokes {
   UpdateMergePreview = 'update_merge_preview',
   DiscardMerge = 'discard_merge',
   UpdateWgpuTransform = 'update_wgpu_transform',
+  WebviewFirstFrameStable = 'webview_first_frame_stable',
   SetUiScale = 'set_ui_scale',
   ReleaseOriginalPreview = 'release_original_preview',
   OpenViewerWindow = 'open_viewer_window',

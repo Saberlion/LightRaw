@@ -1933,3 +1933,49 @@ pub fn warm_up_pipelines(
     GpuProcessor::new(context, 256, 256)?;
     Ok(start.elapsed())
 }
+
+/// Set by the frontend via the [`webview_first_frame_stable`] command once the
+/// first frames have been composited. The startup pipeline-warmup thread waits
+/// for it (bounded, see [`wait_for_webview_first_frame`]) before creating its
+/// wgpu device: creating the device concurrently with the ArkWeb compositor's
+/// first-frame burst raced the Maleoon v200 driver into a SIGSEGV on Mate 80
+/// (BUG-2026-11-25-29, 2026-11-25: `vkCreateDescriptorSetLayout` inside
+/// `request_device` on the `pipeline-warmup` thread, identical signature twice
+/// across two builds). On non-OHOS targets no warmup thread exists, so the
+/// flag is simply never read there.
+static WEBVIEW_FIRST_FRAME_STABLE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Frontend signal: the webview has painted and the compositor's startup burst
+/// has settled. Idempotent; registered on all platforms so the frontend can
+/// invoke it unconditionally.
+#[tauri::command]
+pub fn webview_first_frame_stable() {
+    WEBVIEW_FIRST_FRAME_STABLE.store(true, Ordering::Release);
+}
+
+/// Block until the frontend reports the webview's first frames are stable, or
+/// until `timeout` elapses. The bound keeps the pre-signal behaviour (warmup
+/// runs unconditionally) when the signal never arrives — a webview that boots
+/// slowly or a frontend build predating the command.
+///
+/// Returns the time actually spent waiting, for the log line.
+#[cfg(target_env = "ohos")]
+pub fn wait_for_webview_first_frame(timeout: std::time::Duration) -> std::time::Duration {
+    let start = std::time::Instant::now();
+    while !WEBVIEW_FIRST_FRAME_STABLE.load(Ordering::Acquire) {
+        if start.elapsed() >= timeout {
+            log::warn!(
+                "[pipeline-warmup] webview first-frame signal not received within {timeout:?}; \
+                 warming up anyway (compositor race risk)"
+            );
+            return start.elapsed();
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+    log::info!(
+        "[pipeline-warmup] webview first frame stable after {:.0?}",
+        start.elapsed()
+    );
+    start.elapsed()
+}

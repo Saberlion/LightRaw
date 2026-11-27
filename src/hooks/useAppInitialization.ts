@@ -151,6 +151,21 @@ export const useAppInitialization = ({
     initPlatform();
   }, [initPlatform]);
 
+  // Signal the Rust side that the webview's first frames have been composited.
+  // The OHOS pipeline-warmup thread waits (bounded) for this before creating
+  // its wgpu device, to avoid racing the ArkWeb compositor's startup burst
+  // inside the Maleoon driver (BUG-2026-11-25-29). Double rAF = one painted
+  // frame plus a settled one; on failure the backend falls back to a timed
+  // warmup, so errors are intentionally ignored.
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        invoke(Invokes.WebviewFirstFrameStable).catch(() => undefined);
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   // Source of truth for Theme.System: the OHOS bridge (initial query + event,
   // authoritative) or the standard media query everywhere else.
   useEffect(() => {

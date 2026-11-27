@@ -552,6 +552,15 @@ pub fn run() {
                 // if the process disappears, the next launch skips the warmup
                 // once instead of crash-looping, and the backend itself is
                 // left untouched (the engine still compiles on demand).
+                //
+                // Since 2026-11-26 the warmup additionally WAITS for the
+                // webview's first stable frame before touching the GPU driver
+                // (BUG-2026-11-25-29): on Mate 80 (Maleoon 920/v200) the
+                // device creation inside warmup raced the ArkWeb compositor's
+                // GLES startup burst in the shared driver and crashed the
+                // process ~2s after launch. The frontend reports first-frame
+                // stability via the `webview_first_frame_stable` command; the
+                // wait is bounded so a missing signal only delays the warmup.
                 let warmup_handle = app.handle().clone();
                 std::thread::Builder::new()
                     .name("pipeline-warmup".into())
@@ -569,6 +578,15 @@ pub fn run() {
                             }
                             return;
                         }
+                        // Gate on the webview's first stable frame before
+                        // creating the wgpu device, then let the compositor
+                        // settle past the first presented frame (entrance
+                        // animations, tile rasterization). Bounded wait —
+                        // see wait_for_webview_first_frame.
+                        render::gpu::processor::wait_for_webview_first_frame(
+                            std::time::Duration::from_secs(3),
+                        );
+                        std::thread::sleep(std::time::Duration::from_millis(500));
                         if let Some(path) = &warmup_flag {
                             let _ = std::fs::write(path, "warming_up");
                         }
@@ -800,6 +818,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             render::gpu::fallback::get_gpu_fallbacks,
             render::gpu::fallback::reset_gpu_fallback,
+            render::gpu::processor::webview_first_frame_stable,
             render::commands::apply_adjustments,
             render::commands::subscribe_analytics,
             render::commands::generate_preview_for_path,
