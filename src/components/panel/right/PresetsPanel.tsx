@@ -1390,7 +1390,13 @@ export default function PresetsPanel() {
             </button>
             <button
               className="p-2 rounded-full hover:bg-surface transition-colors"
-              disabled={isLoading}
+              // Presets are saved from the CURRENT image's adjustments, and
+              // the panel's empty state hides the whole list below when no
+              // image is open — an enabled "+" there saved successfully but
+              // showed nothing, reading as "add does nothing" on the phone
+              // presets tab (feedback 2026-11-27). Gate it to match the
+              // visible state; the image-open path is unchanged.
+              disabled={isLoading || !selectedImage}
               onClick={() => setConfigureModalState({ isOpen: true, preset: null })}
               data-tooltip={t('editor.presets.tooltips.saveNew')}
             >
