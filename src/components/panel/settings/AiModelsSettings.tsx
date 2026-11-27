@@ -8,7 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { ChevronDown, ChevronRight, Download, Loader2, Package, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
 import Text from '../../ui/Text';
 import Switch from '../../ui/Switch';
-import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
+import { TextColor, TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { Invokes } from '../../../types/invokes';
 import type { AppSettings } from '../../../types/settings';
 import { formatBytes } from '../../../utils/formatBytes';
@@ -103,15 +103,19 @@ function describeStatus(model: AiModelInfo, t: TFunction): string {
   }
 }
 
-function statusColor(model: AiModelInfo): string | undefined {
+/// Status color riding the Text component's own color prop: the className
+/// route (text-red-400 etc.) loses to the variant's default color class in
+/// the compiled CSS order, so the device round proved colors silently
+/// dropped (TEST_REPORT_2026-11-27-mor.md O-1).
+function statusColor(model: AiModelInfo): TextColor {
   switch (model.status) {
     case 'ready':
     case 'bundled':
-      return 'text-green-500';
+      return TextColors.success;
     case 'corrupt':
-      return 'text-red-400';
+      return TextColors.error;
     default:
-      return undefined;
+      return TextColors.secondary;
   }
 }
 
@@ -295,11 +299,7 @@ const ModelRow = ({ model, ctx, t }: { model: AiModelInfo; ctx: RowContext; t: T
         >
           {model.name}
         </Text>
-        <Text
-          variant={TextVariants.small}
-          color={statusColor(model) === undefined ? TextColors.secondary : undefined}
-          className={clsx('mt-0.5 truncate', statusColor(model))}
-        >
+        <Text variant={TextVariants.small} color={statusColor(model)} className="mt-0.5 truncate">
           {model.filename} · {describeStatus(model, t)}
         </Text>
         {(sharedCount !== undefined || variantNote !== undefined) && (
