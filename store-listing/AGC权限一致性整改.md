@@ -57,7 +57,7 @@
   1. `arkts-no-any-unknown`：`const x = mod.foo ?? mod.default?.foo` 推断为 any → 必须显式注解；
   2. `arkts-no-func-apply-call`：注解成 `Function | undefined` 后 `.call(...)` 又被禁。
   **正解 = 注解为 `ESObject`**（同文件 `pushColorMode` 的 `const notify: ESObject = …` 为先例：显式 ESObject 过 no-any-unknown，且 ESObject 上的 `.call` 不受 func-apply-call 限制）。for-of 遍历 `Array<ESObject>` 也会触发 no-any-unknown，改索引循环 + `const device: ESObject = cameras[i]`。
-- **模板与 gen 双份**：`src-tauri/ohos/EntryAbility.template.ets` 与 gen 下同名文件需保持一致；hvigor 只编译 gen。整改期间存在并行编辑互相覆盖（11:37 / 12:23 两次保存），最终统一为 ESObject 方案。**后续改 tethering ets 请两份同改或交由单一会话改。**
+- **模板与 gen 双份 → 已自动化（2026-11-27）**：`src-tauri/ohos/EntryAbility.template.ets`、`Index-page.template.ets`、`module.template.json5` 与 gen 下同名文件的同步不再依赖手工两份同改 —— `scripts/build-ohos.ps1` §2.92 在每次构建前把跟踪模板幂等覆盖进 gen（hvigor 只编译 gen）。**后续改 tethering ets / 权限声明一律只改 `src-tauri/ohos/` 下的跟踪模板**，gen 直改会被构建覆盖。
 - 第二轮 cargo 曾出现 rustc 无诊断 exit 1（链接阶段瞬时问题）；同环境独立 `cargo build --release --target aarch64-unknown-linux-ohos` 复跑成功（26m26s），release lib 已缓存，非源码问题。
 - 权限收敛改动本身（module.json5 删 MEDIA_LOCATION / KEEP_BACKGROUND_RUNNING）与上述编译问题无关，ArkTS 通过后即进入注入/打包/签名链。
 

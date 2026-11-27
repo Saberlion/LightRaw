@@ -44,7 +44,7 @@ Every model the app runs at inference time must have a golden test — ORT/ONNX 
 - Frontend renders via Canvas 2D / Konva — **no WebGL/WebGPU**. GPU work is Rust-side wgpu: direct surface rendering (desktop) or compute + readback + IPC bitmap (Android/Linux/OHOS).
 - State lives in zustand stores (`src/store/use*Store.ts`); `src/App.tsx` wires everything — views in `src/components/views/`, panels in `src/components/panel/`, custom titlebar in `src/window/`.
 - Main window is frameless/transparent, created at runtime (`"create": false` in `tauri.conf.json`). Tauri v2 capabilities in `src-tauri/capabilities/`.
-- `src-tauri/gen/` (except `gen/android/`) and `src-tauri/libs/` are generated/local artifacts — gitignored, never edit.
+- `src-tauri/gen/` (except `gen/android/`) and `src-tauri/libs/` are generated/local artifacts — gitignored, never edit. **The OHOS ArkTS bridge layer is the tracked exception**: `src-tauri/ohos/` holds `EntryAbility.template.ets`, `Index-page.template.ets`, `module.template.json5` (permissions + want-filters) and `icons/` (branded launcher/start icons). `tauri ohos init` writes the tauri fork's vanilla templates into `gen/ohos` exactly once (it never derives OHOS icons from `src-tauri/icons/`), so `scripts/build-ohos.ps1` §2.91/§2.92 syncs the tracked sources into `gen/` before every build. **Never edit the gen copies directly — the build overwrites them**; edit the tracked templates.
 
 ## HarmonyOS port rules (`feature/harmonyos-port`)
 

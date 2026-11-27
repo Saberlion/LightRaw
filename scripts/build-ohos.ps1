@@ -252,6 +252,35 @@ if ((Test-Path $ohosIcons) -and (Test-Path $genAppScopeMedia) -and (Test-Path $g
   Fail "gen/ohos exists but $ohosIcons is missing (tracked icon source)"
 }
 
+# ---------- 2.92 sync the ArkTS bridge sources + module manifest ----------
+# Same delivery problem as the icons above: hvigor only compiles gen/ohos,
+# and `tauri ohos init` writes the fork's VANILLA templates there exactly
+# once (never refreshed). The customized bridge layer is tracked in
+# src-tauri/ohos/ and pushed into gen on every build:
+#   module.template.json5     -> 11 requestPermissions, viewData/sendData
+#                                 want-filters, backgroundModes dataTransfer
+#   EntryAbility.template.ets -> runtime permission requests, WantAgent
+#                                 continuous task, network-state re-pull
+#   Index-page.template.ets   -> back-gesture bridge page
+# gen is NEVER authoritative: direct gen edits are overwritten here - edit
+# the tracked templates instead (this replaces the old two-copy manual sync
+# rule from the AGC remediation doc).
+$ohosBridge = "$repo\src-tauri\ohos"
+$genEtsEntry = "$repo\src-tauri\gen\ohos\entry\src\main\ets\entryability"
+$genEtsPages = "$repo\src-tauri\gen\ohos\entry\src\main\ets\pages"
+$genModule = "$repo\src-tauri\gen\ohos\entry\src\main\module.json5"
+if ((Test-Path $genEtsEntry) -and (Test-Path $genEtsPages)) {
+  foreach ($pair in @(
+      @{ src = "$ohosBridge\module.template.json5";     dst = $genModule },
+      @{ src = "$ohosBridge\EntryAbility.template.ets"; dst = "$genEtsEntry\EntryAbility.ets" },
+      @{ src = "$ohosBridge\Index-page.template.ets";   dst = "$genEtsPages\Index.ets" }
+    )) {
+    if (-not (Test-Path $pair.src)) { Fail "missing tracked bridge source: $($pair.src)" }
+    Copy-Item $pair.src $pair.dst -Force
+  }
+  Write-Host 'OHOS ArkTS bridge synced from src-tauri/ohos (module.json5 + EntryAbility + Index)'
+}
+
 # ---------- 3. build (single cargo stage; cargo/ohrs/hvigor failures all surface via exit code) ----------
 if (-not $SkipBuild) {
   # Release needs the runner passthrough: the tauri CLI's own cargo stage
