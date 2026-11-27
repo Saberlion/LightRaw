@@ -40,6 +40,8 @@ export enum Invokes {
   GenerateUncroppedPreview = 'generate_uncropped_preview',
   GetStorageUsage = 'get_storage_usage',
   ListAiModels = 'list_ai_models',
+  DownloadAiModel = 'download_ai_model',
+  DeleteAiModel = 'delete_ai_model',
   ClearAiMapsCache = 'clear_ai_maps_cache',
   ClearAiModels = 'clear_ai_models',
   ClearImmichCache = 'clear_immich_cache',

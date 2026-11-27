@@ -126,7 +126,8 @@ const DENOISE_MS_URL: &str = "https://hf-mirror.com/CyberTimon/RapidRAW-Models/r
 #[cfg(target_env = "ohos")]
 pub(crate) const DENOISE_MS_FILENAME: &str = "nind_denoise_utnet_684.ms";
 #[cfg(target_env = "ohos")]
-pub(crate) const DENOISE_MS_SHA256: &str = "05d7580e5a6e3c18bd286705f7524090cd69abe4b78067c2a173b322ef151b3b";
+pub(crate) const DENOISE_MS_SHA256: &str =
+    "05d7580e5a6e3c18bd286705f7524090cd69abe4b78067c2a173b322ef151b3b";
 
 // CANN (.om) denoise build, sideloaded; same nind lineage after Pad→Slice
 // surgery -> omg (504 is the fixed tile size all TileParams variants use).
@@ -758,4 +759,69 @@ pub async fn list_ai_models(app_handle: AppHandle) -> Result<Vec<AiModelInfo>, S
     })
     .await
     .map_err(|e| e.to_string())
+}
+
+fn find_entry(id: &str) -> Result<&'static RegistryEntry, String> {
+    registry()
+        .iter()
+        .find(|entry| entry.id == id)
+        .ok_or_else(|| format!("Unknown AI model id: {id}"))
+}
+
+/// Settings → AI model management: download (or force re-download) one
+/// model through the same sha256-verified pipeline the lazy-init path
+/// uses. Serialized on the shared `ai_init_lock` so a manual download can
+/// never race a feature-triggered init writing the same temp file.
+/// Progress flows through the existing `ai-model-download-*` events.
+#[tauri::command]
+pub async fn download_ai_model(
+    app_handle: AppHandle,
+    state: tauri::State<'_, crate::app::state::AppState>,
+    id: String,
+    force: bool,
+) -> Result<(), String> {
+    let entry = find_entry(&id)?;
+    let Some(asset) = entry.asset else {
+        return Err(format!(
+            "{} is a side-loaded artifact with no download URL",
+            entry.name
+        ));
+    };
+    let models_dir = crate::ai::models::get_models_dir(&app_handle).map_err(|e| e.to_string())?;
+    let _guard = state.ai_init_lock.lock().await;
+    if force {
+        // Explicit re-download of a valid file: drop it first, otherwise
+        // download_and_verify_model is a hash-verified no-op.
+        let _ = fs::remove_file(models_dir.join(entry.filename));
+    }
+    crate::ai::models::download_and_verify_model(&app_handle, &models_dir, asset)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Settings → AI model management: remove one model file and release every
+/// AI session, so no stale `downloaded` marker can skip the next
+/// re-download check and no session keeps the file open. Deleting the
+/// extracted copy of a bundled model falls back to the HAP bundle on next
+/// use; deleting a side-loaded `.om` falls back to `.ms`/ORT (NPU → CPU).
+#[tauri::command]
+pub async fn delete_ai_model(
+    app_handle: AppHandle,
+    state: tauri::State<'_, crate::app::state::AppState>,
+    id: String,
+) -> Result<(), String> {
+    let entry = find_entry(&id)?;
+    let models_dir = crate::ai::models::get_models_dir(&app_handle).map_err(|e| e.to_string())?;
+    let path = models_dir.join(entry.filename);
+    if !path.exists() {
+        return Err(format!("{} is not installed", entry.name));
+    }
+    let _guard = state.ai_init_lock.lock().await;
+    crate::ai::models::reset_ai_sessions(&state.ai_state);
+    let removed: Result<(), String> = tauri::async_runtime::spawn_blocking(move || {
+        fs::remove_file(&path).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    removed
 }

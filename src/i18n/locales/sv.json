@@ -1959,13 +1959,28 @@
       "view": "View"
     },
     "aiModels": {
+      "actions": {
+        "delete": "Delete",
+        "download": "Download",
+        "redownload": "Re-download"
+      },
       "bundledBadge": "Built-in",
       "bundledExtracted": "Extracted locally · {{size}}",
       "bundledReady": "Loaded from the app package",
       "bundledWillExtract": "Extracted on first use (~{{size}})",
+      "busyAiTask": "AI tasks are running — delete is disabled",
       "corruptNote": "File is damaged",
       "cpuVariantNote": "Used for the CPU fallback (GPU acceleration off)",
+      "deleteConfirm": {
+        "fallback": "Delete the local copy of {{name}}? The model will fall back to the built-in app version.",
+        "message": "Delete {{name}} ({{size}})? It will be downloaded again the next time the feature is used.",
+        "npu": "After deleting {{name}} the NPU backend falls back to CPU.",
+        "reclaim": "Reclaim the local copy of {{name}} ({{size}})? This frees disk space; it is extracted again automatically on next use.",
+        "title": "Delete model"
+      },
+      "deleteFailed": "Delete failed: {{error}}",
       "desc": "Downloaded on demand the first time an AI feature is used; inspect them here.",
+      "downloadFailed": "Download failed: {{error}}",
       "feature": {
         "denoise": "AI Denoise",
         "depthMask": "Depth Mask",
@@ -1980,6 +1995,7 @@
       "gpuVariantNote": "Used when GPU acceleration is on",
       "loadFailed": "Failed to load the model list:",
       "manage": "Manage…",
+      "reclaimAction": "Reclaim local copy",
       "refresh": "Refresh",
       "section": {
         "bundled": "Built-in models",

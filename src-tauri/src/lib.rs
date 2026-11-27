@@ -895,6 +895,8 @@ pub fn run() {
             app::storage::clear_immich_cache,
             app::storage::clear_ai_models,
             ai::model_registry::list_ai_models,
+            ai::model_registry::download_ai_model,
+            ai::model_registry::delete_ai_model,
             library::sidecars::set_color_label_for_paths,
             library::sidecars::set_rating_for_paths,
             library::sidecars::set_flag_for_paths,

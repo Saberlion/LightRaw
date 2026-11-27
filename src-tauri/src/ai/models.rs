@@ -691,7 +691,7 @@ pub(crate) fn verify_sha256(path: &Path, expected_hash: &str) -> Result<bool> {
     Ok(hex_hash == expected_hash)
 }
 
-async fn download_and_verify_model(
+pub(crate) async fn download_and_verify_model(
     app_handle: &tauri::AppHandle,
     models_dir: &Path,
     asset: &ModelAsset,

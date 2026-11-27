@@ -2395,7 +2395,11 @@ export default function SettingsPanel({
                        NPU-model status block above is superseded by the
                        per-model nind .om/.ms rows here. */}
                    <div className="p-6 bg-surface rounded-xl shadow-md">
-                     <AiModelsSettings />
+                     <AiModelsSettings
+                       onRequestConfirm={(request) =>
+                         setConfirmModalState({ ...request, confirmVariant: 'destructive', isOpen: true })
+                       }
+                     />
                    </div>
 
                   <div className="p-6 bg-surface rounded-xl shadow-md">

@@ -1857,13 +1857,28 @@
       "view": "查看"
     },
     "aiModels": {
+      "actions": {
+        "delete": "删除",
+        "download": "下载",
+        "redownload": "重新下载"
+      },
       "bundledBadge": "内置",
       "bundledExtracted": "已提取到本地 · {{size}}",
       "bundledReady": "从应用包加载",
       "bundledWillExtract": "首次使用时释放约 {{size}}",
+      "busyAiTask": "有 AI 任务运行中，暂不能删除",
       "corruptNote": "文件已损坏",
       "cpuVariantNote": "GPU 关闭/CPU 回退时使用",
+      "deleteConfirm": {
+        "fallback": "删除 {{name}} 的本地副本？该模型将回退到应用内置版本。",
+        "message": "删除 {{name}}（{{size}}）？下次使用该功能时会重新下载。",
+        "npu": "删除 {{name}} 后 NPU 后端将回退到 CPU。",
+        "reclaim": "回收 {{name}} 的本地副本（{{size}}）？将释放磁盘空间，下次使用时自动重新提取。",
+        "title": "删除模型"
+      },
+      "deleteFailed": "删除失败：{{error}}",
       "desc": "首次使用 AI 功能时按需下载；可在此查看或清理。",
+      "downloadFailed": "下载失败：{{error}}",
       "feature": {
         "denoise": "AI 降噪",
         "depthMask": "深度蒙版",
@@ -1878,6 +1893,7 @@
       "gpuVariantNote": "GPU 加速开启时使用",
       "loadFailed": "模型清单加载失败：",
       "manage": "管理…",
+      "reclaimAction": "回收本地副本",
       "refresh": "刷新",
       "section": {
         "bundled": "内置模型",
