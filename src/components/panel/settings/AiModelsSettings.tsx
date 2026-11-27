@@ -12,6 +12,7 @@ import { TextColor, TextColors, TextVariants, TextWeights } from '../../../types
 import { Invokes } from '../../../types/invokes';
 import type { AppSettings } from '../../../types/settings';
 import { formatBytes } from '../../../utils/formatBytes';
+import { useOsPlatform } from '../../../hooks/useOsPlatform';
 import { isJobActive, JobKind, useProcessStore } from '../../../store/useProcessStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import type { DataConfirmRequest } from './DataManagementSettings';
@@ -76,8 +77,13 @@ const SHARED_MASK_COUNTS: Record<string, number> = {
   esam3_decoder: 3,
 };
 
-// BiRefNet ships two weight variants; exactly one is active depending on
-// the GPU-acceleration setting.
+// BiRefNet ships two weight variants on Windows/macOS (GPU inference via
+// DirectML/CoreML picks fp16); the other platforms never register the fp16
+// entry at all (gpu_execution_provider is None), so the fp32 row there is
+// not a "fallback" - it is the only variant. Gate the annotation to the
+// platforms where a choice exists.
+const VARIANT_NOTE_PLATFORMS = new Set(['windows', 'macos']);
+
 const VARIANT_NOTES: Record<string, ParseKeys> = {
   birefnet_fp16: 'settings.aiModels.gpuVariantNote',
   birefnet_fp32: 'settings.aiModels.cpuVariantNote',
@@ -274,7 +280,8 @@ function RowActions({ model, ctx }: { model: AiModelInfo; ctx: RowContext }) {
 
 const ModelRow = ({ model, ctx, t }: { model: AiModelInfo; ctx: RowContext; t: TFunction }) => {
   const sharedCount = SHARED_MASK_COUNTS[model.id];
-  const variantNote = VARIANT_NOTES[model.id];
+  const osPlatform = useOsPlatform();
+  const variantNote = VARIANT_NOTE_PLATFORMS.has(osPlatform) ? VARIANT_NOTES[model.id] : undefined;
   const error = ctx.errors[model.id];
   return (
     <div className="flex items-center gap-3 py-2.5">

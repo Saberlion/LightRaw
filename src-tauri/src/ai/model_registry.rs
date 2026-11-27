@@ -421,6 +421,12 @@ pub(crate) fn registry() -> &'static [RegistryEntry] {
             disk_required: false,
         },
         // --- foreground masking (BiRefNet variants) ---
+        // fp16 only exists for GPU inference via DirectML/CoreML, which the
+        // other platforms never provide (gpu_execution_provider() is None
+        // off Windows/macOS), so the entry is registry-gated to where it can
+        // load at all - everywhere else it would be dead weight that the
+        // idle auto-download would still fetch (25 MB observed on MOR-M1).
+        #[cfg(any(target_os = "windows", target_os = "macos"))]
         RegistryEntry {
             id: "birefnet_fp16",
             name: "Foreground Model (fp16)",
@@ -544,17 +550,12 @@ pub(crate) fn registry() -> &'static [RegistryEntry] {
             gpu_variant: None,
             disk_required: false,
         },
-        #[cfg(target_env = "ohos")]
-        RegistryEntry {
-            id: "nind_denoise_ms",
-            name: "NIND Denoise (.ms)",
-            asset: Some(&DENOISE_MS_ASSET),
-            filename: DENOISE_MS_FILENAME,
-            feature: AiFeature::Denoise,
-            mask_models: &[],
-            gpu_variant: None,
-            disk_required: true,
-        },
+        // nind_denoise_ms (.ms) removed from the registry (2026-11-27): the
+        // pinned URL 404s upstream, release HAPs do not bundle it
+        // (libs/ohos/models lacks the file, the build script warns), and its
+        // fallback-rung role (.om -> .ms -> ORT) is unreachable on CANN-capable
+        // SoCs. The runtime fallback code in models.rs is kept: a manually
+        // placed .ms still loads via try_provision_ms_model.
         #[cfg(target_env = "ohos")]
         RegistryEntry {
             id: "nind_denoise_om",
