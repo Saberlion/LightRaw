@@ -389,11 +389,27 @@ export function useFileOperations(
           if (albumPaths.length === 0) return;
 
           const { validFiles, invalidExtensions } = filterSupported(albumPaths);
-          if (invalidExtensions.size > 0) {
-            toast.error(t('library.toasts.unsupportedFormats', { extensions: Array.from(invalidExtensions).join(', ') }));
+          // Mixed selection (e.g. videos picked alongside images): the
+          // FileKit suffix filters cannot express the full extension set
+          // (~100-char cap), so unsupported files can come through. Import
+          // what is supported and only warn about the skipped formats -
+          // aborting the whole batch turned one stray video into a total
+          // import failure.
+          if (validFiles.length === 0) {
+            if (invalidExtensions.size > 0) {
+              toast.error(t('library.toasts.unsupportedFormats', { extensions: Array.from(invalidExtensions).join(', ') }));
+            }
             return;
           }
-          if (validFiles.length === 0) return;
+          if (invalidExtensions.size > 0) {
+            toast.warning(
+              t('library.toasts.importSkippedUnsupported', {
+                skipped: albumPaths.length - validFiles.length,
+                extensions: Array.from(invalidExtensions).join(', '),
+              }),
+              { autoClose: 8000 },
+            );
+          }
 
           // Phone form factor: album imports always land in the app-internal
           // library root (the sandbox, el2/base/files/appdata/library) rather
@@ -415,7 +431,7 @@ export function useFileOperations(
             }
           }
 
-          setOhosImportStaging(albumPaths);
+          setOhosImportStaging(validFiles);
           await startImportFiles(validFiles, importTarget, DEFAULT_IMPORT_SETTINGS);
           return;
         }
@@ -461,9 +477,22 @@ export function useFileOperations(
           );
 
           const { validFiles, invalidExtensions } = filterSupported(selected, resolvedFiles);
-          if (invalidExtensions.size > 0) {
-            toast.error(t('library.toasts.unsupportedFormats', { extensions: Array.from(invalidExtensions).join(', ') }));
+          // Same mixed-selection semantics as the album path above: skip the
+          // unsupported files (videos etc.) and import the rest.
+          if (validFiles.length === 0) {
+            if (invalidExtensions.size > 0) {
+              toast.error(t('library.toasts.unsupportedFormats', { extensions: Array.from(invalidExtensions).join(', ') }));
+            }
             return;
+          }
+          if (invalidExtensions.size > 0) {
+            toast.warning(
+              t('library.toasts.importSkippedUnsupported', {
+                skipped: selected.length - validFiles.length,
+                extensions: Array.from(invalidExtensions).join(', '),
+              }),
+              { autoClose: 8000 },
+            );
           }
 
           if (isAndroid || isOhos) {

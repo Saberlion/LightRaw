@@ -1514,7 +1514,8 @@
       "importFailed": "Import fehlgeschlagen: {{err}}",
       "importPickFailed": "Bildauswahl für Import fehlgeschlagen: {{err}}",
       "importTargetInternal": "Import in die App-Mediathek (empfohlener Standardort auf diesem Gerät).",
-      "unsupportedFormats": "Nicht unterstützte Dateiformate: {{extensions}}"
+      "unsupportedFormats": "Nicht unterstützte Dateiformate: {{extensions}}",
+      "importSkippedUnsupported": "{{skipped}} nicht unterstützte Datei(en) übersprungen ({{extensions}}) – nur Bilder können importiert werden."
     },
     "tooltips": {
       "communityPresets": "Community-Vorgaben",

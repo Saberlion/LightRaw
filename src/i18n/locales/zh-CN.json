@@ -1507,7 +1507,8 @@
       "importFailed": "导入失败：{{err}}",
       "importPickFailed": "导入选择图片失败：{{err}}",
       "importTargetInternal": "正在导入到应用图库(本设备推荐默认位置)。",
-      "unsupportedFormats": "检测到不支持的文件格式：{{extensions}}"
+      "unsupportedFormats": "检测到不支持的文件格式：{{extensions}}",
+      "importSkippedUnsupported": "已跳过 {{skipped}} 个不支持的文件（{{extensions}}）——仅支持导入图片。"
     },
     "tooltips": {
       "communityPresets": "社区预设",

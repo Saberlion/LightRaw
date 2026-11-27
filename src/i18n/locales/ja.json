@@ -1507,7 +1507,8 @@
       "importFailed": "インポートに失敗しました：{{err}}",
       "importPickFailed": "インポートする画像の選択に失敗しました：{{err}}",
       "importTargetInternal": "アプリライブラリ(このデバイスの推奨される既定の場所)に読み込んでいます。",
-      "unsupportedFormats": "サポートされていないファイル形式です：{{extensions}}"
+      "unsupportedFormats": "サポートされていないファイル形式です：{{extensions}}",
+      "importSkippedUnsupported": "サポートされていないファイルを {{skipped}} 個スキップしました（{{extensions}}）。画像のみインポートできます。"
     },
     "tooltips": {
       "communityPresets": "コミュニティプリセット",

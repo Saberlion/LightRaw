@@ -1514,7 +1514,8 @@
       "importFailed": "Import failed: {{err}}",
       "importPickFailed": "Import picker failed: {{err}}",
       "importTargetInternal": "Importing into the app library (the recommended default on this device).",
-      "unsupportedFormats": "Unsupported file format(s): {{extensions}}"
+      "unsupportedFormats": "Unsupported file format(s): {{extensions}}",
+      "importSkippedUnsupported": "Skipped {{skipped}} unsupported file(s) ({{extensions}}) - only images can be imported."
     },
     "tooltips": {
       "communityPresets": "Community Presets",

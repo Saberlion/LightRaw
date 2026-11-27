@@ -1582,7 +1582,8 @@
       "importFailed": "Не удалось импортировать: {{err}}",
       "importPickFailed": "Не удалось выбрать изображения для импорта: {{err}}",
       "importTargetInternal": "Импорт в библиотеку приложения (рекомендуемое место по умолчанию на этом устройстве).",
-      "unsupportedFormats": "Неподдерживаемые форматы файлов: {{extensions}}"
+      "unsupportedFormats": "Неподдерживаемые форматы файлов: {{extensions}}",
+      "importSkippedUnsupported": "Пропущено неподдерживаемых файлов: {{skipped}} ({{extensions}}). Импортировать можно только изображения."
     },
     "tooltips": {
       "communityPresets": "Пресеты сообщества",

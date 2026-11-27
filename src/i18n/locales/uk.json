@@ -1582,7 +1582,8 @@
       "importFailed": "Не вдалося імпортувати: {{err}}",
       "importPickFailed": "Не вдалося вибрати зображення для імпорту: {{err}}",
       "importTargetInternal": "Імпортування до бібліотеки застосунку (рекомендоване типове розташування на цьому пристрої).",
-      "unsupportedFormats": "Непідтримувані формати файлів: {{extensions}}"
+      "unsupportedFormats": "Непідтримувані формати файлів: {{extensions}}",
+      "importSkippedUnsupported": "Пропущено {{skipped}} непідтримуваних файлів ({{extensions}}) – імпортувати можна лише зображення."
     },
     "tooltips": {
       "communityPresets": "Пресети спільноти",

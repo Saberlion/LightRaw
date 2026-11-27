@@ -1514,7 +1514,8 @@
       "importFailed": "Importeren mislukt: {{err}}",
       "importPickFailed": "Selecteren van afbeeldingen voor import mislukt: {{err}}",
       "importTargetInternal": "Bezig met importeren naar de app-bibliotheek (de aanbevolen standaardlocatie op dit apparaat).",
-      "unsupportedFormats": "Niet-ondersteunde bestandsindelingen: {{extensions}}"
+      "unsupportedFormats": "Niet-ondersteunde bestandsindelingen: {{extensions}}",
+      "importSkippedUnsupported": "{{skipped}} niet-ondersteund(e) bestand(en) overgeslagen ({{extensions}}) - alleen afbeeldingen kunnen worden geïmporteerd."
     },
     "tooltips": {
       "communityPresets": "Community-voorinstellingen",

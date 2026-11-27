@@ -1548,7 +1548,8 @@
       "importFailed": "Falha na importação: {{err}}",
       "importPickFailed": "Falha ao selecionar imagens para importar: {{err}}",
       "importTargetInternal": "Importando para a biblioteca do aplicativo (local recomendado neste dispositivo).",
-      "unsupportedFormats": "Formatos de ficheiro não suportados: {{extensions}}"
+      "unsupportedFormats": "Formatos de ficheiro não suportados: {{extensions}}",
+      "importSkippedUnsupported": "{{skipped}} ficheiro(s) não suportado(s) ignorado(s) ({{extensions}}) - apenas imagens podem ser importadas."
     },
     "tooltips": {
       "communityPresets": "Predefinições da Comunidade",

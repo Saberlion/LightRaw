@@ -1523,7 +1523,8 @@
       "importFailed": "Importen misslyckades: {{err}}",
       "importPickFailed": "Misslyckades med att välja bilder för import: {{err}}",
       "importTargetInternal": "Importerar till appbiblioteket (rekommenderad standardplats på den här enheten).",
-      "unsupportedFormats": "Filtyper som inte stöds: {{extensions}}"
+      "unsupportedFormats": "Filtyper som inte stöds: {{extensions}}",
+      "importSkippedUnsupported": "{{skipped}} filer som inte stöds hoppades över ({{extensions}}) - endast bilder kan importeras."
     },
     "tooltips": {
       "communityPresets": "Användarnas förinställningar",

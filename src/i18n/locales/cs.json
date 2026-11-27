@@ -1582,7 +1582,8 @@
       "importFailed": "Import se nezdařil: {{err}}",
       "importPickFailed": "Selhal výběr obrázků k importu: {{err}}",
       "importTargetInternal": "Importuje se do knihovny aplikace (doporučené výchozí umístění v tomto zařízení).",
-      "unsupportedFormats": "Nepodporované formáty souborů: {{extensions}}"
+      "unsupportedFormats": "Nepodporované formáty souborů: {{extensions}}",
+      "importSkippedUnsupported": "Přeskočeno {{skipped}} nepodporovaných souborů ({{extensions}}) – importovat lze pouze obrázky."
     },
     "tooltips": {
       "communityPresets": "Presety komunity",
