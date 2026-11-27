@@ -710,7 +710,7 @@ fn bundled_model_size(_filename: &str) -> Option<u64> {
     None
 }
 
-fn build_info(entry: &RegistryEntry, models_dir: &Path) -> AiModelInfo {
+pub(crate) fn build_info(entry: &RegistryEntry, models_dir: &Path) -> AiModelInfo {
     let path = models_dir.join(entry.filename);
     let meta = fs::metadata(&path).ok().filter(|meta| meta.is_file());
     let bundled = crate::ai::models::has_bundled_model(entry.filename);
