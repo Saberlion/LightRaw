@@ -1378,12 +1378,57 @@ export default class EntryAbility extends RustAbility {
       });
   }
 
+  // Defensive bound for the system pickers. On some images the picker UI
+  // closes without ever resolving its promise: the DevEco 26 emulator's
+  // DocumentViewPicker terminates itself ~2s after launch (result length 0,
+  // resultCode -1) and its PhotoViewPicker swallows the result after 完成 —
+  // the app-side await then pends forever (2026-11-28 emulator forensics:
+  // zero bridge logs after the modal closed). A legitimate session always
+  // settles when the picker closes, so this generous bound only fires in the
+  // broken case, and the warn line names the defect for whoever reads the
+  // log next. Never rejects: the caller's fallback completes the flow.
+  private boundPickerResult<T>(
+    picker: Promise<T>,
+    fallback: T,
+    label: string,
+    ms: number,
+  ): Promise<T> {
+    return new Promise<T>((resolve: (value: T) => void) => {
+      let settled: boolean = false;
+      picker
+        .then((value: T): void => {
+          if (!settled) {
+            settled = true;
+            resolve(value);
+          }
+        })
+        .catch((e: BusinessError): void => {
+          if (!settled) {
+            settled = true;
+            console.error(`[RapidRAW] ${label} failed: ${JSON.stringify(e)}`);
+            resolve(fallback);
+          }
+        });
+      setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          console.warn(
+            `[RapidRAW] ${label} did not deliver a result within ${ms}ms ` +
+              `(picker closed without resolving - known DevEco 26 emulator defect); falling back`,
+          );
+          resolve(fallback);
+        }
+      }, ms);
+    });
+  }
+
   private pickFolder(requestId: number, resolvePickFolder: ESObject): void {
     const options: picker.DocumentSelectOptions = new picker.DocumentSelectOptions();
     options.selectMode = picker.DocumentSelectMode.FOLDER;
     options.maxSelectNumber = 1;
     const documentPicker = new picker.DocumentViewPicker(this.context);
-    documentPicker.select(options).then((uris: Array<string>) => {
+    this.boundPickerResult<Array<string>>(documentPicker.select(options), [], 'pick_folder', 180000)
+      .then((uris: Array<string>) => {
       let resolved: string | null = null;
       if (uris && uris.length > 0) {
         const rawUri: string = uris[0];
@@ -1445,7 +1490,8 @@ export default class EntryAbility extends RustAbility {
       console.info(`[RapidRAW] pick_files filters: ${JSON.stringify(options.fileSuffixFilters)}`);
     }
     const documentPicker = new picker.DocumentViewPicker(this.context);
-    documentPicker.select(options).then((uris: Array<string>) => {
+    this.boundPickerResult<Array<string>>(documentPicker.select(options), [], 'pick_files', 180000)
+      .then((uris: Array<string>) => {
       const paths: Array<string> = [];
       if (uris) {
         for (const rawUri of uris) {
@@ -1492,7 +1538,12 @@ export default class EntryAbility extends RustAbility {
     options.maxSelectNumber = Math.min(maxSelect, 500);
 
     const photoPicker: photoAccessHelper.PhotoViewPicker = new photoAccessHelper.PhotoViewPicker();
-    photoPicker.select(options).then((result: photoAccessHelper.PhotoSelectResult) => {
+    this.boundPickerResult<photoAccessHelper.PhotoSelectResult>(
+      photoPicker.select(options),
+      new photoAccessHelper.PhotoSelectResult(),
+      'pick_gallery_images',
+      180000,
+    ).then((result: photoAccessHelper.PhotoSelectResult) => {
       const uris: Array<string> = result.photoUris ?? [];
       if (uris.length === 0) {
         console.info('[RapidRAW] pick_gallery_images cancelled');
