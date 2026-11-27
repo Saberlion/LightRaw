@@ -433,7 +433,7 @@ pub fn get_ohos_ai_npu_status(app_handle: tauri::AppHandle) -> Result<OhosAiNpuS
             .map_err(|e| format!("Failed to inspect the CANN denoise model: {e}"))?;
         Ok(OhosAiNpuStatus {
             available,
-            model: crate::ai::models::DENOISE_OM_FILENAME.to_string(),
+            model: crate::ai::model_registry::DENOISE_OM_FILENAME.to_string(),
             size_bytes,
         })
     }
