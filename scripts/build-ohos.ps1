@@ -229,6 +229,29 @@ if ((Test-Path $appJson5) -and (Test-Path $tauriConf) -and -not $SkipBuild) {
   }
 }
 
+# ---------- 2.91 sync the OHOS app icons ----------
+# `tauri ohos init` copies the tauri fork's DEFAULT template icons (static
+# files under templates/mobile/open-harmony/*/media) — it never derives them
+# from src-tauri/icons/ (icon.rs only generates Android mipmaps). The LightRaw
+# branded launcher/layered/start icons live in the tracked
+# src-tauri/ohos/icons/ and are pushed into gen here so a fresh clone rebuilt
+# after `tauri ohos init` keeps the store-consistent icon set. gen is never
+# refreshed by the CLI, so this re-syncs on every run; edit icons ONLY in
+# src-tauri/ohos/icons/ (direct gen edits are overwritten).
+$ohosIcons = "$repo\src-tauri\ohos\icons"
+$genAppScopeMedia = "$repo\src-tauri\gen\ohos\AppScope\resources\base\media"
+$genEntryMedia = "$repo\src-tauri\gen\ohos\entry\src\main\resources\base\media"
+if ((Test-Path $ohosIcons) -and (Test-Path $genAppScopeMedia) -and (Test-Path $genEntryMedia)) {
+  foreach ($n in @('background.png', 'foreground.png')) {
+    Copy-Item "$ohosIcons\$n" "$genAppScopeMedia\$n" -Force
+    Copy-Item "$ohosIcons\$n" "$genEntryMedia\$n" -Force
+  }
+  Copy-Item "$ohosIcons\startIcon.png" "$genEntryMedia\startIcon.png" -Force
+  Write-Host 'OHOS app icons synced from src-tauri/ohos/icons'
+} elseif (Test-Path $genAppScopeMedia) {
+  Fail "gen/ohos exists but $ohosIcons is missing (tracked icon source)"
+}
+
 # ---------- 3. build (single cargo stage; cargo/ohrs/hvigor failures all surface via exit code) ----------
 if (-not $SkipBuild) {
   # Release needs the runner passthrough: the tauri CLI's own cargo stage

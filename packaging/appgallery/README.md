@@ -13,6 +13,12 @@
 | `_preview/*.jpeg` | 两版截图的拼版预览（给人工过目用） | — |
 | `tools/` | 生成脚本（见 §5），可复现本次全部产物 | — |
 
+> **图标源流（三者关系，勿混淆）**
+>
+> - **包内（HAP）图标的唯一真源**是跟踪目录 `src-tauri/ohos/icons/`：`foreground.png`（1024×1024 分层前景，即品牌主图标）、`background.png`（分层背景）、`startIcon.png`（144×144 启动页图标）。`scripts/build-ohos.ps1` §2.91 在每次构建前把它们幂等同步进 `gen/ohos` 的 AppScope 与 entry 两处 `media/` 目录。
+> - `tauri ohos init` 只会拷贝 tauri fork 模板里的**默认 Tauri 图标**（静态文件），不会从 `src-tauri/icons/` 派生 OHOS 图标（CLI 的 `icon.rs` 只生成 Android mipmap）——因此全新克隆重建后品牌图标只能靠这条同步链恢复。
+> - 本目录的 `icon/icon-1024.png` / `icon-216.png` 是 **AGC 商店详情页素材**，与包内 `foreground.png` 同一设计源的另一次导出（字节数不同属正常）。**修改应用图标时只改 `src-tauri/ohos/icons/`**（gen 直改会被构建同步覆盖），并同步重新导出 AGC 侧的 `icon-*.png`，保持「名称/图标与包内一致」审核项成立。
+
 ## 2. 规格核对（AGC「PC / 2-in-1」）
 
 | 项目 | AGC 要求 | 本次产物 | 结论 |
