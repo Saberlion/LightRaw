@@ -118,7 +118,18 @@ if ($ResetHvigor) {
 }
 
 # ---------- 1. environment (self-contained; mirrors porting doc section 8) ----------
+# DevEco Studio location: system-wide install first, per-user install
+# (DevEco 26 installs to %LOCALAPPDATA%\Programs by default) as fallback.
 $dev = 'C:\Program Files\Huawei\DevEco Studio'
+if (-not (Test-Path "$dev\jbr\bin\java.exe")) {
+  $dev = "$env:LOCALAPPDATA\Programs\DevEco Studio"
+  if (-not (Test-Path "$dev\jbr\bin\java.exe")) { Fail "DevEco Studio not found (neither Program Files nor $dev)" }
+  Write-Host "using per-user DevEco Studio: $dev"
+}
+# cargo-mobile2 (feat/ohos) resolves ohpm.bat / its OHOS_HOME fallback from
+# DEV_ECO_STUDIO_INSTALL_PATH, defaulting to the Program Files location that
+# DevEco 26 no longer uses — point it at whichever install we detected above.
+$env:DEV_ECO_STUDIO_INSTALL_PATH = $dev
 $vscmake = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake'
 $env:OHOS_HOME = "$env:USERPROFILE\ohos-devstudio\sdk\default\openharmony"
 $env:OHOS_NDK_HOME = "$env:USERPROFILE\ohos-devstudio\sdk\default\openharmony\native"
@@ -501,6 +512,10 @@ try {
 } finally { $zip.Dispose() }
 
 # ---------- 4. report artifact ----------
+# FileInfo caches attributes from capture time (line ~250, before the zip
+# rewrite); without Refresh() the size report shows the pre-injection length
+# (observed 2026-11-26: reported 366.1 MB for a 860.3 MB release HAP).
+$hap.Refresh()
 Write-Host "HAP: $($hap.FullName)"
 Write-Host ("size: {0:N1} MB   built: {1}" -f ($hap.Length/1MB), $hap.LastWriteTime)
 exit 0
