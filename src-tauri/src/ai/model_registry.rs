@@ -141,9 +141,11 @@ pub const DENOISE_OM_FILENAME: &str = "nind_v2.om";
 #[cfg(target_env = "ohos")]
 pub const LAMA_OM_FILENAME: &str = "lama_fp32w.om";
 
-/// Side-loaded CANN `.om` for the RapidRes upscale model (same provisioning
-/// channel as `nind_v2.om`: never bundled, always SoC-specific, built with
-/// `omg --platform=<soc>` per docs/RAPIDRES_NPU_FEASIBILITY.md).
+/// CANN/HIAI RapidRes `.om` — same provisioning channel as `nind_v2.om`:
+/// bundled into release HAPs by build-ohos.ps1 ($releaseNpuModels) since
+/// 2026-11-27, always SoC-specific, built with `omg --platform=<soc>` per
+/// docs/RAPIDRES_NPU_FEASIBILITY.md. Per-SoC IO contract checks reject a
+/// wrong-SoC bundled copy and fall back to ORT.
 #[cfg(target_env = "ohos")]
 pub const UPSCALE_OM_FILENAME: &str = "2xBHI_small_span_rapidraw.om";
 

@@ -436,16 +436,22 @@ try {
     'mediapipe_selfie_multiclass.onnx',      #  16.5 MB
     'depth_anything_v2_vits.onnx'            #  99.4 MB  Depth masking
   )
-  # NPU artifacts (NPU execution paths wired: NIND denoise + LaMa quick erase, §6.16/§6.34).
-  # `.om` is per-SoC (kirinx90/CE lineage, verified on X90/XE90/GEM-W40); other
-  # SoCs fall back to the SoC-agnostic `.ms` (MindSpore Lite NNRT), then ORT CPU.
+  # NPU artifacts (NPU execution paths wired: NIND denoise + LaMa quick erase,
+  # §6.16/§6.34; RapidRes upscale .om added 2026-11-27 per the user's
+  # "bundle the CANN models" request). All .om are per-SoC (kirinx90
+  # lineage, verified on X90/XE90/GEM-W40); on other SoCs the IO contract
+  # checks in models.rs reject the bundled copy and fall back to ORT - so a
+  # wrong-SoC bundle degrades gracefully instead of crashing.
+  # The .ms (MindSpore NNRT) entry was dropped from this list along with the
+  # registry entry (d117f706): upstream 404, never bundled, and its fallback
+  # rung is unreachable on CANN-capable SoCs.
   # LaMa fp16-weight `.om` is NOT bundled on purpose: it fails NPU runtime Init
   # (partition overflow — docs/LAMA_CANN_NPU_ANALYSIS.md §4); fp32w is the only
   # device-proven variant.
   $releaseNpuModels = @(
     'nind_v2.om',                    #  59.2 MB  CANN/HIAI denoise (ai_denoise_backend=npu)
     'lama_fp32w.om',                 # 205.3 MB  CANN/HIAI LaMa quick erase (static 768x768, §6.34)
-    'nind_denoise_utnet_684.ms'      #  NNRT fallback (optional; downloads when absent)
+    '2xBHI_small_span_rapidraw.om'   # CANN/HIAI RapidRes upscale (tile 544x544, docs/RAPIDRES_NPU_FEASIBILITY.md)
   )
   $modelsDir = if ($ModelsDir) { $ModelsDir } else { "$repo\src-tauri\libs\ohos\models" }
   if ($Release) {
