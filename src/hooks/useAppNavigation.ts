@@ -25,6 +25,13 @@ import { getImmichAlbumImages, isImmichAlbumId } from '../utils/immichApi';
 
 export interface AppNavigationProps {
   clearThumbnailQueue: () => void;
+  // Late-bound import entry point (handleImportClick from useFileOperations).
+  // useAppNavigation runs before useFileOperations in App.tsx while the latter
+  // depends on this hook's handleSelectSubfolder - a cycle - so App.tsx stores
+  // the importer in this ref right after useFileOperations returns.
+  importFilesRef?: React.MutableRefObject<
+    ((targetPath: string, source?: 'files' | 'album') => Promise<void>) | null
+  >;
   refs: {
     transformWrapperRef: React.RefObject<any>;
     preloadedDataRef: React.RefObject<any>;
@@ -109,7 +116,7 @@ const loadExifForImages = async (
   }
 };
 
-export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationProps) {
+export function useAppNavigation({ clearThumbnailQueue, importFilesRef, refs }: AppNavigationProps) {
   const {
     transformWrapperRef,
     preloadedDataRef,
@@ -582,16 +589,24 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
           // OpenHarmony support); the ArkTS DocumentViewPicker bridge returns
           // the picked folder path (null when the user cancelled).
           // intent distinguishes the two call sites: 'open' is the welcome
-          // splash's primary entry (a phone cannot persist folder grants and
-          // its album imports land in the internal library root, so the phone
-          // opens that instead of forcing a picker on every cold start),
-          // while 'add' - the folder tree's add-folder button, and any splash
-          // tap when a library already exists - always offers the picker.
+          // splash's primary entry, while 'add' is any splash tap when a
+          // library already exists. On a phone neither may touch the
+          // directory picker: folder grants cannot persist there and the
+          // library is the internal root, so 'open' enters it directly and
+          // 'add' opens the FILE picker instead - the picked images import
+          // straight into the internal root (the FileMgr's folder-mode UI
+          // is a phone-skinned directory tree that does not fit this flow).
+          // Tablets/2in1 keep the folder picker: their grants persist.
           const deviceType = useSettingsStore.getState().ohosDeviceType;
-          const toInternalRoot = intent === 'open' && deviceType === 'phone';
-          selectedPath = toInternalRoot
-            ? await invoke<string>(Invokes.GetOrCreateInternalLibraryRoot)
-            : ((await invoke<string | null>(Invokes.PickOhosFolder)) ?? '');
+          if (deviceType === 'phone') {
+            const internalRoot = await invoke<string>(Invokes.GetOrCreateInternalLibraryRoot);
+            if (intent === 'add' && importFilesRef?.current) {
+              await importFilesRef.current(internalRoot, 'files');
+            }
+            selectedPath = internalRoot;
+          } else {
+            selectedPath = ((await invoke<string | null>(Invokes.PickOhosFolder)) ?? '');
+          }
         } else {
           const selected = await open({ directory: true, multiple: false, defaultPath: await homeDir() });
           if (typeof selected === 'string') {
@@ -630,7 +645,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         toast.error(isAndroid ? 'Failed to open library.' : 'Failed to open folder selection dialog.');
       }
     },
-    [handleSelectSubfolder],
+    [handleSelectSubfolder, importFilesRef],
   );
 
   const handleContinueSession = () => {

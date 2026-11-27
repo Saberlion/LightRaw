@@ -431,6 +431,13 @@ function App() {
     [],
   );
 
+  // Late-bound handleImportClick for useAppNavigation (see AppNavigationProps):
+  // useFileOperations runs after useAppNavigation (it needs handleSelectSubfolder)
+  // while the splash's handleOpenFolder needs the importer - the ref breaks the cycle.
+  const importFilesRef = useRef<((targetPath: string, source?: 'files' | 'album') => Promise<void>) | null>(
+    null,
+  );
+
   const {
     handleGoHome,
     handleBackToLibrary,
@@ -444,6 +451,7 @@ function App() {
     handleContinueSession,
   } = useAppNavigation({
     clearThumbnailQueue,
+    importFilesRef,
     refs: navigationRefs,
   });
 
@@ -518,6 +526,10 @@ function App() {
     handleBackToLibrary,
     sortedImageList,
   );
+
+  useEffect(() => {
+    importFilesRef.current = handleImportClick;
+  }, [handleImportClick]);
 
   const { handleMergeSettingsChange, handleSaveCollage, handleSaveMerge, handleStartMerge } =
     useProductivityActions(handleLibraryRefresh);
