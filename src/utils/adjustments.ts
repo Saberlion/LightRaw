@@ -1318,7 +1318,12 @@ export const getAdjustmentSectionOrder = (order?: string[]): string[] =>
 export const getVisibleAdjustmentSections = (layout?: AdjustmentLayout): string[] =>
   getAdjustmentSectionOrder(layout?.sectionOrder).filter((section) => !layout?.hiddenSections?.includes(section));
 
-export const DEFAULT_HIDDEN_ADJUSTMENT_TOOLS = ['chromaticAberration', 'colorCalibration'];
+// Fork: LUT ships as a dedicated right-rail panel (LutPanel); the upstream
+// Effects sub-section is hidden by default so the same tool does not show
+// twice. The Effects entry stays user-reenableable from the section submenu
+// (AdjustmentSectionsSubMenu) — both placements render the shared
+// LUTControl and evolve independently (docs/HARMONYOS_PORTING.md §6.44).
+export const DEFAULT_HIDDEN_ADJUSTMENT_TOOLS = ['chromaticAberration', 'colorCalibration', 'lut'];
 
 export const getHiddenAdjustmentTools = (layout?: AdjustmentLayout): string[] =>
   layout?.hiddenTools ?? DEFAULT_HIDDEN_ADJUSTMENT_TOOLS;

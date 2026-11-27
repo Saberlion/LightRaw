@@ -78,6 +78,7 @@ const ALL_PANELS: Panel[] = [
   Panel.Crop,
   Panel.Masks,
   Panel.Ai,
+  Panel.Lut,
   Panel.Presets,
 ];
 
@@ -99,6 +100,7 @@ const DEFAULT_PANEL_DEFAULT_REGIONS: Partial<Record<Panel, PanelRegion>> = {
   [Panel.Crop]: 'rightTop',
   [Panel.Masks]: 'rightTop',
   [Panel.Ai]: 'rightTop',
+  [Panel.Lut]: 'rightTop',
   [Panel.Presets]: 'rightTop',
 };
 
@@ -127,7 +129,7 @@ export function reconcileWorkspace(
     panelLayout: {
       leftTop: [Panel.Metadata, Panel.FolderTree, Panel.Export, ...(isTetheringSupported ? [Panel.Tethering] : [])],
       leftBottom: [],
-      rightTop: [Panel.Adjustments, Panel.Crop, Panel.Masks, Panel.Ai, Panel.Presets],
+      rightTop: [Panel.Adjustments, Panel.Crop, Panel.Masks, Panel.Ai, Panel.Lut, Panel.Presets],
       rightBottom: [],
     },
     activePanels: {
@@ -171,7 +173,19 @@ export function reconcileWorkspace(
   defaultPlacedPanels.forEach((panel) => {
     if (!seenPanels.has(panel)) {
       const targetRegion = DEFAULT_PANEL_DEFAULT_REGIONS[panel] || 'leftTop';
-      sanitizedLayout[targetRegion].push(panel);
+      const list = sanitizedLayout[targetRegion];
+      // Insert the LUT panel right before Presets so it lands where users
+      // expect it even on workspaces saved before the panel existed.
+      if (panel === Panel.Lut) {
+        const presetsIndex = list.indexOf(Panel.Presets);
+        if (presetsIndex >= 0) {
+          list.splice(presetsIndex, 0, panel);
+        } else {
+          list.push(panel);
+        }
+      } else {
+        list.push(panel);
+      }
       seenPanels.add(panel);
     }
   });
@@ -396,7 +410,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   panelLayout: {
     leftTop: [Panel.Metadata, Panel.FolderTree, Panel.Export],
     leftBottom: [],
-    rightTop: [Panel.Adjustments, Panel.Crop, Panel.Masks, Panel.Ai, Panel.Presets],
+    rightTop: [Panel.Adjustments, Panel.Crop, Panel.Masks, Panel.Ai, Panel.Lut, Panel.Presets],
     rightBottom: [],
   },
   activePanels: {
