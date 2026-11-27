@@ -85,7 +85,7 @@ const ESAM3_FACE_PROMPT_URL: &str = "https://hf-mirror.com/CyberTimon/RapidRAW-M
 pub(crate) const ESAM3_FACE_PROMPT_FILENAME: &str = "efficientsam3_face_prompt.bin";
 
 const ESAM3_FACE_PROMPT_SHA256: &str =
-    "8fdbe63ef853756b1da9cdc642c271a6e422452f3feaf35f429e6aea3a1ffb9";
+    "8fdbe63ef853756b1da9cdc642c277a6e422452f3feaf35f4297e6aea3a1ffb9";
 
 const FACE_LANDMARKS_URL: &str = "https://hf-mirror.com/CyberTimon/RapidRAW-Models/resolve/main/mediapipe_face_landmarks.onnx?download=true";
 
