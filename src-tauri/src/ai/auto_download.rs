@@ -29,6 +29,11 @@ const TICK: Duration = Duration::from_secs(30);
 /// session may start. Screen-off bypasses the threshold entirely.
 const IDLE_THRESHOLD_SECS: f64 = 120.0;
 
+/// Hard ceiling for one model download inside a session. Generous enough
+/// for a slow CDN pushing the largest asset (~350 MB CLIP), but finite so a
+/// dead socket cannot wedge the session (observed on the suspend round).
+const PER_FILE_TIMEOUT: Duration = Duration::from_secs(600);
+
 #[derive(Serialize, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub enum AutoDownloadState {
@@ -76,7 +81,9 @@ pub fn get_auto_download_status() -> SessionStatus {
     *LAST_STATUS.lock().unwrap()
 }
 
-fn pending_entries(app: &AppHandle) -> Vec<&'static crate::ai::model_registry::RegistryEntry> {
+pub(crate) fn pending_entries(
+    app: &AppHandle,
+) -> Vec<&'static crate::ai::model_registry::RegistryEntry> {
     let Ok(models_dir) = models::get_models_dir(app) else {
         return Vec::new();
     };
@@ -103,8 +110,12 @@ fn ai_tasks_running(app: &AppHandle) -> bool {
 /// Session-wide "may we keep going" check, re-evaluated between files: the
 /// user coming back (idle reset), losing Wi-Fi, enabling the hotspot or
 /// switching the setting off all stop the session after the current file.
+/// The idle re-check is what the MOR-M1 round proved missing: without it a
+/// session that started while backgrounded kept downloading in the
+/// foreground after the user returned.
 fn conditions_still_ok(app: &AppHandle) -> bool {
-    crate::ohos_integration::auto_download_network_ready()
+    crate::ohos_integration::auto_download_idle_seconds() >= IDLE_THRESHOLD_SECS
+        && crate::ohos_integration::auto_download_network_ready()
         && crate::app::settings::load_settings(app.clone())
             .map(|settings| settings.auto_download_models)
             .unwrap_or(false)
@@ -261,10 +272,21 @@ async fn run_session(
         };
         let state = app.state::<crate::app::state::AppState>();
         // Per-file lock: user-triggered downloads and AI inits interleave
-        // between files instead of waiting for the whole session.
+        // between files instead of waiting for the whole session. The
+        // timeout bounds a hung download (the suspend round parked a dead
+        // socket inside reqwest for eight minutes) so one stalled file can
+        // never wedge SESSION_RUNNING forever.
         let result = {
             let _guard = state.ai_init_lock.lock().await;
-            models::download_and_verify_model(app, &models_dir, asset).await
+            tokio::time::timeout(PER_FILE_TIMEOUT, async {
+                models::download_and_verify_model(app, &models_dir, asset).await
+            })
+            .await
+            .unwrap_or_else(|elapsed| {
+                Err(anyhow::anyhow!(
+                    "model download timed out after {elapsed:?}"
+                ))
+            })
         };
         match result {
             Ok(()) => log::info!("[auto-download] fetched {}", entry.name),

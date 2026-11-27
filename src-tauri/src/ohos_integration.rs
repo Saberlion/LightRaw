@@ -380,6 +380,25 @@ mod system_bridge {
         IDLE.lock().unwrap().backgrounded_since.is_some()
     }
 
+    /// NAPI export (ArkTS name: `ohosAutoDownloadWanted`). EntryAbility's
+    /// onBackground / SCREEN_OFF handler calls this synchronously on the
+    /// transition: a continuous task must be requested while the app is
+    /// still counted as transitioning to the background. The suspend round
+    /// proved a tick-after-the-fact request from an already-backgrounded
+    /// app is refused and the process freezes with the session wedged.
+    #[napi_derive_ohos::napi]
+    pub fn ohos_auto_download_wanted() -> bool {
+        with_handle(|handle| {
+            let enabled = crate::app::settings::load_settings(handle.clone())
+                .map(|settings| settings.auto_download_models)
+                .unwrap_or(false);
+            enabled
+                && network_ready()
+                && !crate::ai::auto_download::pending_entries(handle).is_empty()
+        })
+        .unwrap_or(false)
+    }
+
     /// NAPI export (ArkTS name: `notifyOhosIdleEvent`). EntryAbility pushes
     /// idle-relevant system signals: `kind` is one of `screen` (active =
     /// screen on), `window` (active = focused) or `lifecycle` (active =

@@ -495,7 +495,11 @@ export default class EntryAbility extends RustAbility {
               console.error(`[RapidRAW] screen event failed: ${JSON.stringify(err)}`);
               return;
             }
-            this.pushIdleEvent('screen', data?.event === 'usual.event.SCREEN_ON');
+            const screenOn: boolean = data?.event === 'usual.event.SCREEN_ON';
+            this.pushIdleEvent('screen', screenOn);
+            if (!screenOn) {
+              this.holdContinuousTaskIfWanted();
+            }
           });
           console.info('[RapidRAW] screen on/off subscribed');
         } catch (e) {
@@ -511,7 +515,19 @@ export default class EntryAbility extends RustAbility {
   // needs a WantAgent (or the API-21 ContinuousTaskRequest class). A plain
   // self-referencing WantAgent satisfies it — tapping the task notification
   // just brings the app forward.
-  private async setAutoDownloadContinuousTask(hold: boolean): Promise<void> {
+  // Synchronous pre-check over the Rust bridge: hold the dataTransfer
+  // task only when the feature is enabled, the network preconditions
+  // hold and something is actually pending (cheap: cached settings,
+  // cached network state, 22 file stats).
+  private holdContinuousTaskIfWanted(): void {
+    const mod: ESObject | null = this.rapidrawModule;
+    const wanted: ESObject = mod?.ohosAutoDownloadWanted ?? mod?.default?.ohosAutoDownloadWanted;
+    if (typeof wanted === 'function' && wanted()) {
+      this.setAutoDownloadContinuousTask(true).catch(() => undefined);
+    }
+  }
+
+  private setAutoDownloadContinuousTask(hold: boolean): Promise<void> {
     if (this.continuousTaskWanted === hold) {
       return;
     }
@@ -809,6 +825,13 @@ export default class EntryAbility extends RustAbility {
   onBackground(): void {
     super.onBackground();
     this.pushIdleEvent('lifecycle', false);
+    // The continuous task must be requested while the app still counts
+    // as transitioning to the background: the suspend round proved a
+    // tick-after-the-fact request from an already-backgrounded app is
+    // refused and the process freezes with the session wedged. The
+    // Rust scheduler releases the task on its next tick when the
+    // conditions are not actually met.
+    this.holdContinuousTaskIfWanted();
   }
 
   onConfigurationUpdate(newConfig: Configuration): void {
