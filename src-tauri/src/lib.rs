@@ -819,6 +819,7 @@ pub fn run() {
             render::gpu::fallback::get_gpu_fallbacks,
             render::gpu::fallback::reset_gpu_fallback,
             render::gpu::processor::webview_first_frame_stable,
+            render::gpu::context::gpu_status,
             render::commands::apply_adjustments,
             render::commands::subscribe_analytics,
             render::commands::generate_preview_for_path,

@@ -21,7 +21,89 @@ pub fn current_gpu_context(state: &AppState) -> Option<GpuContext> {
         .clone()
 }
 
+/// Zero-driver-touch GPU status for the frontend and diagnostics: reads
+/// atomics and (via try_lock) the context slot only. Never creates a context
+/// and never calls into the GPU driver, so it is safe to poll at any time —
+/// including during the OHOS first-frame window, where touching the driver is
+/// exactly what must not happen. try_lock keeps a concurrent init from
+/// blocking the poll: "not ready yet" is the honest answer then.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GpuStatus {
+    /// Platform GPU policy: "auto" (desktop) | "vulkan-only" (OHOS devices) |
+    /// "blocked" (x86_64 OHOS — the DevEco emulator ICD aborts the process
+    /// during the cooperative-matrix probe, see the guard in
+    /// get_or_init_gpu_context).
+    pub policy: &'static str,
+    /// Whether the first-frame window is open (always true off OHOS devices).
+    pub window_open: bool,
+    /// Whether a live GPU context already exists.
+    pub context_ready: bool,
+    /// Whether the device was lost and the next GPU call re-creates the context.
+    pub device_lost: bool,
+}
+
+#[tauri::command]
+pub fn gpu_status(state: tauri::State<'_, AppState>) -> GpuStatus {
+    GpuStatus {
+        policy: if cfg!(all(target_env = "ohos", target_arch = "x86_64")) {
+            "blocked"
+        } else if cfg!(target_env = "ohos") {
+            "vulkan-only"
+        } else {
+            "auto"
+        },
+        window_open: gpu_window_open(),
+        context_ready: state
+            .gpu_context
+            .try_lock()
+            .map(|context| context.is_some())
+            .unwrap_or(false),
+        device_lost: GPU_DEVICE_LOST.load(Ordering::Acquire),
+    }
+}
+
 static GPU_DEVICE_LOST: AtomicBool = AtomicBool::new(false);
+
+/// First-frame window for OHOS GPU init (BUG-2026-11-25-29 follow-up): the
+/// warmup-only gate left every other GPU entry point (thumbnail/sidecar
+/// workers, LUT/preset previews, editor commands — ~20 get_or_init_gpu_context
+/// call sites) relying on timing luck against the ArkWeb compositor's
+/// startup burst inside the Maleoon driver. The gate sits at the choke point
+/// instead: the first GPU init of the process waits (bounded) for the
+/// frontend's `webview_first_frame_stable` signal plus a settle delay, no
+/// matter which thread gets there first; every later caller passes straight
+/// through. Blocking, not cancelling — callers are background workers and
+/// request handlers that would rather wait 3.5s than race the driver.
+#[cfg(all(target_env = "ohos", not(target_arch = "x86_64")))]
+static OHOS_GPU_WINDOW_OPEN: AtomicBool = AtomicBool::new(false);
+
+/// Opens the OHOS GPU window. Idempotent; free once open. The bound and the
+/// fallback semantics mirror the warmup gate: a missing signal only delays
+/// the init, it never cancels it (a slow frontend degrades to a late warmup).
+#[cfg(all(target_env = "ohos", not(target_arch = "x86_64")))]
+fn wait_for_gpu_window() {
+    if OHOS_GPU_WINDOW_OPEN.load(Ordering::Acquire) {
+        return;
+    }
+    crate::render::gpu::processor::wait_for_webview_first_frame(std::time::Duration::from_secs(3));
+    // Let the compositor settle past the first presented frames (entrance
+    // animations, tile rasterization) — the same margin the warmup used.
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    OHOS_GPU_WINDOW_OPEN.store(true, Ordering::Release);
+}
+
+/// Window state for gpu_status. Always true where no gate exists; the x86_64
+/// emulator reports policy "blocked" instead (its guard never lets a GPU
+/// context exist, the window concept does not apply there).
+#[cfg(all(target_env = "ohos", not(target_arch = "x86_64")))]
+pub fn gpu_window_open() -> bool {
+    OHOS_GPU_WINDOW_OPEN.load(Ordering::Acquire)
+}
+#[cfg(not(all(target_env = "ohos", not(target_arch = "x86_64"))))]
+pub fn gpu_window_open() -> bool {
+    true
+}
 
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 
@@ -159,6 +241,15 @@ pub fn get_or_init_gpu_context(
     state: &tauri::State<AppState>,
     #[cfg_attr(target_os = "android", allow(unused_variables))] app_handle: &tauri::AppHandle,
 ) -> Result<GpuContext, String> {
+    // OHOS first-frame gate (see wait_for_gpu_window): throttle the FIRST GPU
+    // init of the process behind the webview's stable first frames, before
+    // the context lock is taken, so context peeks (gpu_status /
+    // current_gpu_context) never block on the wait. Excluded on x86_64: the
+    // emulator guard below returns before the GPU is ever touched, and the
+    // wait would be dead time there.
+    #[cfg(all(target_env = "ohos", not(target_arch = "x86_64")))]
+    wait_for_gpu_window();
+
     let mut context_lock = match state.gpu_context.lock() {
         Ok(guard) => guard,
         Err(poisoned) => {
@@ -206,6 +297,27 @@ pub fn get_or_init_gpu_context(
     #[cfg(target_os = "windows")]
     if std::env::var("WGPU_BACKEND").is_err() {
         instance_desc.backends = wgpu::Backends::PRIMARY;
+    }
+
+    // The DevEco x86_64 emulator is the only x86_64 OpenHarmony environment,
+    // and its Vulkan ICD is non-conformant: it advertises
+    // VK_KHR_cooperative_matrix without implementing the entry point, so
+    // wgpu-hal's capability probe reaches the loader terminator, which calls
+    // abort() and kills the process (SIGABRT, cppcrash pair 2026-11-27
+    // 23:09:02/23:09:26: "ICD associated with VkPhysicalDevice does not
+    // support GetPhysicalDeviceCooperativeMatrixPropertiesKHR"). All real
+    // OHOS devices are ARM, so fail context creation up front and let every
+    // GPU call site take its existing no-adapter degradation path — porting
+    // doc 6.16 already declares the emulator non-rendering; without this the
+    // app dies ~6s after every launch on the DevEco 26 image.
+    #[cfg(all(target_env = "ohos", target_arch = "x86_64"))]
+    {
+        return Err(
+            "GPU unavailable on x86_64 OHOS: the DevEco emulator's Vulkan ICD \
+             aborts the process during the cooperative-matrix probe; \
+             running in degraded (no-GPU) mode"
+                .into(),
+        );
     }
 
     // OpenHarmony renders through Vulkan and nothing else. There is no GLES
