@@ -542,6 +542,7 @@ export default class EntryAbility extends RustAbility {
             abilityName: 'EntryAbility',
           }],
           requestCode: 0,
+          operationType: wantAgent.OperationType.START_ABILITY,
         });
         await backgroundTaskManager.startBackgroundRunning(this.context,
           backgroundTaskManager.BackgroundMode.DATA_TRANSFER, agent);
