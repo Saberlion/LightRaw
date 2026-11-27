@@ -103,20 +103,17 @@ function describeStatus(model: AiModelInfo, t: TFunction): string {
   }
 }
 
-/// Status color riding the Text component's own color prop: the className
-/// route (text-red-400 etc.) loses to the variant's default color class in
-/// the compiled CSS order, so the device round proved colors silently
-/// dropped (TEST_REPORT_2026-11-27-mor.md O-1).
+/// Status color riding the Text component's own color prop (the className
+/// route loses to the variant's default color class in compiled CSS order —
+/// device round O-1). Deliberately restrained to match the monochrome
+/// design system (themes.ts has no green anywhere): ready/bundled states are
+/// neutral secondary — the label, size and action buttons carry the state —
+/// and only a corrupt file earns the functional error red.
 function statusColor(model: AiModelInfo): TextColor {
-  switch (model.status) {
-    case 'ready':
-    case 'bundled':
-      return TextColors.success;
-    case 'corrupt':
-      return TextColors.error;
-    default:
-      return TextColors.secondary;
+  if (model.status === 'corrupt') {
+    return TextColors.error;
   }
+  return TextColors.secondary;
 }
 
 interface AiModelsSettingsProps {
@@ -625,7 +622,7 @@ export default function AiModelsSettings({ onRequestConfirm, appSettings, onSett
           {autoStatus && (appSettings?.autoDownloadModels ?? true) && (
             <Text
               variant={TextVariants.small}
-              color={autoStatus.state === 'running' ? TextColors.success : undefined}
+              color={autoStatus.state === 'running' ? TextColors.accent : undefined}
               className="mt-0.5"
             >
               {describeAutoStatus(autoStatus, t)}
