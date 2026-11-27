@@ -497,7 +497,9 @@ export default class EntryAbility extends RustAbility {
             }
             const screenOn: boolean = data?.event === 'usual.event.SCREEN_ON';
             this.pushIdleEvent('screen', screenOn);
-            if (!screenOn) {
+            if (screenOn) {
+              this.pushNetworkState();
+            } else {
               this.holdContinuousTaskIfWanted();
             }
           });
@@ -820,6 +822,12 @@ export default class EntryAbility extends RustAbility {
   onForeground(): void {
     super.onForeground();
     this.pushIdleEvent('lifecycle', true);
+    // Re-pull the network verdict: while the ability was frozen the
+    // wifiManager subscriptions could not run, so the last push the Rust
+    // side saw may have been the transient disconnect from the suspend
+    // dance (observed on MOR-M1: the status line stayed "waiting for
+    // Wi-Fi" on a connected device after resume).
+    this.pushNetworkState();
   }
 
   onBackground(): void {
