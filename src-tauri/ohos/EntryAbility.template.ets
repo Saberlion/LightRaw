@@ -529,7 +529,7 @@ export default class EntryAbility extends RustAbility {
     }
   }
 
-  private setAutoDownloadContinuousTask(hold: boolean): Promise<void> {
+  private async setAutoDownloadContinuousTask(hold: boolean): Promise<void> {
     if (this.continuousTaskWanted === hold) {
       return;
     }
