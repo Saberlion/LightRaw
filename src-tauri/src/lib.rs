@@ -460,10 +460,29 @@ pub fn run() {
                 .expect("Main window config not found")
                 .clone();
 
-            #[cfg_attr(any(target_os = "android", target_env = "ohos"), allow(unused_mut))]
+            // unused-mut allowance matrix: desktop debug + OHOS debug shadow
+            // the binding below (devtools), OHOS release never mutates it
+            // (the decorations block is desktop-only).
+            #[cfg_attr(
+                any(
+                    target_os = "android",
+                    target_env = "ohos",
+                    debug_assertions
+                ),
+                allow(unused_mut)
+            )]
             let mut window_builder =
                 tauri::WebviewWindowBuilder::from_config(app.handle(), &main_window_cfg)
                     .unwrap();
+
+            // Debug builds only: wry compiles the devtools flag under
+            // debug_assertions (release ignores it — no AGC audit risk) and
+            // the OHOS webview then calls WebviewController
+            // .setWebDebuggingAccess(true), exposing the ArkWeb remote
+            // debugger over localhost for the `hdc fport` CDP probe
+            // (lightraw-qa: zero-coordinate webview inspection).
+            #[cfg(debug_assertions)]
+            let mut window_builder = window_builder.devtools(true);
 
             #[cfg(not(any(target_os = "android", target_env = "ohos")))]
             {

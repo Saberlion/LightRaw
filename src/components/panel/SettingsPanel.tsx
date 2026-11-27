@@ -1957,7 +1957,7 @@ export default function SettingsPanel({
                                     label={t('settings.processing.highDpi')}
                                     description={
                                       dpr > 1
-                                        ? t('settings.processing.highDpiDesc', { dpr })
+                                        ? t('settings.processing.highDpiDesc', { dpr: dpr.toFixed(1) })
                                         : t('settings.processing.highDpiDescStandard')
                                     }
                                   >
