@@ -12,6 +12,7 @@ import deviceInfo from '@ohos.deviceInfo';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { dataSharePredicates } from '@kit.ArkData';
 import { privacyManager } from '@kit.AppGalleryKit';
+import wantAgent, { WantAgent } from '@ohos.app.ability.wantAgent';
 import usbManager from '@ohos.usbManager';
 import { wifiManager } from '@kit.ConnectivityKit';
 import { backgroundTaskManager } from '@kit.BackgroundTasksKit';
@@ -506,32 +507,33 @@ export default class EntryAbility extends RustAbility {
       });
   }
 
-  private setAutoDownloadContinuousTask(hold: boolean): void {
+  // This SDK has no two-argument startBackgroundRunning: every overload
+  // needs a WantAgent (or the API-21 ContinuousTaskRequest class). A plain
+  // self-referencing WantAgent satisfies it — tapping the task notification
+  // just brings the app forward.
+  private async setAutoDownloadContinuousTask(hold: boolean): Promise<void> {
     if (this.continuousTaskWanted === hold) {
       return;
     }
     this.continuousTaskWanted = hold;
     try {
       if (hold) {
-        backgroundTaskManager.startBackgroundRunning(this.context,
-          backgroundTaskManager.BackgroundMode.DATA_TRANSFER)
-          .then(() => {
-            console.info('[RapidRAW] dataTransfer continuous task started');
-          })
-          .catch((e: BusinessError) => {
-            console.error(`[RapidRAW] continuous task start failed: ${JSON.stringify(e)}`);
-          });
+        const agent: WantAgent = await wantAgent.getWantAgent({
+          wants: [{
+            bundleName: 'io.github.CyberTimon.RapidRAW',
+            abilityName: 'EntryAbility',
+          }],
+          requestCode: 0,
+        });
+        await backgroundTaskManager.startBackgroundRunning(this.context,
+          backgroundTaskManager.BackgroundMode.DATA_TRANSFER, agent);
+        console.info('[RapidRAW] dataTransfer continuous task started');
       } else {
-        backgroundTaskManager.stopBackgroundRunning(this.context)
-          .then(() => {
-            console.info('[RapidRAW] dataTransfer continuous task stopped');
-          })
-          .catch((e: BusinessError) => {
-            console.error(`[RapidRAW] continuous task stop failed: ${JSON.stringify(e)}`);
-          });
+        await backgroundTaskManager.stopBackgroundRunning(this.context);
+        console.info('[RapidRAW] dataTransfer continuous task stopped');
       }
     } catch (e) {
-      console.error(`[RapidRAW] continuous task threw: ${JSON.stringify(e)}`);
+      console.error(`[RapidRAW] continuous task ${hold ? 'start' : 'stop'} failed: ${JSON.stringify(e)}`);
     }
   }
 
