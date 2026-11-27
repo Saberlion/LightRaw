@@ -2,7 +2,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import clsx from 'clsx';
-import { FolderOpen, Loader2, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
+import { FolderOpen, Loader2, Package, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
 import Text from '../../ui/Text';
 import { TextColors, TextVariants, TextWeights } from '../../../types/typography';
 import { AppSettings } from '../../../types/settings';
@@ -98,6 +98,7 @@ interface DataManagementSettingsProps {
   onRequestConfirm(request: DataConfirmRequest): void;
   onSettingsChange(settings: AppSettings): void | Promise<void>;
   rootPaths: string[];
+  onManageModels?(): void;
 }
 
 type Status = { text: string; error?: boolean } | null;
@@ -254,6 +255,7 @@ function Row({
 export default function DataManagementSettings({
   appSettings,
   onLibraryRefresh,
+  onManageModels,
   onRequestConfirm,
   onSettingsChange,
   rootPaths,
@@ -480,15 +482,22 @@ export default function DataManagementSettings({
                       {t('settings.data.show')}
                     </ActionButton>
                   ) : (
-                    <ActionButton
-                      danger
-                      busy={busy[key]}
-                      disabled={!usage?.[key]}
-                      icon={<Trash2 size={13} />}
-                      onClick={() => clearStorage(key)}
-                    >
-                      {t('settings.data.clear')}
-                    </ActionButton>
+                    <div className="flex gap-1.5">
+                      {key === 'models' && onManageModels && (
+                        <ActionButton icon={<Package size={13} />} onClick={onManageModels}>
+                          {t('settings.aiModels.manage')}
+                        </ActionButton>
+                      )}
+                      <ActionButton
+                        danger
+                        busy={busy[key]}
+                        disabled={!usage?.[key]}
+                        icon={<Trash2 size={13} />}
+                        onClick={() => clearStorage(key)}
+                      >
+                        {t('settings.data.clear')}
+                      </ActionButton>
+                    </div>
                   )
                 }
                 color={color}

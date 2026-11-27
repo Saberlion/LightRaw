@@ -1856,6 +1856,44 @@
       "userAgreementDesc": "查看应用的用户协议。",
       "view": "查看"
     },
+    "aiModels": {
+      "bundledBadge": "内置",
+      "bundledExtracted": "已提取到本地 · {{size}}",
+      "bundledReady": "从应用包加载",
+      "bundledWillExtract": "首次使用时释放约 {{size}}",
+      "corruptNote": "文件已损坏",
+      "cpuVariantNote": "GPU 关闭/CPU 回退时使用",
+      "desc": "首次使用 AI 功能时按需下载；可在此查看或清理。",
+      "feature": {
+        "denoise": "AI 降噪",
+        "depthMask": "深度蒙版",
+        "foregroundMask": "前景蒙版（BiRefNet）",
+        "inpaint": "快速擦除（LaMa）",
+        "normal": "法线贴图",
+        "sharedMask": "共用组件（天空/文本/面部）",
+        "subjectMask": "主体蒙版（SAM）",
+        "tagging": "AI 打标（CLIP）",
+        "upscale": "超分辨率（RapidRes）"
+      },
+      "gpuVariantNote": "GPU 加速开启时使用",
+      "loadFailed": "模型清单加载失败：",
+      "manage": "管理…",
+      "refresh": "刷新",
+      "section": {
+        "bundled": "内置模型",
+        "bundledDesc": "随应用提供，无需下载。共 {{size}}。",
+        "downloadable": "需下载的模型",
+        "downloadableDesc": "首次使用对应功能时按需下载。磁盘占用 {{size}}。"
+      },
+      "sharedNote_other": "被 {{count}} 个功能使用",
+      "sideloadNote": "需手动放置到应用数据目录 models/ 下",
+      "status": {
+        "checking": "正在检查模型…",
+        "notInstalled": "未下载",
+        "ready": "就绪"
+      },
+      "title": "AI 模型"
+    },
     "categories": {
       "about": "关于",
       "general": "通用",

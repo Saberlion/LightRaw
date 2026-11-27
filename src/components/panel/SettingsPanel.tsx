@@ -58,6 +58,7 @@ import { DEFAULT_HDR_HEADROOM } from '../../types/export';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import ImmichSettings from '../immich/ImmichSettings';
 import DataManagementSettings from './settings/DataManagementSettings';
+import AiModelsSettings from './settings/AiModelsSettings';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { revokeOhosFolderGrants } from '../../utils/ohosGrants';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -2389,6 +2390,14 @@ export default function SettingsPanel({
                     </div>
                   </div>
 
+                   {/* AI model management: registry status view
+                       (docs/AI_MODEL_MANAGEMENT_DESIGN.md). The OHOS
+                       NPU-model status block above is superseded by the
+                       per-model nind .om/.ms rows here. */}
+                   <div className="p-6 bg-surface rounded-xl shadow-md">
+                     <AiModelsSettings />
+                   </div>
+
                   <div className="p-6 bg-surface rounded-xl shadow-md">
                     <Text variant={TextVariants.title} color={TextColors.accent} className="mb-5">
                       {t('settings.processing.preprocessing.title')}
@@ -2635,6 +2644,7 @@ export default function SettingsPanel({
                     <DataManagementSettings
                       appSettings={appSettings}
                       onLibraryRefresh={onLibraryRefresh}
+                      onManageModels={() => setActiveCategory('processing')}
                       onRequestConfirm={(request) =>
                         setConfirmModalState({ ...request, confirmVariant: 'destructive', isOpen: true })
                       }

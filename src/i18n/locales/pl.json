@@ -1947,6 +1947,47 @@
       "userAgreementDesc": "View the app's user agreement.",
       "view": "View"
     },
+    "aiModels": {
+      "bundledBadge": "Built-in",
+      "bundledExtracted": "Extracted locally · {{size}}",
+      "bundledReady": "Loaded from the app package",
+      "bundledWillExtract": "Extracted on first use (~{{size}})",
+      "corruptNote": "File is damaged",
+      "cpuVariantNote": "Used for the CPU fallback (GPU acceleration off)",
+      "desc": "Downloaded on demand the first time an AI feature is used; inspect them here.",
+      "feature": {
+        "denoise": "AI Denoise",
+        "depthMask": "Depth Mask",
+        "foregroundMask": "Foreground Mask (BiRefNet)",
+        "inpaint": "Quick Erase (LaMa)",
+        "normal": "Normal Maps",
+        "sharedMask": "Shared components (Sky/Text/Face)",
+        "subjectMask": "Subject Mask (SAM)",
+        "tagging": "AI Tagging (CLIP)",
+        "upscale": "Super Resolution (RapidRes)"
+      },
+      "gpuVariantNote": "Used when GPU acceleration is on",
+      "loadFailed": "Failed to load the model list:",
+      "manage": "Manage…",
+      "refresh": "Refresh",
+      "section": {
+        "bundled": "Built-in models",
+        "bundledDesc": "Shipped with the app package, no download needed. Total {{size}}.",
+        "downloadable": "Downloadable models",
+        "downloadableDesc": "Downloaded on first use of the matching feature. On-disk: {{size}}."
+      },
+      "sharedNote_one": "Shared by {{count}} features",
+      "sharedNote_few": "Shared by {{count}} features",
+      "sharedNote_many": "Shared by {{count}} features",
+      "sharedNote_other": "Shared by {{count}} features",
+      "sideloadNote": "needs to be placed manually in the app data models/ directory",
+      "status": {
+        "checking": "Checking models…",
+        "notInstalled": "Not downloaded",
+        "ready": "Ready"
+      },
+      "title": "AI Models"
+    },
     "categories": {
       "about": "About",
       "general": "Ogólne",
