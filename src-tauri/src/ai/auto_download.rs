@@ -163,7 +163,6 @@ async fn tick(app: &AppHandle) {
         .map(|settings| settings.auto_download_models)
         .unwrap_or(false);
     let network = crate::ohos_integration::auto_download_network_ready();
-    let backgrounded = crate::ohos_integration::auto_download_backgrounded();
     let idle = crate::ohos_integration::auto_download_idle_seconds();
 
     if !enabled {
@@ -222,10 +221,13 @@ async fn tick(app: &AppHandle) {
     }
 
     if idle < IDLE_THRESHOLD_SECS {
-        // Backgrounded + conditions otherwise fine: hold the continuous task
-        // NOW so the freezer cannot kill the scheduler before the threshold
-        // elapses (phone path). Foreground/unfocused (2in1) needs no task.
-        hold_continuous_task(backgrounded);
+        // Hold the dataTransfer task whenever there is work pending and the
+        // preconditions hold — foreground or not. The suspend round proved
+        // FROZEN_AFTER_ENTER_BG fires within ~2s of backgrounding, so any
+        // task requested after the transition is already too late; a task
+        // requested while work is pending simply survives the transition.
+        // It self-releases on the UpToDate / disabled / no-network branches.
+        hold_continuous_task(true);
         publish(
             app,
             SessionStatus {

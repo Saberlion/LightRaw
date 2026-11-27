@@ -535,17 +535,6 @@ pub fn auto_download_idle_seconds() -> f64 {
     0.0
 }
 
-/// Whether the ability is backgrounded. Always `false` off OHOS.
-#[cfg(target_env = "ohos")]
-pub fn auto_download_backgrounded() -> bool {
-    system_bridge::backgrounded()
-}
-
-#[cfg(not(target_env = "ohos"))]
-pub fn auto_download_backgrounded() -> bool {
-    false
-}
-
 /// Dispatch a JSON bridge request to the ArkTS EntryAbility (the
 /// `window_controller` ThreadsafeFunction; see the privacy/window ops for the
 /// payload contract). The idle auto-download scheduler uses it to hold and
