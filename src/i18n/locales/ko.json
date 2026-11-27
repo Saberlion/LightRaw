@@ -1503,9 +1503,11 @@
       "list": "목록"
     },
     "toasts": {
+      "fuseRootNotice": "클라우드 동기화 폴더(예: Download)에는 클라우드로 오프로드된 빈 스텁 파일이 포함될 수 있으며 깨진 플레이스홀더로 표시됩니다. 또한 접근 권한은 시작할 때마다 다시 활성화해야 합니다. 가져오기 기본 위치로는 내장 라이브러리를 권장합니다.",
       "importFailed": "가져오기 실패: {{err}}",
       "importPickFailed": "가져올 이미지 선택 실패: {{err}}",
-      "importTargetInternal": "앱 라이브러리(이 기기의 권장 기본 위치)로 가져오는 중입니다."
+      "importTargetInternal": "앱 라이브러리(이 기기의 권장 기본 위치)로 가져오는 중입니다.",
+      "unsupportedFormats": "지원되지 않는 파일 형식입니다: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "커뮤니티 프리셋",

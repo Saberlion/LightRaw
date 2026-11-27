@@ -1545,9 +1545,11 @@
       "list": "Liste"
     },
     "toasts": {
+      "fuseRootNotice": "Les dossiers synchronisés avec le cloud (ex. Download) peuvent contenir des fichiers vides déchargés qui s’affichent comme des vignettes cassées ; leur autorisation d’accès doit être réactivée à chaque lancement. La bibliothèque intégrée est l’emplacement d’import recommandé.",
       "importFailed": "Échec de l'importation : {{err}}",
       "importPickFailed": "Échec de la sélection d'images pour l'importation : {{err}}",
-      "importTargetInternal": "Importation dans la bibliothèque de l'application (emplacement recommandé sur cet appareil)."
+      "importTargetInternal": "Importation dans la bibliothèque de l'application (emplacement recommandé sur cet appareil).",
+      "unsupportedFormats": "Formats de fichier non pris en charge : {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Paramètres prédéfinis de la communauté",

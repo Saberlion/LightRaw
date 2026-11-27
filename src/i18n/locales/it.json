@@ -1544,9 +1544,11 @@
       "list": "Elenco"
     },
     "toasts": {
+      "fuseRootNotice": "Le cartelle sincronizzate con il cloud (es. Download) possono contenere stub di file vuoti che appaiono come segnaposto danneggiati; la loro autorizzazione di accesso va riattivata a ogni avvio. Per le importazioni è consigliata la libreria integrata.",
       "importFailed": "Importazione non riuscita: {{err}}",
       "importPickFailed": "Selezione delle immagini da importare non riuscita: {{err}}",
-      "importTargetInternal": "Importazione nella libreria dell'app (posizione consigliata su questo dispositivo)."
+      "importTargetInternal": "Importazione nella libreria dell'app (posizione consigliata su questo dispositivo).",
+      "unsupportedFormats": "Formati file non supportati: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Predefiniti della Community",

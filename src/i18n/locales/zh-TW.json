@@ -1503,9 +1503,11 @@
       "list": "列表"
     },
     "toasts": {
+      "fuseRootNotice": "雲端同步資料夾（如 Download）可能包含已卸載至雲端的空檔案佔位，在應用程式中會顯示為破損佔位圖，且其存取授權需在每次啟動時重新啟用。建議使用應用程式內建圖庫作為匯入的預設位置。",
       "importFailed": "匯入失敗：{{err}}",
       "importPickFailed": "匯入選取圖片失敗：{{err}}",
-      "importTargetInternal": "正在匯入到應用圖庫(本裝置建議的預設位置)。"
+      "importTargetInternal": "正在匯入到應用圖庫(本裝置建議的預設位置)。",
+      "unsupportedFormats": "偵測到不支援的檔案格式：{{extensions}}"
     },
     "tooltips": {
       "communityPresets": "社群預設",

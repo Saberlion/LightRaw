@@ -1544,9 +1544,11 @@
       "list": "Lista"
     },
     "toasts": {
+      "fuseRootNotice": "Pastas sincronizadas com a nuvem (ex.: Download) podem conter arquivos vazios descarregados que aparecem como marcadores quebrados, e sua permissão de acesso precisa ser reativada a cada inicialização. A biblioteca integrada é o local recomendado para importações.",
       "importFailed": "Falha na importação: {{err}}",
       "importPickFailed": "Falha ao selecionar imagens para importar: {{err}}",
-      "importTargetInternal": "Importando para a biblioteca do aplicativo (local recomendado neste dispositivo)."
+      "importTargetInternal": "Importando para a biblioteca do aplicativo (local recomendado neste dispositivo).",
+      "unsupportedFormats": "Formatos de ficheiro não suportados: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Predefinições da Comunidade",

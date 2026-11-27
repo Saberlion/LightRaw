@@ -1503,9 +1503,11 @@
       "list": "リスト"
     },
     "toasts": {
+      "fuseRootNotice": "クラウド同期フォルダ（例：Download）には、クラウドへ退避された空のスタブファイルが含まれることがあり、破損したプレースホルダーとして表示されます。またアクセス権は起動のたびに再度有効化する必要があります。インポート先としては内蔵ライブラリの使用を推奨します。",
       "importFailed": "インポートに失敗しました：{{err}}",
       "importPickFailed": "インポートする画像の選択に失敗しました：{{err}}",
-      "importTargetInternal": "アプリライブラリ(このデバイスの推奨される既定の場所)に読み込んでいます。"
+      "importTargetInternal": "アプリライブラリ(このデバイスの推奨される既定の場所)に読み込んでいます。",
+      "unsupportedFormats": "サポートされていないファイル形式です：{{extensions}}"
     },
     "tooltips": {
       "communityPresets": "コミュニティプリセット",

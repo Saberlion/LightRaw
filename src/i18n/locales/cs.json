@@ -1578,9 +1578,11 @@
       "list": "Seznam"
     },
     "toasts": {
+      "fuseRootNotice": "Složky synchronizované s cloudem (např. Download) mohou obsahovat prázdné zástupné soubory, které se zobrazují jako poškozené placeholdery, a jejich přístupová oprávnění je nutné při každém spuštění znovu aktivovat. Pro importy je doporučena vestavěná knihovna aplikace.",
       "importFailed": "Import se nezdařil: {{err}}",
       "importPickFailed": "Selhal výběr obrázků k importu: {{err}}",
-      "importTargetInternal": "Importuje se do knihovny aplikace (doporučené výchozí umístění v tomto zařízení)."
+      "importTargetInternal": "Importuje se do knihovny aplikace (doporučené výchozí umístění v tomto zařízení).",
+      "unsupportedFormats": "Nepodporované formáty souborů: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Presety komunity",

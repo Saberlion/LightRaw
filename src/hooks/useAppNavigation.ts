@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { dirname, homeDir } from '@tauri-apps/api/path';
 import { toast } from 'react-toastify';
+import i18n from 'i18next';
 import { useLibraryStore } from '../store/useLibraryStore';
 import { canvasToolState, useEditorStore } from '../store/useEditorStore';
 import { useUIStore } from '../store/useUIStore';
@@ -168,7 +169,10 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
     } else {
       clearLibrarySelection();
     }
-    setUI({ activeView: 'library', slideDirection: 1 });
+    // isFullScreen must not survive an editor exit: it is only cleared inside
+    // toggleFullScreen otherwise, and re-entering the editor would reopen into
+    // the chrome-less preview (no toolbar/sheet, keyboard-only exits).
+    setUI({ activeView: 'library', slideDirection: 1, isFullScreen: false });
   }, [refs]);
 
   const handleImageSelect = useCallback(
@@ -367,7 +371,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         setLibrary({ isViewLoading: true, activeAlbumId: null, libraryScrollTop: 0 });
         setProcess({ thumbnails: {}, mediumThumbnails: {} });
         globalImageCache.clear();
-        setUI({ activeView: 'library' });
+        setUI({ activeView: 'library', isFullScreen: false });
       } else {
         setLibrary({ isViewLoading: true, activeAlbumId: null });
       }
@@ -473,7 +477,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         clearThumbnailQueue();
         setLibrary({ libraryScrollTop: 0 });
         globalImageCache.clear();
-        setUI({ activeView: 'library' });
+        setUI({ activeView: 'library', isFullScreen: false });
       }
 
       const albumFolderPath = `Album: ${albumName}`;
@@ -705,10 +709,7 @@ export function useAppNavigation({ clearThumbnailQueue, refs }: AppNavigationPro
         !localStorage.getItem('lightraw.fuse-root-notice')
       ) {
         localStorage.setItem('lightraw.fuse-root-notice', '1');
-        toast.info(
-          'Cloud-synced folders (e.g. Download) can contain offloaded, empty file stubs that show up as broken placeholders, and their access grant must be re-activated on every launch. The built-in app library is the recommended default location for imports.',
-          { autoClose: 10000 },
-        );
+        toast.info(i18n.t('library.toasts.fuseRootNotice'), { autoClose: 10000 });
       }
 
       setLibrary({ rootPaths: rootFolders });

@@ -1617,9 +1617,11 @@
       "list": "Sąrašas"
     },
     "toasts": {
+      "fuseRootNotice": "Debesimis sinchronizuojami aplankai (pvz., Download) gali turėti į debesį iškeltų tuščių failų-atitikmenų, kurie rodomi kaip sugadinti pakaitalai, o jų prieigos teises reikia iš naujo aktyvuoti kiekvieną kartą paleidus. Importui rekomenduojama vidinė programos biblioteka.",
       "importFailed": "Importuoti nepavyko: {{err}}",
       "importPickFailed": "Nepavyko pasirinkti importuotinų vaizdų: {{err}}",
-      "importTargetInternal": "Importuojama į programos biblioteką (rekomenduojama numatytoji vieta šiame įrenginyje)."
+      "importTargetInternal": "Importuojama į programos biblioteką (rekomenduojama numatytoji vieta šiame įrenginyje).",
+      "unsupportedFormats": "Nepalaikomi failų formatai: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Bendruomenės nustatymai",

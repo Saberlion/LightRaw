@@ -1510,9 +1510,11 @@
       "list": "List"
     },
     "toasts": {
+      "fuseRootNotice": "Cloud-synced folders (e.g. Download) can contain offloaded, empty file stubs that show up as broken placeholders, and their access grant must be re-activated on every launch. The built-in app library is the recommended default location for imports.",
       "importFailed": "Import failed: {{err}}",
       "importPickFailed": "Import picker failed: {{err}}",
-      "importTargetInternal": "Importing into the app library (the recommended default on this device)."
+      "importTargetInternal": "Importing into the app library (the recommended default on this device).",
+      "unsupportedFormats": "Unsupported file format(s): {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Community Presets",

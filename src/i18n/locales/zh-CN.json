@@ -1503,9 +1503,11 @@
       "list": "列表"
     },
     "toasts": {
+      "fuseRootNotice": "云同步文件夹（如 Download）可能包含已卸载到云端的空文件占位，在应用中会显示为破损占位图，且其访问授权需在每次启动时重新激活。建议使用应用内置图库作为导入的默认位置。",
       "importFailed": "导入失败：{{err}}",
       "importPickFailed": "导入选择图片失败：{{err}}",
-      "importTargetInternal": "正在导入到应用图库(本设备推荐默认位置)。"
+      "importTargetInternal": "正在导入到应用图库(本设备推荐默认位置)。",
+      "unsupportedFormats": "检测到不支持的文件格式：{{extensions}}"
     },
     "tooltips": {
       "communityPresets": "社区预设",

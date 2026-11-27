@@ -1510,9 +1510,11 @@
       "list": "Lijst"
     },
     "toasts": {
+      "fuseRootNotice": "Cloud-gesynchroniseerde mappen (zoals Download) kunnen lege bestandsstubs bevatten die als kapotte tijdelijke afbeeldingen verschijnen; de toegangsverlening moet bij elke start opnieuw worden geactiveerd. Voor imports wordt de ingebouwde app-bibliotheek aanbevolen.",
       "importFailed": "Importeren mislukt: {{err}}",
       "importPickFailed": "Selecteren van afbeeldingen voor import mislukt: {{err}}",
-      "importTargetInternal": "Bezig met importeren naar de app-bibliotheek (de aanbevolen standaardlocatie op dit apparaat)."
+      "importTargetInternal": "Bezig met importeren naar de app-bibliotheek (de aanbevolen standaardlocatie op dit apparaat).",
+      "unsupportedFormats": "Niet-ondersteunde bestandsindelingen: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Community-voorinstellingen",

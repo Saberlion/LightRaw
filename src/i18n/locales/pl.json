@@ -1578,9 +1578,11 @@
       "list": "Lista"
     },
     "toasts": {
+      "fuseRootNotice": "Foldery synchronizowane z chmurą (np. Download) mogą zawierać wygaszone, puste pliki zastępcze, które pojawiają się jako uszkodzone miniatury, a ich uprawnienia dostępu trzeba reaktywować przy każdym uruchomieniu. Zalecaną lokalizacją importu jest wbudowana biblioteka aplikacji.",
       "importFailed": "Import nie powiódł się: {{err}}",
       "importPickFailed": "Nie udało się wybrać zdjęć do zaimportowania: {{err}}",
-      "importTargetInternal": "Importowanie do biblioteki aplikacji (zalecana domyślna lokalizacja na tym urządzeniu)."
+      "importTargetInternal": "Importowanie do biblioteki aplikacji (zalecana domyślna lokalizacja na tym urządzeniu).",
+      "unsupportedFormats": "Nieobsługiwane formaty plików: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Presety społeczności",

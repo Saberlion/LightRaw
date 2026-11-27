@@ -1544,9 +1544,11 @@
       "list": "Llista"
     },
     "toasts": {
+      "fuseRootNotice": "Les carpetes sincronitzades amb el núvol (p. ex., Download) poden contenir fitxers buits descarregats que es mostren com a marcadors trencats, i el seu permís d’accés s’ha de reactivar a cada inici. Es recomana la biblioteca integrada com a ubicació d’importació.",
       "importFailed": "La importació ha fallat: {{err}}",
       "importPickFailed": "Ha fallat el selector d'imatges per importar: {{err}}",
-      "importTargetInternal": "S'està important a la biblioteca de l'aplicació (ubicació recomanada en aquest dispositiu)."
+      "importTargetInternal": "S'està important a la biblioteca de l'aplicació (ubicació recomanada en aquest dispositiu).",
+      "unsupportedFormats": "Formats de fitxer no compatibles: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Ajustos preestablerts de la comunitat",

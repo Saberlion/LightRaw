@@ -390,7 +390,7 @@ export function useFileOperations(
 
           const { validFiles, invalidExtensions } = filterSupported(albumPaths);
           if (invalidExtensions.size > 0) {
-            toast.error(`Unsupported file format(s) detected: ${Array.from(invalidExtensions).join(', ')}`);
+            toast.error(t('library.toasts.unsupportedFormats', { extensions: Array.from(invalidExtensions).join(', ') }));
             return;
           }
           if (validFiles.length === 0) return;
@@ -462,7 +462,7 @@ export function useFileOperations(
 
           const { validFiles, invalidExtensions } = filterSupported(selected, resolvedFiles);
           if (invalidExtensions.size > 0) {
-            toast.error(`Unsupported file format(s) detected: ${Array.from(invalidExtensions).join(', ')}`);
+            toast.error(t('library.toasts.unsupportedFormats', { extensions: Array.from(invalidExtensions).join(', ') }));
             return;
           }
 

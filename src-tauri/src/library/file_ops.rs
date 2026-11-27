@@ -887,47 +887,158 @@ fn heal_empty_destination(dest_file_path: &Path) -> bool {
 /// complete, and they sail past the empty-file guard (Mate 80, 2026-11-25
 /// second round: a partially materialized Download screenshot imported as a
 /// permanent grey placeholder failing "Failed to decode image" on every
-/// open). The container tails can catch them: a JPEG must end in an EOI
-/// marker and a PNG in an IEND chunk, both searched within the last 16 bytes
-/// to tolerate filesystem padding after the real end of the stream.
+/// open).
 ///
-/// Returns `Ok(false)` for formats without a verifiable tail (RAW containers
-/// among them) — those keep relying on the size checks.
+/// The end marker is located by CONTAINER STRUCTURE, never by a fixed tail
+/// window: camera JPEGs append vendor blocks AFTER the EOI marker (Huawei
+/// DFX/HDR tails made the old 16-byte window reject every healthy camera
+/// JPEG — "图库导入选择文件后无法导入", BUG-2026-11-25-07), and EXIF
+/// thumbnails embed their own EOI inside APP1. For JPEG the marker segments
+/// are therefore walked by length until the scan (FFDA); the entropy stream
+/// that follows cannot legitimately contain a raw FF D9 pair (real FF bytes
+/// are byte-stuffed), so the first hit is the true end of stream and any
+/// vendor tail after it is never reached. PNG chunks are walked by length
+/// until IEND. Reaching EOF before the end marker means the file is
+/// truncated.
+///
+/// Returns `Ok(false)` for formats without a verifiable structure (RAW
+/// containers among them) — those keep relying on the size checks.
 fn is_truncated_image_file(path: &Path) -> Result<bool, String> {
     use std::io::{Read, Seek, SeekFrom};
 
-    const HEAD: usize = 32;
-    const TAIL: usize = 16;
-    const JPEG_EOI: [u8; 2] = [0xFF, 0xD9];
-    const PNG_IEND: [u8; 8] = [0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
+    const JPEG_SOI: [u8; 3] = [0xFF, 0xD8, 0xFF];
+    const PNG_SIG: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
 
     let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
     let len = file.metadata().map_err(|e| e.to_string())?.len();
-    if len < TAIL as u64 {
+    if len < 16 {
         // Tiny files are either caught by the empty guard or will fail to
-        // decode with the size-annotated error; no tail to inspect.
+        // decode with the size-annotated error; no structure to inspect.
         return Ok(false);
     }
-    let mut head = vec![0u8; HEAD];
-    let head_len = file.read(&mut head).map_err(|e| e.to_string())?;
-    let jpeg = head[..head_len].starts_with(&[0xFF, 0xD8, 0xFF]);
-    let png = head[..head_len].starts_with(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]);
+
+    let mut magic = [0u8; 8];
+    file.read_exact(&mut magic).map_err(|e| e.to_string())?;
+    let jpeg = magic[..JPEG_SOI.len()] == JPEG_SOI;
+    let png = magic == PNG_SIG;
     if !jpeg && !png {
         return Ok(false);
     }
-    file.seek(SeekFrom::End(-(TAIL as i64)))
-        .map_err(|e| e.to_string())?;
-    let mut tail = vec![0u8; TAIL];
-    let tail_len = file.read(&mut tail).map_err(|e| e.to_string())?;
-    let tail = &tail[..tail_len];
-    let complete = if jpeg {
-        tail.windows(JPEG_EOI.len())
-            .any(|window| window == JPEG_EOI)
-    } else {
-        tail.windows(PNG_IEND.len())
-            .any(|window| window == PNG_IEND)
-    };
-    Ok(!complete)
+
+    // Reads a short buffer at `pos`; Err on a physical failure, Ok(None) past EOF.
+    let read_at =
+        |file: &mut fs::File, pos: u64, buf: &mut [u8]| -> Result<Option<usize>, String> {
+            file.seek(SeekFrom::Start(pos)).map_err(|e| e.to_string())?;
+            let mut filled = 0;
+            while filled < buf.len() {
+                match file.read(&mut buf[filled..]) {
+                    Ok(0) => break,
+                    Ok(n) => filled += n,
+                    Err(e) => return Err(e.to_string()),
+                }
+            }
+            Ok((filled == buf.len()).then_some(filled))
+        };
+
+    if png {
+        // Walk length-typed chunks until IEND; vendor tails after IEND are
+        // irrelevant because the walk stops there.
+        let mut pos: u64 = PNG_SIG.len() as u64;
+        let mut header = [0u8; 8];
+        loop {
+            let Some(_) = read_at(&mut file, pos, &mut header)? else {
+                return Ok(true); // EOF before a chunk header: truncated
+            };
+            let data_len = u32::from_be_bytes([header[0], header[1], header[2], header[3]]) as u64;
+            if &header[4..8] == b"IEND" {
+                return Ok(false); // structurally complete
+            }
+            // 8 header bytes + data + 4 CRC must fit before EOF.
+            let Some(next) = pos.checked_add(8 + data_len + 4) else {
+                return Ok(true);
+            };
+            if next > len || next <= pos {
+                return Ok(true); // chunk runs past EOF / no progress: truncated
+            }
+            pos = next;
+        }
+    }
+
+    // JPEG: walk marker segments by length until SOS (FFDA). APP1's embedded
+    // EXIF thumbnail is opaque to this walk — skipped whole by segment
+    // length, so its internal EOI never matches.
+    let mut pos: u64 = 2; // just after SOI
+    let mut marker = [0u8; 4]; // FF <marker> <length hi> <length lo>
+    let entropy_start;
+    loop {
+        // Tolerate fill bytes: any number of FF may precede a marker.
+        let mut one = [0u8; 1];
+        let Some(_) = read_at(&mut file, pos, &mut one)? else {
+            return Ok(true); // EOF inside the header: truncated
+        };
+        if one[0] != 0xFF {
+            // Malformed stream, not a truncation verdict — the decoder will
+            // reject it with its own error. Fail open.
+            return Ok(false);
+        }
+        pos += 1;
+        let Some(_) = read_at(&mut file, pos, &mut one)? else {
+            return Ok(true); // EOF right after FF: truncated
+        };
+        let code = one[0];
+        pos += 1;
+        match code {
+            0xD8 | 0x01 | 0xD0..=0xD7 => continue, // standalone markers
+            0xD9 => return Ok(false),              // EOI without a scan: degenerate but complete
+            _ => {}
+        }
+        let Some(_) = read_at(&mut file, pos, &mut marker[..2])? else {
+            return Ok(true); // EOF inside a segment header: truncated
+        };
+        let seg_len = u16::from_be_bytes([marker[0], marker[1]]) as u64;
+        if seg_len < 2 {
+            return Ok(false); // malformed length: fail open, decoder will error
+        }
+        let Some(after_seg) = pos.checked_add(seg_len) else {
+            return Ok(true);
+        };
+        if after_seg > len {
+            return Ok(true); // segment runs past EOF: truncated
+        }
+        if code == 0xDA {
+            entropy_start = after_seg; // entropy-coded scan data follows
+            break;
+        }
+        pos = after_seg;
+    }
+
+    // Entropy scan: chunked forward search for the first FF D9. In scan data
+    // every real FF is byte-stuffed (FF 00) or a marker, so a FF D9 pair can
+    // only be the true EOI — vendor tails after it are never reached.
+    const NEEDLE: [u8; 2] = [0xFF, 0xD9];
+    const CHUNK: usize = 256 * 1024;
+    let mut buf = vec![0u8; CHUNK];
+    let mut pos = entropy_start;
+    loop {
+        file.seek(SeekFrom::Start(pos)).map_err(|e| e.to_string())?;
+        let n = file.read(&mut buf).map_err(|e| e.to_string())?;
+        if n == 0 {
+            return Ok(true); // EOF without EOI: truncated mid-scan
+        }
+        if buf[..n].windows(NEEDLE.len()).any(|w| w == NEEDLE) {
+            return Ok(false); // true end of stream found
+        }
+        if pos + n as u64 >= len {
+            // Consumed through EOF without a needle — no more bytes can
+            // straddle a chunk boundary, so scanning is done. (Without this
+            // arm the trailing straddle byte re-read forever: pos += n - 1
+            // is a no-op when one byte remains, infinite loop — isolated
+            // probe hang, 2026-11-27.)
+            return Ok(true);
+        }
+        // Keep the last byte: a needle may straddle the chunk boundary.
+        pos += n as u64 - 1;
+    }
 }
 
 #[tauri::command]

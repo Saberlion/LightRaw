@@ -1510,9 +1510,11 @@
       "list": "Liste"
     },
     "toasts": {
+      "fuseRootNotice": "Cloud-synchronisierte Ordner (z. B. Download) können ausgelagerte, leere Datei-Stubs enthalten, die als fehlerhafte Platzhalter erscheinen; deren Zugriffsberechtigung muss bei jedem Start neu aktiviert werden. Für Importe wird die integrierte App-Bibliothek empfohlen.",
       "importFailed": "Import fehlgeschlagen: {{err}}",
       "importPickFailed": "Bildauswahl für Import fehlgeschlagen: {{err}}",
-      "importTargetInternal": "Import in die App-Mediathek (empfohlener Standardort auf diesem Gerät)."
+      "importTargetInternal": "Import in die App-Mediathek (empfohlener Standardort auf diesem Gerät).",
+      "unsupportedFormats": "Nicht unterstützte Dateiformate: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Community-Vorgaben",

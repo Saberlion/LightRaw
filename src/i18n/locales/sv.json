@@ -1519,9 +1519,11 @@
       "list": "Lista"
     },
     "toasts": {
+      "fuseRootNotice": "Molnsynkroniserade mappar (t.ex. Download) kan innehålla avlastade tomma filstubbar som visas som trasiga platshållare, och deras åtkomstbehörighet måste återaktiveras vid varje start. För importer rekommenderas det inbyggda appbiblioteket.",
       "importFailed": "Importen misslyckades: {{err}}",
       "importPickFailed": "Misslyckades med att välja bilder för import: {{err}}",
-      "importTargetInternal": "Importerar till appbiblioteket (rekommenderad standardplats på den här enheten)."
+      "importTargetInternal": "Importerar till appbiblioteket (rekommenderad standardplats på den här enheten).",
+      "unsupportedFormats": "Filtyper som inte stöds: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Användarnas förinställningar",
