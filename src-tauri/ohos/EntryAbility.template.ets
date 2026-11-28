@@ -1907,19 +1907,12 @@ export default class EntryAbility extends RustAbility {
     const extension: string = dotIndex >= 0 ? fileName.substring(dotIndex + 1).toLowerCase() : 'jpg';
     const title: string = dotIndex >= 0 ? fileName.substring(0, dotIndex) : fileName;
     console.info(`[RapidRAW] save_to_gallery tempPath: ${tempPath}`);
-    // Tauri's desktop path resolver yields a non-sandbox cache path on OHOS,
-    // which the system save dialog cannot authorize (14000011). Stage the
-    // bytes into this ability's cacheDir first: URIs derived from it are the
-    // canonical sandbox form showAssetsCreationDialog accepts.
+    // Stage the bytes into the sandbox first: both createAsset and
+    // showAssetsCreationDialog need a file the app can open.
     const sandboxDir: string = `${this.context.cacheDir}/export_bridge`;
     const stagedName: string = tempPath.substring(tempPath.lastIndexOf('/') + 1);
     const sandboxPath: string = `${sandboxDir}/${stagedName}`;
     try {
-      // mkdirSync is not idempotent: an existing directory throws 13900015
-      // ("File exists") even with recursion enabled. Probe with accessSync —
-      // but note it RETURNS a boolean (false when missing) and does NOT throw
-      // for absent paths; a try/catch probe would never run the mkdir (the
-      // same bug that broke the album-import staging, 2026-11-25).
       if (!fs.accessSync(sandboxDir)) {
         fs.mkdirSync(sandboxDir, true);
       }
@@ -1929,7 +1922,6 @@ export default class EntryAbility extends RustAbility {
       resolveSaveToGallery(requestId, false, `staging failed: ${JSON.stringify(e)}`);
       return;
     }
-    const srcUri: string = fileUri.getUriFromPath(sandboxPath);
     const helper: photoAccessHelper.PhotoAccessHelper =
       photoAccessHelper.getPhotoAccessHelper(this.context);
     const config: photoAccessHelper.PhotoCreationConfig = {
@@ -1937,10 +1929,82 @@ export default class EntryAbility extends RustAbility {
       fileNameExtension: extension,
       photoType: photoAccessHelper.PhotoType.IMAGE,
     };
-    // createAsset needs the restricted WRITE_IMAGEVIDEO permission (fails
-    // with error 201); this dialog saves with explicit user consent instead.
-    // On consent the system creates the asset and returns a URI with a
-    // permanent write grant, but the app must copy the bytes itself.
+
+    // 2026-11-28 (BUG-32): previously every save popped a
+    // showAssetsCreationDialog confirm per image — batch exports meant N
+    // taps. Now: request the WRITE_IMAGEVIDEO user_grant permission once
+    // (system dialog), then createAsset writes directly with no per-image
+    // dialog. Falls back to showAssetsCreationDialog only if the user
+    // denies the permission.
+    const writeImageVideo: Permissions = 'ohos.permission.WRITE_IMAGEVIDEO';
+    this.ensureRuntimePermission(writeImageVideo).then((granted: boolean): void => {
+      if (granted) {
+        // Direct write: no per-image dialog, no user interaction needed.
+        helper.createAsset(photoAccessHelper.PhotoType.IMAGE, extension, title)
+          .then((assetUri: string): void => {
+            try {
+              const srcFile: fs.File = fs.openSync(sandboxPath, fs.OpenMode.READ_ONLY);
+              const desFile: fs.File = fs.openSync(assetUri, fs.OpenMode.READ_WRITE);
+              fs.copyFileSync(srcFile.fd, desFile.fd);
+              fs.closeSync(srcFile);
+              fs.closeSync(desFile);
+              console.info(`[RapidRAW] save_to_gallery ok (createAsset): ${assetUri}`);
+              this.unlinkQuietly(sandboxPath);
+              resolveSaveToGallery(requestId, true, null);
+            } catch (e) {
+              console.error(`[RapidRAW] save_to_gallery createAsset copy failed: ${JSON.stringify(e)}`);
+              this.unlinkQuietly(sandboxPath);
+              resolveSaveToGallery(requestId, false, `copy failed: ${JSON.stringify(e)}`);
+            }
+          })
+          .catch((e: BusinessError): void => {
+            // createAsset failed (e.g. permission revoked after grant, or a
+            // system-level restriction) — fall back to the dialog path.
+            console.warn(`[RapidRAW] save_to_gallery createAsset failed (${JSON.stringify(e)}), falling back to dialog`);
+            this.saveToGalleryViaDialog(sandboxPath, helper, config, requestId, resolveSaveToGallery);
+          });
+      } else {
+        // User denied WRITE_IMAGEVIDEO — the dialog path is the only way
+        // to save to the gallery with explicit consent.
+        console.warn('[RapidRAW] save_to_gallery: WRITE_IMAGEVIDEO denied, using dialog');
+        this.saveToGalleryViaDialog(sandboxPath, helper, config, requestId, resolveSaveToGallery);
+      }
+    }).catch((e: BusinessError): void => {
+      console.error(`[RapidRAW] save_to_gallery permission request threw: ${JSON.stringify(e)}`);
+      this.saveToGalleryViaDialog(sandboxPath, helper, config, requestId, resolveSaveToGallery);
+    });
+  }
+
+  /// Check and (if not yet granted) request the given user_grant
+  /// permission via the system dialog. Resolves true when granted.
+  private ensureRuntimePermission(permission: Permissions): Promise<boolean> {
+    const atManager = abilityAccessCtrl.createAtManager();
+    return atManager.checkAccessToken(this.context.applicationInfo.accessTokenId, permission)
+      .then((status: number): Promise<boolean> => {
+        if (status === 0) {
+          // Already granted — no dialog needed.
+          return Promise.resolve(true);
+        }
+        // Not granted yet — request it (the system shows the dialog).
+        return atManager.requestPermissionsFromUser(this.context, [permission])
+          .then((result: ESObject): boolean => {
+            const statuses: Array<number> = result.grantStatus as Array<number>;
+            return statuses.length > 0 && statuses[0] === 0;
+          });
+      });
+  }
+
+  /// Fallback: the per-image showAssetsCreationDialog (pre-2026-11-28
+  /// behavior). Only reached when the user denies WRITE_IMAGEVIDEO or
+  /// createAsset fails at runtime.
+  private saveToGalleryViaDialog(
+    sandboxPath: string,
+    helper: photoAccessHelper.PhotoAccessHelper,
+    config: photoAccessHelper.PhotoCreationConfig,
+    requestId: number,
+    resolveSaveToGallery: ESObject,
+  ): void {
+    const srcUri: string = fileUri.getUriFromPath(sandboxPath);
     helper.showAssetsCreationDialog([srcUri], [config]).then((uris: Array<string>) => {
       const first: string = uris.length > 0 ? uris[0] : '';
       if (first.startsWith('file://')) {
