@@ -62,6 +62,18 @@ Violating any of these breaks builds — details in `docs/HARMONYOS_PORTING.md` 
 
 - `tauri-plugin-http` and `tauri-plugin-clerk` are desktop-only too: plugin-http's setup resolves `app_cache_dir()` via the desktop XDG path (FUSE user storage, EPERM) and aborts the whole app at startup, so both are registered under `cfg(not(target_env = "ohos"))`; the frontend treats OHOS as `unsupported` for cloud auth.
 - **Never call `app.path().app_data_dir()` / `app_cache_dir()` / `app_config_dir()` directly in port code** — use `crate::app_paths::*`. The tauri fork resolves them with desktop XDG semantics on OHOS (FUSE, EPERM); the app_paths helpers redirect to `/data/storage/el2/base`. AI model downloads (`ai_processing::get_models_dir`) and the AI-jobs journal depend on this.
+- **⚠️ 军规：OHOS 上不得并发创建多个 wgpu 设备，也不得在启动阶段预创建解码 GPU** — Maleoon 驱动家族（v200/B322/v300）均存在 `vkCreateDescriptorSetLayout` 相关的 SEGV 缺陷。2026-11-28 一天因此崩溃 40+ 次（BUG-25/26/33），四轮排查链：
+  1. B322（平板）两线程并发 vkCreate* 撕裂驱动容器指针 → 加 `GPU_OBJECT_CREATION` 全局锁修复（`8b9bf411`）
+  2. v200（手机）首帧门控在 device-lost 重建路径不生效 → 重置 `OHOS_GPU_WINDOW_OPEN`（`081a58b0`）
+  3. v200 warmup"成功"后仍崩、flag 被移除 → 无限崩循环 → 成功后保留 flag（`686e4e96`）
+  4. **根因**：后台 decode 预热线程在同一适配器上创建第二个 wgpu 设备 → v200 必崩 → OHOS 上不再启动该线程（`5cf8986a`），decode GPU 按需惰性初始化
+
+  **规则**：
+  - `get_or_init_gpu_context` 内不得 `thread::spawn` 任何会调用 `request_device` 或 `vkCreate*` 的闭包（OHOS cfg 排除）
+  - 新增 GPU 预热/预热线程前必须验证 v200（Mate 80）**和** B322（GEM-W40）零崩溃 ≥6 次冷启动
+  - 所有 GPU 对象创建爆发点（管线编译、设备创建）必须持 `GPU_OBJECT_CREATION` 锁
+  - `.gpu_warmup_crash_flag` 写入后**不移除**（永久 sticky，除非显式重新启用 warmup）；删除 app-config 文件可重新启用
+  - 遇到 `SIGSEGV in libmaleoon_*.so / hvgr_v200.so` 时，先拉 faultlog 符号化（`llvm-symbolizer -e target/aarch64-unknown-linux-ohos/debug/liblightraw.so <pc>`），再分析是否为多设备/多线程创建路径
 - `cargo tauri ohos build` must run from the repo root (beforeBuildCommand resolves `package.json` from CLI cwd); on Windows use `npm.cmd`. **HAP packaging and signing work end-to-end** (recipe: doc §6.3 + §8; signing material in untracked `.csr/SIGNING.md` — private keys: `.csr/`, `*.p12`, `*.p7b`, `*.jks` must never be committed; AppGallery listing pending a clean aarch64 release rebuild + on-device install). **Never run standalone `hvigorw assembleHap`** — hvigor calls back into the parent CLI's WebSocket, which only exists while `cargo tauri ohos build` is running.
 - **A release artifact must not contain debug build output.** AppGallery rejects packages carrying debug info (audit issue "软件包中包含调试信息" — doc §6.17). `scripts/build-ohos.ps1` builds **debug by default** (passes `-d` to the tauri CLI), so anything that leaves the machine — AGC submission, hand-off, release smoke — needs `-Release`; that flag must reach the **ohrs/cargo stage** as well (the CLI's own cargo step follows `--release`, ohrs does not unless `-- --release` is forwarded). Three leak sources, each to re-check on the built package: ① the HAP embedding a dev-profile `liblightraw.so` (release is visibly smaller — recalibrated 2026-11-26 on v1.7.1+tethering: release 171.4 MB vs debug 188.6 MB, a weak 1.1× ratio; the old 40.5/56.4 MB pair predates the §6.28 rename and the strip/LTO config drift flagged in doc §8.1, so size alone is now a weak signal — the zero-DWARF/symtab scan in ② is the hard gate); ② the machine-provided `src-tauri/libs/ohos/<abi>/*.so` (ORT + the CANN set) keeping `.debug_*` sections/symtab — `llvm-strip --strip-unneeded` them and keep the `.unstripped` original beside it; ③ hvigor packing `ets/sourceMaps.map`. Verify on the produced HAP: no `ets/sourceMaps.map` entry, zero DWARF/symtab in every packed `.so`, `.so` size in the release range.
 
