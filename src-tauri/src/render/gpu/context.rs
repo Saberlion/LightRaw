@@ -503,6 +503,16 @@ pub fn get_or_init_gpu_context(
         pipelines: Arc::new(std::sync::OnceLock::new()),
         compute: Arc::new(std::sync::OnceLock::new()),
     };
+    // BUG-2026-11-28-33 (v200/Mate 80): the background decode-warming thread
+    // creates a SECOND wgpu device on the same adapter (decode_gpu_for →
+    // request_device → Device::new → create_bind_group_layout), which the
+    // Maleoon v200 driver crashes on (SIGSEGV @0x4e0, NULL pointer in
+    // vkCreateDescriptorSetLayout). Serialized locks don't help — the crash
+    // is the SECOND device creation itself, not a race. On OHOS, don't
+    // pre-warm the decode GPU; it initializes lazily on the first decode
+    // (same for compute pipelines). The cost is a slightly slower first
+    // image open, which is already the warmup-crash-flag fallback.
+    #[cfg(not(target_env = "ohos"))]
     if !new_context.shares_one_gl_context() {
         let warm = new_context.clone();
         std::thread::spawn(move || {
