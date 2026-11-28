@@ -1940,7 +1940,7 @@ export default class EntryAbility extends RustAbility {
     this.ensureRuntimePermission(writeImageVideo).then((granted: boolean): void => {
       if (granted) {
         // Direct write: no per-image dialog, no user interaction needed.
-        helper.createAsset(photoAccessHelper.PhotoType.IMAGE, extension, title)
+        helper.createAsset(photoAccessHelper.PhotoType.IMAGE, extension, { title: title })
           .then((assetUri: string): void => {
             try {
               const srcFile: fs.File = fs.openSync(sandboxPath, fs.OpenMode.READ_ONLY);
