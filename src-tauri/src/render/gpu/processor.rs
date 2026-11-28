@@ -1927,27 +1927,22 @@ pub fn warm_up_pipelines(
     app_handle: &tauri::AppHandle,
 ) -> Result<std::time::Duration, String> {
     let start = std::time::Instant::now();
-    // BUG-2026-11-28-25/26 (GEM-W40, Maleoon 935A B322): the throwaway
-    // GpuProcessor::new used to run UNLOCKED, so a user opening an image
-    // while the warmup was compiling put two threads' vkCreate* calls into
-    // the driver concurrently - a SIGSEGV in libmaleoon_v300.so with ~50%
-    // startup failure on the tablet (the fresh-install first launch was
-    // healthy because the user interacted only after the warmup finished).
-    // Serialize the pipeline compilation against the shared gpu_processor
-    // lock - the same lock the main path (output.rs) creates its processor
-    // under. Acquired AFTER get_or_init: that function's device-lost
-    // recovery takes the processor lock while still holding the context
-    // lock, so taking processor->context here could deadlock. With the
-    // context already initialized, get_or_init on the main thread is a
-    // clone-only fast path, so the adapter/device creation itself is never
-    // concurrent either.
+    // BUG-2026-11-28-25/26: serialize the pipeline compilation against the
+    // other GPU object-creation sites (the background compute warmer that
+    // get_or_init spawns, and the main path's processor creation) - the
+    // Maleoon driver's descriptor-layout container is not thread-safe and
+    // concurrent creation bursts tear its pointers. Guard taken AFTER
+    // get_or_init (not around it): get_or_init's device-lost path takes the
+    // processor lock while holding the context lock, so holding this guard
+    // across it could close a lock cycle; with the guard taken here it is
+    // the only GPU-side lock held, as in the warmer thread.
     let context = crate::render::gpu::context::get_or_init_gpu_context(state, app_handle)?;
-    let _processor_guard =
-        crate::render::gpu::context::lock_or_reset(&state.gpu_processor, "GPU processor");
+    let _guard = crate::render::gpu::context::GPU_OBJECT_CREATION
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     // 256x256 keeps the throwaway textures tiny; pipeline creation is
     // dimension-independent.
     GpuProcessor::new(context, 256, 256)?;
-    drop(_processor_guard);
     Ok(start.elapsed())
 }
 

@@ -107,6 +107,20 @@ pub fn gpu_window_open() -> bool {
 
 static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 
+/// Serializes every GPU object-creation burst (pipeline / bind-group-layout
+/// compilation - a long run of vkCreate* calls) across ALL threads.
+///
+/// BUG-2026-11-28-25/26 (Maleoon v200/B322): the driver's internal
+/// descriptor-layout container is not thread-safe. The background
+/// compute-warming thread spawned at context creation used to run with no
+/// lock, racing the pipeline-warmup thread and the main-path processor
+/// creation; the torn writes corrupt a driver-internal pointer (fault x1
+/// holds packed non-pointer data) and the next vkCreateDescriptorSetLayout
+/// dereferences it - SIGSEGV in libmaleoon/hvgr with the register-forensics
+/// signatures from TEST-2026-11-28. Every creation site takes this mutex:
+/// background warmer, warmup, output.rs processor creation, shader_check.
+pub static GPU_OBJECT_CREATION: Mutex<()> = Mutex::new(());
+
 pub fn register_app_handle(app_handle: &tauri::AppHandle) {
     let _ = APP_HANDLE.set(app_handle.clone());
 }
@@ -414,27 +428,16 @@ pub fn get_or_init_gpu_context(
         adapter_info.driver,
         adapter_info.driver_info
     );
-    // Maleoon B322 (GEM-W40 / 935A) driver bug, BUG-2026-11-25/26: every
-    // vkCreateDescriptorSetLayout - i.e. the first bind-group-layout of any
-    // pipeline creation, warmup AND real work alike - SIGSEGVs inside
-    // libmaleoon_v300.so. Single-threaded reproducible, survives a device
-    // reboot, ~19/19 crash rate after the first post-install launch on the
-    // only B322 device we have. The HAL-label hypothesis was DISPROVED by
-    // experiment (2026-11-28: DISCARD_HAL_LABELS set, fault registers x6/x7
-    // zeroed - labels provably gone - and the crash persisted at the same
-    // constant fault address 0x0001080102027b3c in both the warmup and the
-    // continue-session paths). Until the vendor fixes the driver, refuse the
-    // GPU here so every call site takes the existing no-adapter CPU
-    // degradation path (the x86_64 emulator already runs through it) - slow
-    // but stable. B312 (MateBook/MOR) and v200-with-gate (Mate 80) are
-    // unaffected.
-    if adapter_info.driver.contains("B322") {
-        log::error!(
-            "Maleoon B322 GPU driver is blocklisted (vkCreateDescriptorSetLayout SIGSEGV, \
-             BUG-2026-11-28-26): running on the CPU for stability"
-        );
-        return Err("Maleoon B322 GPU driver is blocklisted for stability".to_string());
-    }
+    // Maleoon B322 (GEM-W40 / 935A) driver, BUG-2026-11-25/26: vkCreateDescriptorSetLayout
+    // SIGSEGVs when object-creation bursts from two threads interleave - the
+    // driver's internal descriptor-layout container is not thread-safe
+    // (forward-forensics: faulting instruction `ldp [x1,#-16]` on an
+    // intrusive-list node whose pointer field holds packed non-pointer data).
+    // VERIFICATION BUILD 2026-11-28: root-caused to the UNLOCKED background
+    // compute warmer racing the warmup/main creation paths; all creation
+    // sites now serialize through GPU_OBJECT_CREATION and the blocklist is
+    // LIFTED. If this build still crashes, restore the Err return from git
+    // history (2a15998b) and keep the CPU degradation.
     crate::render::gpu::fallback::begin_attempt(crate::render::gpu::fallback::backend_name(
         adapter_info.backend,
     ));
@@ -492,6 +495,19 @@ pub fn get_or_init_gpu_context(
     if !new_context.shares_one_gl_context() {
         let warm = new_context.clone();
         std::thread::spawn(move || {
+            // BUG-2026-11-28-25/26: this warming thread creates compute
+            // pipelines (bind-group layouts -> vkCreateDescriptorSetLayout)
+            // with NO lock, racing the pipeline-warmup thread and the main
+            // path's processor creation. The Maleoon driver's internal
+            // descriptor-layout container is not thread-safe: the racing
+            // writes tear a pointer field (fault x1 is packed
+            // non-pointer data / label bytes, constant per driver
+            // generation) and the next vkCreate* dereferences it ->
+            // SIGSEGV. Serialize ALL GPU object-creation bursts through
+            // GPU_OBJECT_CREATION.
+            let _guard = GPU_OBJECT_CREATION
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
             crate::decode::gpu_fallback::prepare(&decode_gpu_for(&warm));
             warm.compute
                 .get_or_init(|| crate::render::gpu::compute::ComputePipelines::new(&warm.device))

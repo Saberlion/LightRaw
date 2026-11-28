@@ -142,6 +142,17 @@ fn process_and_get_dynamic_image_inner(
         let old_processor = processor_lock.take();
         drop(old_processor);
 
+        // BUG-2026-11-28-25/26: serialize against the other GPU
+        // object-creation bursts (warmup thread, background compute warmer)
+        // - the Maleoon driver's descriptor-layout container is not
+        // thread-safe. Lock order processor -> GPU_OBJECT_CREATION is safe:
+        // nothing that holds GPU_OBJECT_CREATION ever reaches for the
+        // processor or context locks (the warmer and the warmup's creation
+        // section take it as their only GPU-side lock).
+        let _gpu_guard = crate::render::gpu::context::GPU_OBJECT_CREATION
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+
         let _ = context.device.poll(wgpu::PollType::Wait {
             submission_index: None,
             timeout: Some(std::time::Duration::from_millis(500)),
