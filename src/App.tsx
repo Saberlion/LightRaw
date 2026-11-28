@@ -15,10 +15,14 @@ import {
 } from '@dnd-kit/core';
 import clsx from 'clsx';
 
+import { ArrowLeft } from 'lucide-react';
+import i18n from 'i18next';
 import TitleBar from './window/TitleBar';
 import FolderTree from './components/panel/right/FolderTree';
 import SettingsPanel from './components/panel/SettingsPanel';
 import ExportPanel from './components/panel/right/ExportPanel';
+import Text from './components/ui/Text';
+import { TextVariants } from './types/typography';
 import GlobalTooltip from './components/ui/GlobalTooltip';
 import AppModals from './components/modals/AppModals';
 import AgreementGate, { AGREEMENT_VERSION } from './components/AgreementGate';
@@ -178,6 +182,7 @@ function App() {
     activePanel,
     activeLayoutDragItem,
     isSettingsOpen,
+    isLibraryExportPanelVisible,
     setUI,
     setPanel,
     setLayoutDragItem,
@@ -197,6 +202,7 @@ function App() {
       activePanel: state.activePanel,
       activeLayoutDragItem: state.activeLayoutDragItem,
       isSettingsOpen: state.isSettingsOpen,
+      isLibraryExportPanelVisible: state.isLibraryExportPanelVisible,
       setUI: state.setUI,
       setPanel: state.setPanel,
       setLayoutDragItem: state.setLayoutDragItem,
@@ -1167,6 +1173,7 @@ function App() {
                   )}
                 >
                   {usePhoneTabShell ? (
+                    <>
                     <PhoneTabShell
                       onSelectAlbum={(album) => {
                         handleSelectAlbum(album.id, album.name, album.images, false, false);
@@ -1231,6 +1238,39 @@ function App() {
                         hideBottomBar
                       />
                     </PhoneTabShell>
+                      {isLibraryExportPanelVisible && (
+                        /* BUG-2026-11-28-22: the phone batch bar's export button
+                            used to toggle isLibraryExportPanelVisible, but nothing
+                            read the flag on compact - the ExportPanel only mounts in
+                            the desktop left dock, so the tap was a silent no-op.
+                            Render it as a full-screen overlay over the phone shell. */
+                        <div className="fixed inset-0 z-50 bg-bg-primary flex flex-col">
+                          <div className="flex items-center gap-3 px-4 h-14 shrink-0 border-b border-border-color">
+                            <button
+                              onClick={() => setUI({ isLibraryExportPanelVisible: false })}
+                              aria-label={i18n.t('library.tooltips.goHome')}
+                              className="p-2 -ml-2 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-primary transition-colors"
+                            >
+                              <ArrowLeft size={18} />
+                            </button>
+                            <Text variant={TextVariants.heading}>{i18n.t('ui.bottomBar.tooltips.export')}</Text>
+                          </div>
+                          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-24">
+                            <ExportPanel
+                              exportState={exportState}
+                              multiSelectedPaths={multiSelectedPaths}
+                              selectedImage={selectedImage}
+                              setExportState={setExportState}
+                              appSettings={appSettings}
+                              onSettingsChange={handleSettingsChange}
+                              rootPaths={rootPaths}
+                              isVisible={true}
+                              onClose={() => setUI({ isLibraryExportPanelVisible: false })}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <LibraryView
                       sortedImageList={sortedImageList}

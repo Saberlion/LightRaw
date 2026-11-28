@@ -596,9 +596,15 @@ export function useAppNavigation({ clearThumbnailQueue, importFilesRef, refs }: 
           // 'add' opens the FILE picker instead - the picked images import
           // straight into the internal root (the FileMgr's folder-mode UI
           // is a phone-skinned directory tree that does not fit this flow).
-          // Tablets/2in1 keep the folder picker: their grants persist.
+          // Phones AND tablets (2026-11-28, product decision) open the
+          // internal library root and, on 'add', the FILE picker that
+          // imports straight into it. The folder picker stays 2in1-only:
+          // the directory-tree UI fits the desktop form factor, and 2in1
+          // grants persist. (Tablet grants DO persist - TC-FILE-09 - but
+          // the internal-root flow keeps the two touch form factors
+          // consistent.)
           const deviceType = useSettingsStore.getState().ohosDeviceType;
-          if (deviceType === 'phone') {
+          if (deviceType === 'phone' || deviceType === 'tablet') {
             const internalRoot = await invoke<string>(Invokes.GetOrCreateInternalLibraryRoot);
             if (intent === 'add' && importFilesRef?.current) {
               await importFilesRef.current(internalRoot, 'files');
