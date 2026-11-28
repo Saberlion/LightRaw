@@ -38,6 +38,7 @@ import {
   Camera as CameraIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import clsx from 'clsx';
 import ConfigurePresetModal from '../../modals/ConfigurePresetModal';
 import CreateFolderModal from '../../modals/CreateFolderModal';
 import RenameFolderModal from '../../modals/RenameFolderModal';
@@ -69,6 +70,7 @@ interface DraggablePresetItemProps {
   onHover(preset: Preset): void;
   onLeave(): void;
   onContextMenu(event: any, preset: any): void;
+  onDelete?(presetId: string): void;
   preset: any;
   previewUrl?: string | null;
   isActive?: boolean;
@@ -414,6 +416,7 @@ function DraggablePresetItem({
   onHover,
   onLeave,
   onContextMenu,
+  onDelete,
   previewUrl,
   isActive,
   intensity,
@@ -459,7 +462,29 @@ function DraggablePresetItem({
       onContextMenu={(e: any) => onContextMenu(e, { preset })}
       ref={setCombinedRef}
       style={style}
+      className="relative group"
     >
+      {onDelete && preset?.id && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(preset.id);
+          }}
+          aria-label="Delete preset"
+          className={clsx(
+            'absolute top-1.5 right-1.5 z-10 p-1.5 rounded-full',
+            'text-text-secondary bg-bg-primary/80 backdrop-blur-sm',
+            'hover:text-red-400 hover:bg-red-500/10',
+            'transition-all duration-150',
+            // Desktop: show on hover only. Touch (no hover): always visible.
+            'opacity-0 pointer-events-none [@media(hover:none)]:opacity-100 [@media(hover:none)]:pointer-events-auto',
+            'group-hover:opacity-100 group-hover:pointer-events-auto',
+            'focus-visible:opacity-100 focus-visible:pointer-events-auto',
+          )}
+        >
+          <Trash2 size={13} />
+        </button>
+      )}
       <motion.div
         {...listeners}
         {...attributes}
@@ -1463,6 +1488,7 @@ export default function PresetsPanel() {
                               >
                                 <DraggablePresetItem
                                   onApply={handleApplyPreset}
+                                  onDelete={(presetId) => handleDeleteItem(presetId, false)}
                                   onHover={handlePresetHover}
                                   onLeave={hoverPreview.leave}
                                   onContextMenu={(e: any) => handleContextMenu(e, { preset })}
@@ -1495,6 +1521,7 @@ export default function PresetsPanel() {
                     >
                       <DraggablePresetItem
                         onApply={handleApplyPreset}
+                        onDelete={(presetId) => handleDeleteItem(presetId, false)}
                         onHover={handlePresetHover}
                         onLeave={hoverPreview.leave}
                         onContextMenu={(e: any) => handleContextMenu(e, item)}
