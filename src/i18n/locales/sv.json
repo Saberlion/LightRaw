@@ -1520,15 +1520,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Molnsynkroniserade mappar (t.ex. Download) kan innehålla avlastade tomma filstubbar som visas som trasiga platshållare, och deras åtkomstbehörighet måste återaktiveras vid varje start. För importer rekommenderas det inbyggda appbiblioteket.",
+      "gallerySaveRejected": "Sparandet till galleriet avslogs.",
+      "importDuplicate": "En fil med samma namn finns redan i biblioteket - importen hoppades över.",
+      "importEmptyFile": "En tom (0-byte) fil kan inte importeras.",
       "importFailed": "Importen misslyckades: {{err}}",
       "importPickFailed": "Misslyckades med att välja bilder för import: {{err}}",
-      "importTargetInternal": "Importerar till appbiblioteket (rekommenderad standardplats på den här enheten).",
-      "unsupportedFormats": "Filtyper som inte stöds: {{extensions}}",
       "importSkippedUnsupported": "{{skipped}} filer som inte stöds hoppades över ({{extensions}}) - endast bilder kan importeras.",
-      "gallerySaveRejected": "Sparandet till galleriet avslogs.",
+      "importTargetInternal": "Importerar till appbiblioteket (rekommenderad standardplats på den här enheten).",
+      "importTruncated": "Källfilen verkar avklippt eller ofullständig - överför den igen och importera på nytt.",
       "regrantNeeded": "Mappåtkomst måste beviljas igen – välj din mapp igen.",
       "restoreFailed": "Kunde inte återställa sessionen. En mapp kan ha flyttats eller tagits bort.",
-      "savePickerCancelled": "Sparning avbröts."
+      "savePickerCancelled": "Sparning avbröts.",
+      "unsupportedFormats": "Filtyper som inte stöds: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Användarnas förinställningar",

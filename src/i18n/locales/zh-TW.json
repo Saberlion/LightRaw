@@ -1504,15 +1504,18 @@
     },
     "toasts": {
       "fuseRootNotice": "雲端同步資料夾（如 Download）可能包含已卸載至雲端的空檔案佔位，在應用程式中會顯示為破損佔位圖，且其存取授權需在每次啟動時重新啟用。建議使用應用程式內建圖庫作為匯入的預設位置。",
+      "gallerySaveRejected": "已拒絕儲存到圖庫。",
+      "importDuplicate": "圖庫中已存在同名檔案,已跳過匯入。",
+      "importEmptyFile": "無法匯入空(0 位元組)檔案。",
       "importFailed": "匯入失敗：{{err}}",
       "importPickFailed": "匯入選取圖片失敗：{{err}}",
-      "importTargetInternal": "正在匯入到應用圖庫(本裝置建議的預設位置)。",
-      "unsupportedFormats": "偵測到不支援的檔案格式：{{extensions}}",
       "importSkippedUnsupported": "已跳過 {{skipped}} 個不支援的檔案（{{extensions}}）——僅支援匯入圖片。",
-      "gallerySaveRejected": "已拒絕儲存到圖庫。",
+      "importTargetInternal": "正在匯入到應用圖庫(本裝置建議的預設位置)。",
+      "importTruncated": "來源檔案似乎被截斷或不完整——請重新傳輸後再匯入。",
       "regrantNeeded": "圖庫資料夾存取授權需重新授予——請重新選擇您的資料夾。",
       "restoreFailed": "工作階段還原失敗。資料夾可能已被移動或刪除。",
-      "savePickerCancelled": "已取消儲存。"
+      "savePickerCancelled": "已取消儲存。",
+      "unsupportedFormats": "偵測到不支援的檔案格式：{{extensions}}"
     },
     "tooltips": {
       "communityPresets": "社群預設",

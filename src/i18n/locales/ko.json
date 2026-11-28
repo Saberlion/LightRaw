@@ -1504,15 +1504,18 @@
     },
     "toasts": {
       "fuseRootNotice": "클라우드 동기화 폴더(예: Download)에는 클라우드로 오프로드된 빈 스텁 파일이 포함될 수 있으며 깨진 플레이스홀더로 표시됩니다. 또한 접근 권한은 시작할 때마다 다시 활성화해야 합니다. 가져오기 기본 위치로는 내장 라이브러리를 권장합니다.",
+      "gallerySaveRejected": "갤러리 저장이 거부되었습니다.",
+      "importDuplicate": "라이브러리에 같은 이름의 파일이 이미 있어 가져오기를 건너뛰었습니다.",
+      "importEmptyFile": "빈(0바이트) 파일은 가져올 수 없습니다.",
       "importFailed": "가져오기 실패: {{err}}",
       "importPickFailed": "가져올 이미지 선택 실패: {{err}}",
-      "importTargetInternal": "앱 라이브러리(이 기기의 권장 기본 위치)로 가져오는 중입니다.",
-      "unsupportedFormats": "지원되지 않는 파일 형식입니다: {{extensions}}",
       "importSkippedUnsupported": "지원되지 않는 파일 {{skipped}}개를 건너뛰었습니다({{extensions}}). 이미지만 가져올 수 있습니다.",
-      "gallerySaveRejected": "갤러리 저장이 거부되었습니다.",
+      "importTargetInternal": "앱 라이브러리(이 기기의 권장 기본 위치)로 가져오는 중입니다.",
+      "importTruncated": "원본 파일이 잘렸거나 불완전한 것 같습니다. 다시 전송한 후 가져오세요.",
       "regrantNeeded": "폴더 접근 권한을 다시 부여해야 합니다. 폴더를 다시 선택해 주세요.",
       "restoreFailed": "세션을 복원하지 못했습니다. 폴더가 이동되었거나 삭제되었을 수 있습니다.",
-      "savePickerCancelled": "저장이 취소되었습니다."
+      "savePickerCancelled": "저장이 취소되었습니다.",
+      "unsupportedFormats": "지원되지 않는 파일 형식입니다: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "커뮤니티 프리셋",

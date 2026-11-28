@@ -1579,15 +1579,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Foldery synchronizowane z chmurą (np. Download) mogą zawierać wygaszone, puste pliki zastępcze, które pojawiają się jako uszkodzone miniatury, a ich uprawnienia dostępu trzeba reaktywować przy każdym uruchomieniu. Zalecaną lokalizacją importu jest wbudowana biblioteka aplikacji.",
+      "gallerySaveRejected": "Zapis do galerii został odrzucony.",
+      "importDuplicate": "Plik o tej samej nazwie już istnieje w bibliotece — import został pominięty.",
+      "importEmptyFile": "Nie można zaimportować pustego (0-bajtowego) pliku.",
       "importFailed": "Import nie powiódł się: {{err}}",
       "importPickFailed": "Nie udało się wybrać zdjęć do zaimportowania: {{err}}",
-      "importTargetInternal": "Importowanie do biblioteki aplikacji (zalecana domyślna lokalizacja na tym urządzeniu).",
-      "unsupportedFormats": "Nieobsługiwane formaty plików: {{extensions}}",
       "importSkippedUnsupported": "Pominięto {{skipped}} nieobsługiwanych plików ({{extensions}}) – importować można tylko obrazy.",
-      "gallerySaveRejected": "Zapis do galerii został odrzucony.",
+      "importTargetInternal": "Importowanie do biblioteki aplikacji (zalecana domyślna lokalizacja na tym urządzeniu).",
+      "importTruncated": "Plik źródłowy wygląda na obcięty lub niekompletny — prześlij go ponownie i zaimportuj jeszcze raz.",
       "regrantNeeded": "Dostęp do folderu musi zostać ponownie przyznany — wybierz folder ponownie.",
       "restoreFailed": "Nie udało się przywrócić sesji. Folder mógł zostać przeniesiony lub usunięty.",
-      "savePickerCancelled": "Anulowano zapisywanie."
+      "savePickerCancelled": "Anulowano zapisywanie.",
+      "unsupportedFormats": "Nieobsługiwane formaty plików: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Presety społeczności",

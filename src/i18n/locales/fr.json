@@ -1546,15 +1546,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Les dossiers synchronisés avec le cloud (ex. Download) peuvent contenir des fichiers vides déchargés qui s’affichent comme des vignettes cassées ; leur autorisation d’accès doit être réactivée à chaque lancement. La bibliothèque intégrée est l’emplacement d’import recommandé.",
+      "gallerySaveRejected": "L'enregistrement dans la galerie a été refusé.",
+      "importDuplicate": "Un fichier du même nom existe déjà dans la bibliothèque - l'import a été ignoré.",
+      "importEmptyFile": "Impossible d'importer un fichier vide (0 octet).",
       "importFailed": "Échec de l'importation : {{err}}",
       "importPickFailed": "Échec de la sélection d'images pour l'importation : {{err}}",
-      "importTargetInternal": "Importation dans la bibliothèque de l'application (emplacement recommandé sur cet appareil).",
-      "unsupportedFormats": "Formats de fichier non pris en charge : {{extensions}}",
       "importSkippedUnsupported": "{{skipped}} fichier(s) non pris en charge ignoré(s) ({{extensions}}) - seules les images peuvent être importées.",
-      "gallerySaveRejected": "L'enregistrement dans la galerie a été refusé.",
+      "importTargetInternal": "Importation dans la bibliothèque de l'application (emplacement recommandé sur cet appareil).",
+      "importTruncated": "Le fichier source semble tronqué ou incomplet - retransférez-le puis importez-le à nouveau.",
       "regrantNeeded": "L'accès au dossier doit être réautorisé - veuillez sélectionner à nouveau votre dossier.",
       "restoreFailed": "Échec de restauration de la session. Un dossier a peut-être été déplacé ou supprimé.",
-      "savePickerCancelled": "Enregistrement annulé."
+      "savePickerCancelled": "Enregistrement annulé.",
+      "unsupportedFormats": "Formats de fichier non pris en charge : {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Paramètres prédéfinis de la communauté",

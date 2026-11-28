@@ -1545,15 +1545,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Pastas sincronizadas com a nuvem (ex.: Download) podem conter arquivos vazios descarregados que aparecem como marcadores quebrados, e sua permissão de acesso precisa ser reativada a cada inicialização. A biblioteca integrada é o local recomendado para importações.",
+      "gallerySaveRejected": "A gravação na galeria foi rejeitada.",
+      "importDuplicate": "Já existe um ficheiro com o mesmo nome na biblioteca - a importação foi ignorada.",
+      "importEmptyFile": "Não é possível importar um ficheiro vazio (0 bytes).",
       "importFailed": "Falha na importação: {{err}}",
       "importPickFailed": "Falha ao selecionar imagens para importar: {{err}}",
-      "importTargetInternal": "Importando para a biblioteca do aplicativo (local recomendado neste dispositivo).",
-      "unsupportedFormats": "Formatos de ficheiro não suportados: {{extensions}}",
       "importSkippedUnsupported": "{{skipped}} ficheiro(s) não suportado(s) ignorado(s) ({{extensions}}) - apenas imagens podem ser importadas.",
-      "gallerySaveRejected": "A gravação na galeria foi rejeitada.",
+      "importTargetInternal": "Importando para a biblioteca do aplicativo (local recomendado neste dispositivo).",
+      "importTruncated": "O ficheiro de origem parece truncado ou incompleto - retransfira-o e importe novamente.",
       "regrantNeeded": "O acesso à pasta tem de ser reconcedido - selecione novamente a sua pasta.",
       "restoreFailed": "Falha ao restaurar a sessão. Uma pasta pode ter sido movida ou eliminada.",
-      "savePickerCancelled": "Gravação cancelada."
+      "savePickerCancelled": "Gravação cancelada.",
+      "unsupportedFormats": "Formatos de ficheiro não suportados: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Predefinições da Comunidade",

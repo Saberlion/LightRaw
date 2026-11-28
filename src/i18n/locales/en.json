@@ -1511,15 +1511,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Cloud-synced folders (e.g. Download) can contain offloaded, empty file stubs that show up as broken placeholders, and their access grant must be re-activated on every launch. The built-in app library is the recommended default location for imports.",
+      "gallerySaveRejected": "The save to the gallery was rejected.",
+      "importDuplicate": "A file with the same name already exists in the library - the import was skipped.",
+      "importEmptyFile": "Cannot import an empty (0-byte) file.",
       "importFailed": "Import failed: {{err}}",
       "importPickFailed": "Import picker failed: {{err}}",
-      "importTargetInternal": "Importing into the app library (the recommended default on this device).",
-      "unsupportedFormats": "Unsupported file format(s): {{extensions}}",
       "importSkippedUnsupported": "Skipped {{skipped}} unsupported file(s) ({{extensions}}) - only images can be imported.",
-      "gallerySaveRejected": "The save to the gallery was rejected.",
+      "importTargetInternal": "Importing into the app library (the recommended default on this device).",
+      "importTruncated": "The source file appears to be truncated or incomplete - re-transfer it and import again.",
       "regrantNeeded": "Library folder access must be re-granted - please select your folder again.",
       "restoreFailed": "Failed to restore session. A folder may have been moved or deleted.",
-      "savePickerCancelled": "Save cancelled."
+      "savePickerCancelled": "Save cancelled.",
+      "unsupportedFormats": "Unsupported file format(s): {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Community Presets",

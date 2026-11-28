@@ -1511,15 +1511,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Cloud-gesynchroniseerde mappen (zoals Download) kunnen lege bestandsstubs bevatten die als kapotte tijdelijke afbeeldingen verschijnen; de toegangsverlening moet bij elke start opnieuw worden geactiveerd. Voor imports wordt de ingebouwde app-bibliotheek aanbevolen.",
+      "gallerySaveRejected": "Het opslaan in de galerij is geweigerd.",
+      "importDuplicate": "Er bestaat al een bestand met dezelfde naam in de bibliotheek - de import is overgeslagen.",
+      "importEmptyFile": "Een leeg (0-byte) bestand kan niet worden geïmporteerd.",
       "importFailed": "Importeren mislukt: {{err}}",
       "importPickFailed": "Selecteren van afbeeldingen voor import mislukt: {{err}}",
-      "importTargetInternal": "Bezig met importeren naar de app-bibliotheek (de aanbevolen standaardlocatie op dit apparaat).",
-      "unsupportedFormats": "Niet-ondersteunde bestandsindelingen: {{extensions}}",
       "importSkippedUnsupported": "{{skipped}} niet-ondersteund(e) bestand(en) overgeslagen ({{extensions}}) - alleen afbeeldingen kunnen worden geïmporteerd.",
-      "gallerySaveRejected": "Het opslaan in de galerij is geweigerd.",
+      "importTargetInternal": "Bezig met importeren naar de app-bibliotheek (de aanbevolen standaardlocatie op dit apparaat).",
+      "importTruncated": "Het bronbestand lijkt afgekapt of onvolledig - draag het opnieuw over en importeer het nogmaals.",
       "regrantNeeded": "Maptoegang moet opnieuw worden verleend - selecteer uw map opnieuw.",
       "restoreFailed": "Sessie herstellen mislukt. Een map is mogelijk verplaatst of verwijderd.",
-      "savePickerCancelled": "Opslaan geannuleerd."
+      "savePickerCancelled": "Opslaan geannuleerd.",
+      "unsupportedFormats": "Niet-ondersteunde bestandsindelingen: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Community-voorinstellingen",

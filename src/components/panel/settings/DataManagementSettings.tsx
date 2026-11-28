@@ -216,9 +216,15 @@ function Row({
 }) {
   return (
     <div className="py-3.5 first:pt-0 last:pb-0">
-      <div className="flex items-center gap-3">
+      {/* BUG-2026-11-28-21: the row used to keep three shrink-0 blocks (dot,
+          size, min-w-24 action) on one line, so at phone widths (366px) the
+          flexible title column collapsed to ~24-43px and CJK text wrapped
+          one character per line. Now the size+action trail as ONE group,
+          the title refuses to go below 160px below 480px, and the group
+          wraps onto its own full-width line (size left, action right). */}
+      <div className="flex items-center gap-3 flex-wrap">
         {color && <span className={clsx('w-2.5 h-2.5 rounded-full shrink-0', color)} />}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 max-[480px]:min-w-40">
           <Text variant={TextVariants.label} color={TextColors.primary} weight={TextWeights.medium}>
             {title}
           </Text>
@@ -226,17 +232,19 @@ function Row({
             {description}
           </Text>
         </div>
-        {size !== undefined && (
-          <Text
-            variant={TextVariants.label}
-            color={TextColors.primary}
-            weight={TextWeights.medium}
-            className="tabular-nums text-right shrink-0"
-          >
-            {size}
-          </Text>
-        )}
-        {size !== undefined ? <div className="flex justify-end min-w-24 shrink-0">{action}</div> : action}
+        <div className="flex items-center gap-3 shrink-0 max-[480px]:basis-full max-[480px]:justify-between">
+          {size !== undefined && (
+            <Text
+              variant={TextVariants.label}
+              color={TextColors.primary}
+              weight={TextWeights.medium}
+              className="tabular-nums text-right"
+            >
+              {size}
+            </Text>
+          )}
+          {size !== undefined ? <div className="flex justify-end min-w-24">{action}</div> : action}
+        </div>
       </div>
       {children}
       {status && (

@@ -437,7 +437,20 @@ export function useTauriListeners({
         void cleanupOhosImportStaging();
       }),
       listen('import-error', (event: any) => {
-        const message = typeof event.payload === 'string' ? event.payload : 'Unknown error';
+        const rawMessage = typeof event.payload === 'string' ? event.payload : 'Unknown error';
+        // BUG-2026-11-28-23: the import worker surfaces raw Rust error
+        // strings (with sandbox paths) per failed file. Map the known
+        // guard rejections to localized, path-free messages; anything
+        // unknown stays verbatim (the full raw string is in app.log via
+        // the [import] failed line).
+        let message = rawMessage;
+        if (rawMessage.includes('File already exists at destination')) {
+          message = i18n.t('library.toasts.importDuplicate');
+        } else if (rawMessage.includes('Refusing to import an empty (0-byte) file')) {
+          message = i18n.t('library.toasts.importEmptyFile');
+        } else if (rawMessage.includes('truncated/incomplete')) {
+          message = i18n.t('library.toasts.importTruncated');
+        }
         if (isEffectActive)
           useProcessStore.getState().setImportState({
             status: Status.Error,

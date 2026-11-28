@@ -1545,15 +1545,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Les carpetes sincronitzades amb el núvol (p. ex., Download) poden contenir fitxers buits descarregats que es mostren com a marcadors trencats, i el seu permís d’accés s’ha de reactivar a cada inici. Es recomana la biblioteca integrada com a ubicació d’importació.",
+      "gallerySaveRejected": "S'ha rebutjat el desat a la galeria.",
+      "importDuplicate": "Ja existeix un fitxer amb el mateix nom a la biblioteca - s'ha omès la importació.",
+      "importEmptyFile": "No es pot importar un fitxer buit (0 bytes).",
       "importFailed": "La importació ha fallat: {{err}}",
       "importPickFailed": "Ha fallat el selector d'imatges per importar: {{err}}",
-      "importTargetInternal": "S'està important a la biblioteca de l'aplicació (ubicació recomanada en aquest dispositiu).",
-      "unsupportedFormats": "Formats de fitxer no compatibles: {{extensions}}",
       "importSkippedUnsupported": "S'han omès {{skipped}} fitxers no compatibles ({{extensions}}) - només es poden importar imatges.",
-      "gallerySaveRejected": "S'ha rebutjat el desat a la galeria.",
+      "importTargetInternal": "S'està important a la biblioteca de l'aplicació (ubicació recomanada en aquest dispositiu).",
+      "importTruncated": "El fitxer d'origen sembla truncat o incomplet - torneu-lo a transferir i importeu-lo de nou.",
       "regrantNeeded": "L'accés a la carpeta s'ha de tornar a concedir - torneu a seleccionar la carpeta.",
       "restoreFailed": "No s'ha pogut restaurar la sessió. És possible que s'hagi mogut o eliminat una carpeta.",
-      "savePickerCancelled": "S'ha cancel·lat el desat."
+      "savePickerCancelled": "S'ha cancel·lat el desat.",
+      "unsupportedFormats": "Formats de fitxer no compatibles: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Ajustos preestablerts de la comunitat",

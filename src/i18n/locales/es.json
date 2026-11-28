@@ -1545,15 +1545,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Las carpetas sincronizadas con la nube (p. ej., Download) pueden contener archivos vacíos descargados que se muestran como marcadores rotos, y su permiso de acceso debe reactivarse en cada inicio. Se recomienda la biblioteca integrada como ubicación de importación.",
+      "gallerySaveRejected": "Se rechazó el guardado en la galería.",
+      "importDuplicate": "Ya existe un archivo con el mismo nombre en la biblioteca: se omitió la importación.",
+      "importEmptyFile": "No se puede importar un archivo vacío (0 bytes).",
       "importFailed": "Error al importar: {{err}}",
       "importPickFailed": "Error al seleccionar imágenes para importar: {{err}}",
-      "importTargetInternal": "Importando en la biblioteca de la aplicación (ubicación recomendada en este dispositivo).",
-      "unsupportedFormats": "Formatos de archivo no compatibles: {{extensions}}",
       "importSkippedUnsupported": "Se omitieron {{skipped}} archivo(s) no compatible(s) ({{extensions}}): solo se pueden importar imágenes.",
-      "gallerySaveRejected": "Se rechazó el guardado en la galería.",
+      "importTargetInternal": "Importando en la biblioteca de la aplicación (ubicación recomendada en este dispositivo).",
+      "importTruncated": "El archivo de origen parece truncado o incompleto: vuelva a transferirlo e impórtelo de nuevo.",
       "regrantNeeded": "El acceso a la carpeta debe volver a concederse: seleccione de nuevo su carpeta.",
       "restoreFailed": "No se pudo restaurar la sesión. Es posible que se haya movido o eliminado una carpeta.",
-      "savePickerCancelled": "Guardado cancelado."
+      "savePickerCancelled": "Guardado cancelado.",
+      "unsupportedFormats": "Formatos de archivo no compatibles: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Ajustes de la comunidad",

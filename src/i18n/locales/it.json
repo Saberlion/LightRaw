@@ -1545,15 +1545,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Le cartelle sincronizzate con il cloud (es. Download) possono contenere stub di file vuoti che appaiono come segnaposto danneggiati; la loro autorizzazione di accesso va riattivata a ogni avvio. Per le importazioni è consigliata la libreria integrata.",
+      "gallerySaveRejected": "Il salvataggio nella galleria è stato rifiutato.",
+      "importDuplicate": "Un file con lo stesso nome esiste già nella libreria: l'importazione è stata saltata.",
+      "importEmptyFile": "Impossibile importare un file vuoto (0 byte).",
       "importFailed": "Importazione non riuscita: {{err}}",
       "importPickFailed": "Selezione delle immagini da importare non riuscita: {{err}}",
-      "importTargetInternal": "Importazione nella libreria dell'app (posizione consigliata su questo dispositivo).",
-      "unsupportedFormats": "Formati file non supportati: {{extensions}}",
       "importSkippedUnsupported": "{{skipped}} file non supportati ignorati ({{extensions}}): è possibile importare solo immagini.",
-      "gallerySaveRejected": "Il salvataggio nella galleria è stato rifiutato.",
+      "importTargetInternal": "Importazione nella libreria dell'app (posizione consigliata su questo dispositivo).",
+      "importTruncated": "Il file di origine sembra troncato o incompleto: ritrasferiscilo e importalo di nuovo.",
       "regrantNeeded": "L'accesso alla cartella deve essere ri-concesso: seleziona di nuovo la cartella.",
       "restoreFailed": "Ripristino della sessione non riuscito. Una cartella potrebbe essere stata spostata o eliminata.",
-      "savePickerCancelled": "Salvataggio annullato."
+      "savePickerCancelled": "Salvataggio annullato.",
+      "unsupportedFormats": "Formati file non supportati: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Predefiniti della Community",

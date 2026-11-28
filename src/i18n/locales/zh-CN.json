@@ -1504,15 +1504,18 @@
     },
     "toasts": {
       "fuseRootNotice": "云同步文件夹（如 Download）可能包含已卸载到云端的空文件占位，在应用中会显示为破损占位图，且其访问授权需在每次启动时重新激活。建议使用应用内置图库作为导入的默认位置。",
+      "gallerySaveRejected": "已拒绝保存到图库。",
+      "importDuplicate": "图库中已存在同名文件,已跳过导入。",
+      "importEmptyFile": "无法导入空(0 字节)文件。",
       "importFailed": "导入失败：{{err}}",
       "importPickFailed": "导入选择图片失败：{{err}}",
-      "importTargetInternal": "正在导入到应用图库(本设备推荐默认位置)。",
-      "unsupportedFormats": "检测到不支持的文件格式：{{extensions}}",
       "importSkippedUnsupported": "已跳过 {{skipped}} 个不支持的文件（{{extensions}}）——仅支持导入图片。",
-      "gallerySaveRejected": "已拒绝保存到图库。",
+      "importTargetInternal": "正在导入到应用图库(本设备推荐默认位置)。",
+      "importTruncated": "源文件似乎被截断或不完整——请重新传输后再导入。",
       "regrantNeeded": "图库文件夹访问授权需重新授予——请重新选择您的文件夹。",
       "restoreFailed": "会话恢复失败。文件夹可能已被移动或删除。",
-      "savePickerCancelled": "已取消保存。"
+      "savePickerCancelled": "已取消保存。",
+      "unsupportedFormats": "检测到不支持的文件格式：{{extensions}}"
     },
     "tooltips": {
       "communityPresets": "社区预设",

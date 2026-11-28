@@ -1504,15 +1504,18 @@
     },
     "toasts": {
       "fuseRootNotice": "クラウド同期フォルダ（例：Download）には、クラウドへ退避された空のスタブファイルが含まれることがあり、破損したプレースホルダーとして表示されます。またアクセス権は起動のたびに再度有効化する必要があります。インポート先としては内蔵ライブラリの使用を推奨します。",
+      "gallerySaveRejected": "ギャラリーへの保存が拒否されました。",
+      "importDuplicate": "ライブラリに同名のファイルが既に存在するため、インポートをスキップしました。",
+      "importEmptyFile": "空(0 バイト)のファイルはインポートできません。",
       "importFailed": "インポートに失敗しました：{{err}}",
       "importPickFailed": "インポートする画像の選択に失敗しました：{{err}}",
-      "importTargetInternal": "アプリライブラリ(このデバイスの推奨される既定の場所)に読み込んでいます。",
-      "unsupportedFormats": "サポートされていないファイル形式です：{{extensions}}",
       "importSkippedUnsupported": "サポートされていないファイルを {{skipped}} 個スキップしました（{{extensions}}）。画像のみインポートできます。",
-      "gallerySaveRejected": "ギャラリーへの保存が拒否されました。",
+      "importTargetInternal": "アプリライブラリ(このデバイスの推奨される既定の場所)に読み込んでいます。",
+      "importTruncated": "ソースファイルが途切れているか不完全なようです。再転送してからインポートしてください。",
       "regrantNeeded": "フォルダーへのアクセス権限を再付与する必要があります。フォルダーを再選択してください。",
       "restoreFailed": "セッションを復元できませんでした。フォルダーが移動または削除された可能性があります。",
-      "savePickerCancelled": "保存がキャンセルされました。"
+      "savePickerCancelled": "保存がキャンセルされました。",
+      "unsupportedFormats": "サポートされていないファイル形式です：{{extensions}}"
     },
     "tooltips": {
       "communityPresets": "コミュニティプリセット",

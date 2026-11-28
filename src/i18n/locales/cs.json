@@ -1579,15 +1579,18 @@
     },
     "toasts": {
       "fuseRootNotice": "Složky synchronizované s cloudem (např. Download) mohou obsahovat prázdné zástupné soubory, které se zobrazují jako poškozené placeholdery, a jejich přístupová oprávnění je nutné při každém spuštění znovu aktivovat. Pro importy je doporučena vestavěná knihovna aplikace.",
+      "gallerySaveRejected": "Uložení do galerie bylo zamítnuto.",
+      "importDuplicate": "Soubor se stejným názvem už v knihovně existuje – import byl přeskočen.",
+      "importEmptyFile": "Prázdný (0bajtový) soubor nelze importovat.",
       "importFailed": "Import se nezdařil: {{err}}",
       "importPickFailed": "Selhal výběr obrázků k importu: {{err}}",
-      "importTargetInternal": "Importuje se do knihovny aplikace (doporučené výchozí umístění v tomto zařízení).",
-      "unsupportedFormats": "Nepodporované formáty souborů: {{extensions}}",
       "importSkippedUnsupported": "Přeskočeno {{skipped}} nepodporovaných souborů ({{extensions}}) – importovat lze pouze obrázky.",
-      "gallerySaveRejected": "Uložení do galerie bylo zamítnuto.",
+      "importTargetInternal": "Importuje se do knihovny aplikace (doporučené výchozí umístění v tomto zařízení).",
+      "importTruncated": "Zdrojový soubor vypadá zkráceně nebo neúplně – přeneste jej znovu a importujte jej znovu.",
       "regrantNeeded": "Přístup ke složce je nutné znovu udělit – vyberte složku znovu.",
       "restoreFailed": "Obnovení relace se nezdařilo. Složka mohla být přesunuta nebo odstraněna.",
-      "savePickerCancelled": "Ukládání zrušeno."
+      "savePickerCancelled": "Ukládání zrušeno.",
+      "unsupportedFormats": "Nepodporované formáty souborů: {{extensions}}"
     },
     "tooltips": {
       "communityPresets": "Presety komunity",
