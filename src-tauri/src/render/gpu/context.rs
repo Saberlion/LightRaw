@@ -294,6 +294,25 @@ pub fn get_or_init_gpu_context(
     #[allow(unused_mut)]
     let mut instance_desc = wgpu::InstanceDescriptor::new_without_display_handle_from_env();
 
+    // Maleoon driver bug forensics (BUG-2026-11-28-26 / BUG-2026-11-25-29):
+    // the v200 (Mate 80) and B322 (GEM-W40) drivers SEGV inside their
+    // debug-utils object-name handling - wgpu's HAL labels ("(wgpu
+    // internal) zero init buffer", ...) end up dereferenced as pointers
+    // (fault registers x6/x7 hold "(wgpu in" + "ternal) ", the fault
+    // address itself is built from label bytes). hal_label only strips
+    // these when DISCARD_HAL_LABELS is set, and the flag default never
+    // sets it, so every OHOS build has been handing debug-utils names to
+    // the driver. Discard them: labels are a debugging nicety, the driver
+    // treating them as pointers is a crash. NOTE: the B322 SIGSEGV was
+    // proven to persist WITH labels discarded (constant fault address,
+    // registers zeroed) - this flag is defense-in-depth for the v200
+    // variant (whose fault address really is label bytes), not a fix for
+    // B322 (that one is the driver blocklist below).
+    #[cfg(target_env = "ohos")]
+    {
+        instance_desc.flags |= wgpu::InstanceFlags::DISCARD_HAL_LABELS;
+    }
+
     #[cfg(target_os = "windows")]
     if std::env::var("WGPU_BACKEND").is_err() {
         instance_desc.backends = wgpu::Backends::PRIMARY;
@@ -398,13 +417,17 @@ pub fn get_or_init_gpu_context(
     // Maleoon B322 (GEM-W40 / 935A) driver bug, BUG-2026-11-25/26: every
     // vkCreateDescriptorSetLayout - i.e. the first bind-group-layout of any
     // pipeline creation, warmup AND real work alike - SIGSEGVs inside
-    // libmaleoon_v300.so (driver treats wgpu string bytes as pointers).
-    // Single-threaded reproducible, survives a device reboot, ~19/19 crash
-    // rate after the first post-install launch on the only B322 device we
-    // have. Until the vendor fixes the driver, refuse the GPU here so every
-    // call site takes the existing no-adapter CPU degradation path (the
-    // x86_64 emulator already runs through it) - slow but stable. B312
-    // (MateBook/MOR) and v200-with-gate (Mate 80) are unaffected.
+    // libmaleoon_v300.so. Single-threaded reproducible, survives a device
+    // reboot, ~19/19 crash rate after the first post-install launch on the
+    // only B322 device we have. The HAL-label hypothesis was DISPROVED by
+    // experiment (2026-11-28: DISCARD_HAL_LABELS set, fault registers x6/x7
+    // zeroed - labels provably gone - and the crash persisted at the same
+    // constant fault address 0x0001080102027b3c in both the warmup and the
+    // continue-session paths). Until the vendor fixes the driver, refuse the
+    // GPU here so every call site takes the existing no-adapter CPU
+    // degradation path (the x86_64 emulator already runs through it) - slow
+    // but stable. B312 (MateBook/MOR) and v200-with-gate (Mate 80) are
+    // unaffected.
     if adapter_info.driver.contains("B322") {
         log::error!(
             "Maleoon B322 GPU driver is blocklisted (vkCreateDescriptorSetLayout SIGSEGV, \
