@@ -1049,9 +1049,15 @@ pub async fn import_files(
     app_handle: AppHandle,
 ) -> Result<(), String> {
     let total_files = source_paths.len();
+    // The import chain used to be observable only through hilog (eprintln +
+    // emit events), which rotates away within minutes - QA rounds could not
+    // trace imports across restarts (BUG-2026-11-28-02). Anchor the chain in
+    // app.log: start / per-file failure / complete with a success count.
+    log::info!("[import] start: {total_files} file(s) -> {destination_folder}");
     let _ = app_handle.emit("import-start", serde_json::json!({ "total": total_files }));
 
     tauri::async_runtime::spawn_blocking(move || {
+        let mut imported_ok = 0usize;
         for (i, source_path_str) in source_paths.iter().enumerate() {
             let _ = app_handle.emit(
                 "import-progress",
@@ -1318,10 +1324,11 @@ pub async fn import_files(
             })();
 
             if let Err(e) = import_result {
-                eprintln!("Failed to import {}: {}", source_path_str, e);
+                log::warn!("[import] failed {}: {}", source_path_str, e);
                 let _ = app_handle.emit("import-error", e);
                 continue;
             }
+            imported_ok += 1;
         }
 
         let _ = app_handle.emit(
@@ -1329,6 +1336,10 @@ pub async fn import_files(
             serde_json::json!({ "current": total_files, "total": total_files, "path": "" }),
         );
         let _ = app_handle.emit("import-complete", ());
+        log::info!(
+            "[import] complete: {imported_ok}/{total_files} imported ({} rejected)",
+            total_files - imported_ok
+        );
     });
 
     Ok(())

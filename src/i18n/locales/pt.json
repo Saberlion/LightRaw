@@ -1549,7 +1549,11 @@
       "importPickFailed": "Falha ao selecionar imagens para importar: {{err}}",
       "importTargetInternal": "Importando para a biblioteca do aplicativo (local recomendado neste dispositivo).",
       "unsupportedFormats": "Formatos de ficheiro não suportados: {{extensions}}",
-      "importSkippedUnsupported": "{{skipped}} ficheiro(s) não suportado(s) ignorado(s) ({{extensions}}) - apenas imagens podem ser importadas."
+      "importSkippedUnsupported": "{{skipped}} ficheiro(s) não suportado(s) ignorado(s) ({{extensions}}) - apenas imagens podem ser importadas.",
+      "gallerySaveRejected": "A gravação na galeria foi rejeitada."
+      "regrantNeeded": "O acesso à pasta tem de ser reconcedido - selecione novamente a sua pasta."
+      "restoreFailed": "Falha ao restaurar a sessão. Uma pasta pode ter sido movida ou eliminada."
+      "savePickerCancelled": "Gravação cancelada."
     },
     "tooltips": {
       "communityPresets": "Predefinições da Comunidade",

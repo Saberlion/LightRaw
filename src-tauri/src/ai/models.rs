@@ -697,12 +697,25 @@ pub(crate) async fn download_and_verify_model(
     asset: &ModelAsset,
 ) -> Result<()> {
     let dest_path = models_dir.join(asset.filename);
+    let file_exists = dest_path.exists();
     let is_valid = match asset.sha256 {
         Some(expected_hash) => verify_sha256(&dest_path, expected_hash)?,
         None => dest_path.exists(),
     };
 
     if !is_valid {
+        // BUG-2026-11-28-13 follow-up: a Quick Erase run downloaded
+        // lama_fp16.onnx although the file was later reported ready, and the
+        // on-site evidence could not decide between a stale file, a race, or
+        // a different verdict at that instant. Log the exact pre-download
+        // verdict (path / exists / hash outcome) so the next repro is
+        // decisive instead of guesswork.
+        log::info!(
+            "[ai-model] {} not usable at {:?} (exists={file_exists}, hash_check={}), fetching",
+            asset.name,
+            dest_path,
+            asset.sha256.is_some(),
+        );
         // Release HAPs bundle the high-frequency models in rawfile; a bundled
         // copy only counts when it matches the pinned sha256. This branch is
         // only taken when there is no local file at all: a file that exists

@@ -17,6 +17,22 @@ pub fn setup_logging(app_handle: &tauri::AppHandle) {
 
     let log_file_path = log_dir.join("app.log");
 
+    // Retain the previous session's log as app.log.1 before truncating:
+    // QA evidence chains (import/export/AI runs) used to evaporate on every
+    // restart because the file was opened with truncate(true) and no
+    // rotation (BUG-2026-11-28-02). One generation is enough for the
+    // cross-restart evidence the test rounds depend on. rename() is the
+    // primary path; the el2/base sandbox supports it, but if it ever fails
+    // (the tauri fork's FUSE-resolved variants denied rename with EACCES -
+    // persist_downloaded_asset precedent) fall back to a byte copy.
+    let rotated_path = log_dir.join("app.log.1");
+    if log_file_path.exists() {
+        let _ = fs::remove_file(&rotated_path);
+        if fs::rename(&log_file_path, &rotated_path).is_err() {
+            let _ = fs::copy(&log_file_path, &rotated_path);
+        }
+    }
+
     let log_file = fs::OpenOptions::new()
         .write(true)
         .create(true)

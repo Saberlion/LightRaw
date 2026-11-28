@@ -684,7 +684,7 @@ export function useAppNavigation({ clearThumbnailQueue, importFilesRef, refs }: 
             'Library roots unreadable (FileKit grant revoked?), requesting re-grant:',
             rootFolders.filter((r) => !alive.includes(r)),
           );
-          toast.info('Library folder access must be re-granted — please select your folder again.');
+          toast.info(i18n.t('library.toasts.regrantNeeded'));
           const repicked = await invoke<string | null>(Invokes.PickOhosFolder);
 
           if (repicked) {
@@ -702,7 +702,13 @@ export function useAppNavigation({ clearThumbnailQueue, importFilesRef, refs }: 
               await handleSettingsChange({ ...appSettings, rootFolders });
             }
           } else if (alive.length === 0) {
-            toast.error('Failed to restore session. A folder may have been moved or deleted.');
+            toast.error(i18n.t('library.toasts.restoreFailed'));
+            // The startup preload was resolved while the roots were dead
+            // (empty trees). If the roots become readable again later and
+            // the user retries "continue session", the probe now passes and
+            // the restore below would otherwise reuse that stale empty
+            // preload -> a 0/0 library until an app restart (BUG-2026-11-28-16).
+            preloadedDataRef.current = undefined;
             handleGoHome();
             return;
           } else {
@@ -810,7 +816,7 @@ export function useAppNavigation({ clearThumbnailQueue, importFilesRef, refs }: 
 
     restore().catch((err) => {
       console.error('Failed to restore session:', err);
-      toast.error('Failed to restore session. A folder may have been moved or deleted.');
+      toast.error(i18n.t('library.toasts.restoreFailed'));
       handleGoHome();
       useLibraryStore.getState().setLibrary({ isTreeLoading: false });
     });

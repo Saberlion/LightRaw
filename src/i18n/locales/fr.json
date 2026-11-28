@@ -1550,7 +1550,11 @@
       "importPickFailed": "Échec de la sélection d'images pour l'importation : {{err}}",
       "importTargetInternal": "Importation dans la bibliothèque de l'application (emplacement recommandé sur cet appareil).",
       "unsupportedFormats": "Formats de fichier non pris en charge : {{extensions}}",
-      "importSkippedUnsupported": "{{skipped}} fichier(s) non pris en charge ignoré(s) ({{extensions}}) - seules les images peuvent être importées."
+      "importSkippedUnsupported": "{{skipped}} fichier(s) non pris en charge ignoré(s) ({{extensions}}) - seules les images peuvent être importées.",
+      "gallerySaveRejected": "L'enregistrement dans la galerie a été refusé."
+      "regrantNeeded": "L'accès au dossier doit être réautorisé - veuillez sélectionner à nouveau votre dossier."
+      "restoreFailed": "Échec de restauration de la session. Un dossier a peut-être été déplacé ou supprimé."
+      "savePickerCancelled": "Enregistrement annulé."
     },
     "tooltips": {
       "communityPresets": "Paramètres prédéfinis de la communauté",

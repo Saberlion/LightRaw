@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { Channel, convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { toast } from 'react-toastify';
+import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Status } from '../types/export';
 import { Invokes } from '../types/invokes';
@@ -373,9 +374,23 @@ export function useTauriListeners({
       }),
       listen('export-error', (event: any) => {
         if (!isEffectActive) return;
+        // The export chain surfaces machine-readable strings from the Rust/
+        // ArkTS layers ("user rejected the gallery save", "OHOS save picker
+        // cancelled for '<file>'"). Map the user-action ones to localized
+        // messages (BUG-2026-11-28-17); anything unknown stays verbatim.
+        // i18n.t (not the useTranslation t): this effect runs once with []
+        // deps, so the hook-level t would be a stale closure after a
+        // language switch.
+        const raw = typeof event.payload === 'string' ? event.payload : 'Unknown error';
+        let errorMessage = raw;
+        if (raw.includes('user rejected the gallery save')) {
+          errorMessage = i18n.t('library.toasts.gallerySaveRejected');
+        } else if (raw.includes('save picker cancelled')) {
+          errorMessage = i18n.t('library.toasts.savePickerCancelled');
+        }
         useProcessStore.getState().setExportState({
           status: Status.Error,
-          errorMessage: typeof event.payload === 'string' ? event.payload : 'Unknown error',
+          errorMessage,
         });
         refreshAfterExport();
       }),

@@ -1583,7 +1583,11 @@
       "importPickFailed": "Selhal výběr obrázků k importu: {{err}}",
       "importTargetInternal": "Importuje se do knihovny aplikace (doporučené výchozí umístění v tomto zařízení).",
       "unsupportedFormats": "Nepodporované formáty souborů: {{extensions}}",
-      "importSkippedUnsupported": "Přeskočeno {{skipped}} nepodporovaných souborů ({{extensions}}) – importovat lze pouze obrázky."
+      "importSkippedUnsupported": "Přeskočeno {{skipped}} nepodporovaných souborů ({{extensions}}) – importovat lze pouze obrázky.",
+      "gallerySaveRejected": "Uložení do galerie bylo zamítnuto."
+      "regrantNeeded": "Přístup ke složce je nutné znovu udělit – vyberte složku znovu."
+      "restoreFailed": "Obnovení relace se nezdařilo. Složka mohla být přesunuta nebo odstraněna."
+      "savePickerCancelled": "Ukládání zrušeno."
     },
     "tooltips": {
       "communityPresets": "Presety komunity",

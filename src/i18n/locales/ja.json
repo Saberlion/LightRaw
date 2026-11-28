@@ -1508,7 +1508,11 @@
       "importPickFailed": "インポートする画像の選択に失敗しました：{{err}}",
       "importTargetInternal": "アプリライブラリ(このデバイスの推奨される既定の場所)に読み込んでいます。",
       "unsupportedFormats": "サポートされていないファイル形式です：{{extensions}}",
-      "importSkippedUnsupported": "サポートされていないファイルを {{skipped}} 個スキップしました（{{extensions}}）。画像のみインポートできます。"
+      "importSkippedUnsupported": "サポートされていないファイルを {{skipped}} 個スキップしました（{{extensions}}）。画像のみインポートできます。",
+      "gallerySaveRejected": "ギャラリーへの保存が拒否されました。"
+      "regrantNeeded": "フォルダーへのアクセス権限を再付与する必要があります。フォルダーを再選択してください。"
+      "restoreFailed": "セッションを復元できませんでした。フォルダーが移動または削除された可能性があります。"
+      "savePickerCancelled": "保存がキャンセルされました。"
     },
     "tooltips": {
       "communityPresets": "コミュニティプリセット",

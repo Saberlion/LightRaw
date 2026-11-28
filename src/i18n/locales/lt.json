@@ -1622,7 +1622,11 @@
       "importPickFailed": "Nepavyko pasirinkti importuotinų vaizdų: {{err}}",
       "importTargetInternal": "Importuojama į programos biblioteką (rekomenduojama numatytoji vieta šiame įrenginyje).",
       "unsupportedFormats": "Nepalaikomi failų formatai: {{extensions}}",
-      "importSkippedUnsupported": "Praleista {{skipped}} nepalaikomų failų ({{extensions}}) – importuoti galima tik vaizdus."
+      "importSkippedUnsupported": "Praleista {{skipped}} nepalaikomų failų ({{extensions}}) – importuoti galima tik vaizdus.",
+      "gallerySaveRejected": "Įrašymas į galeriją buvo atmestas."
+      "regrantNeeded": "Prieiga prie aplanko turi būti suteikta iš naujo – pasirinkite aplanką dar kartą."
+      "restoreFailed": "Nepavyko atkurti sesijos. Aplankas gali būti perkeltas arba ištrintas."
+      "savePickerCancelled": "Įrašymas atšauktas."
     },
     "tooltips": {
       "communityPresets": "Bendruomenės nustatymai",

@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, PoisonError};
 
 use serde_json::Value;
+#[cfg(not(target_env = "ohos"))]
 use tauri::Manager;
 
 use crate::app::settings::AppSettings;
@@ -21,6 +22,16 @@ pub struct ExportRecords {
 
 impl ExportRecords {
     pub fn load(app_handle: &tauri::AppHandle) -> Self {
+        // The tauri fork resolves app_data_dir with desktop XDG semantics on
+        // OHOS (FUSE user storage, EPERM), which made the export fingerprint
+        // dedup silently no-op there: the records file lived on a path the
+        // app could never read back (BUG-2026-11-28-06, AGENTS.md port
+        // rule). Route through app_paths on OHOS like gpu/fallback.rs.
+        #[cfg(target_env = "ohos")]
+        let file = crate::app_paths::app_data_dir(app_handle)
+            .ok()
+            .map(|dir| dir.join(RECORDS_FILE));
+        #[cfg(not(target_env = "ohos"))]
         let file = app_handle
             .path()
             .app_data_dir()

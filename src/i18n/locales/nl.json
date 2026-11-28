@@ -1515,7 +1515,11 @@
       "importPickFailed": "Selecteren van afbeeldingen voor import mislukt: {{err}}",
       "importTargetInternal": "Bezig met importeren naar de app-bibliotheek (de aanbevolen standaardlocatie op dit apparaat).",
       "unsupportedFormats": "Niet-ondersteunde bestandsindelingen: {{extensions}}",
-      "importSkippedUnsupported": "{{skipped}} niet-ondersteund(e) bestand(en) overgeslagen ({{extensions}}) - alleen afbeeldingen kunnen worden geïmporteerd."
+      "importSkippedUnsupported": "{{skipped}} niet-ondersteund(e) bestand(en) overgeslagen ({{extensions}}) - alleen afbeeldingen kunnen worden geïmporteerd.",
+      "gallerySaveRejected": "Het opslaan in de galerij is geweigerd."
+      "regrantNeeded": "Maptoegang moet opnieuw worden verleend - selecteer uw map opnieuw."
+      "restoreFailed": "Sessie herstellen mislukt. Een map is mogelijk verplaatst of verwijderd."
+      "savePickerCancelled": "Opslaan geannuleerd."
     },
     "tooltips": {
       "communityPresets": "Community-voorinstellingen",

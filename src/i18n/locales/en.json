@@ -1515,7 +1515,11 @@
       "importPickFailed": "Import picker failed: {{err}}",
       "importTargetInternal": "Importing into the app library (the recommended default on this device).",
       "unsupportedFormats": "Unsupported file format(s): {{extensions}}",
-      "importSkippedUnsupported": "Skipped {{skipped}} unsupported file(s) ({{extensions}}) - only images can be imported."
+      "importSkippedUnsupported": "Skipped {{skipped}} unsupported file(s) ({{extensions}}) - only images can be imported.",
+      "gallerySaveRejected": "The save to the gallery was rejected."
+      "regrantNeeded": "Library folder access must be re-granted - please select your folder again."
+      "restoreFailed": "Failed to restore session. A folder may have been moved or deleted."
+      "savePickerCancelled": "Save cancelled."
     },
     "tooltips": {
       "communityPresets": "Community Presets",
