@@ -1525,9 +1525,9 @@
       "importTargetInternal": "Importerar till appbiblioteket (rekommenderad standardplats på den här enheten).",
       "unsupportedFormats": "Filtyper som inte stöds: {{extensions}}",
       "importSkippedUnsupported": "{{skipped}} filer som inte stöds hoppades över ({{extensions}}) - endast bilder kan importeras.",
-      "gallerySaveRejected": "Sparandet till galleriet avslogs."
-      "regrantNeeded": "Mappåtkomst måste beviljas igen – välj din mapp igen."
-      "restoreFailed": "Kunde inte återställa sessionen. En mapp kan ha flyttats eller tagits bort."
+      "gallerySaveRejected": "Sparandet till galleriet avslogs.",
+      "regrantNeeded": "Mappåtkomst måste beviljas igen – välj din mapp igen.",
+      "restoreFailed": "Kunde inte återställa sessionen. En mapp kan ha flyttats eller tagits bort.",
       "savePickerCancelled": "Sparning avbröts."
     },
     "tooltips": {

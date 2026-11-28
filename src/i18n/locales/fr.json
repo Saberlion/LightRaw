@@ -1551,9 +1551,9 @@
       "importTargetInternal": "Importation dans la bibliothèque de l'application (emplacement recommandé sur cet appareil).",
       "unsupportedFormats": "Formats de fichier non pris en charge : {{extensions}}",
       "importSkippedUnsupported": "{{skipped}} fichier(s) non pris en charge ignoré(s) ({{extensions}}) - seules les images peuvent être importées.",
-      "gallerySaveRejected": "L'enregistrement dans la galerie a été refusé."
-      "regrantNeeded": "L'accès au dossier doit être réautorisé - veuillez sélectionner à nouveau votre dossier."
-      "restoreFailed": "Échec de restauration de la session. Un dossier a peut-être été déplacé ou supprimé."
+      "gallerySaveRejected": "L'enregistrement dans la galerie a été refusé.",
+      "regrantNeeded": "L'accès au dossier doit être réautorisé - veuillez sélectionner à nouveau votre dossier.",
+      "restoreFailed": "Échec de restauration de la session. Un dossier a peut-être été déplacé ou supprimé.",
       "savePickerCancelled": "Enregistrement annulé."
     },
     "tooltips": {

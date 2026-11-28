@@ -1509,9 +1509,9 @@
       "importTargetInternal": "正在匯入到應用圖庫(本裝置建議的預設位置)。",
       "unsupportedFormats": "偵測到不支援的檔案格式：{{extensions}}",
       "importSkippedUnsupported": "已跳過 {{skipped}} 個不支援的檔案（{{extensions}}）——僅支援匯入圖片。",
-      "gallerySaveRejected": "已拒絕儲存到圖庫。"
-      "regrantNeeded": "圖庫資料夾存取授權需重新授予——請重新選擇您的資料夾。"
-      "restoreFailed": "工作階段還原失敗。資料夾可能已被移動或刪除。"
+      "gallerySaveRejected": "已拒絕儲存到圖庫。",
+      "regrantNeeded": "圖庫資料夾存取授權需重新授予——請重新選擇您的資料夾。",
+      "restoreFailed": "工作階段還原失敗。資料夾可能已被移動或刪除。",
       "savePickerCancelled": "已取消儲存。"
     },
     "tooltips": {

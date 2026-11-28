@@ -1516,9 +1516,9 @@
       "importTargetInternal": "Import in die App-Mediathek (empfohlener Standardort auf diesem Gerät).",
       "unsupportedFormats": "Nicht unterstützte Dateiformate: {{extensions}}",
       "importSkippedUnsupported": "{{skipped}} nicht unterstützte Datei(en) übersprungen ({{extensions}}) – nur Bilder können importiert werden.",
-      "gallerySaveRejected": "Das Speichern in der Galerie wurde abgelehnt."
-      "regrantNeeded": "Der Ordnerzugriff muss neu erteilt werden – bitte wählen Sie Ihren Ordner erneut aus."
-      "restoreFailed": "Sitzung konnte nicht wiederhergestellt werden. Ein Ordner wurde möglicherweise verschoben oder gelöscht."
+      "gallerySaveRejected": "Das Speichern in der Galerie wurde abgelehnt.",
+      "regrantNeeded": "Der Ordnerzugriff muss neu erteilt werden – bitte wählen Sie Ihren Ordner erneut aus.",
+      "restoreFailed": "Sitzung konnte nicht wiederhergestellt werden. Ein Ordner wurde möglicherweise verschoben oder gelöscht.",
       "savePickerCancelled": "Speichern abgebrochen."
     },
     "tooltips": {

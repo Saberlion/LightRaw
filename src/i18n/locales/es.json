@@ -1550,9 +1550,9 @@
       "importTargetInternal": "Importando en la biblioteca de la aplicación (ubicación recomendada en este dispositivo).",
       "unsupportedFormats": "Formatos de archivo no compatibles: {{extensions}}",
       "importSkippedUnsupported": "Se omitieron {{skipped}} archivo(s) no compatible(s) ({{extensions}}): solo se pueden importar imágenes.",
-      "gallerySaveRejected": "Se rechazó el guardado en la galería."
-      "regrantNeeded": "El acceso a la carpeta debe volver a concederse: seleccione de nuevo su carpeta."
-      "restoreFailed": "No se pudo restaurar la sesión. Es posible que se haya movido o eliminado una carpeta."
+      "gallerySaveRejected": "Se rechazó el guardado en la galería.",
+      "regrantNeeded": "El acceso a la carpeta debe volver a concederse: seleccione de nuevo su carpeta.",
+      "restoreFailed": "No se pudo restaurar la sesión. Es posible que se haya movido o eliminado una carpeta.",
       "savePickerCancelled": "Guardado cancelado."
     },
     "tooltips": {

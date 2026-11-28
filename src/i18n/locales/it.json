@@ -1550,9 +1550,9 @@
       "importTargetInternal": "Importazione nella libreria dell'app (posizione consigliata su questo dispositivo).",
       "unsupportedFormats": "Formati file non supportati: {{extensions}}",
       "importSkippedUnsupported": "{{skipped}} file non supportati ignorati ({{extensions}}): è possibile importare solo immagini.",
-      "gallerySaveRejected": "Il salvataggio nella galleria è stato rifiutato."
-      "regrantNeeded": "L'accesso alla cartella deve essere ri-concesso: seleziona di nuovo la cartella."
-      "restoreFailed": "Ripristino della sessione non riuscito. Una cartella potrebbe essere stata spostata o eliminata."
+      "gallerySaveRejected": "Il salvataggio nella galleria è stato rifiutato.",
+      "regrantNeeded": "L'accesso alla cartella deve essere ri-concesso: seleziona di nuovo la cartella.",
+      "restoreFailed": "Ripristino della sessione non riuscito. Una cartella potrebbe essere stata spostata o eliminata.",
       "savePickerCancelled": "Salvataggio annullato."
     },
     "tooltips": {

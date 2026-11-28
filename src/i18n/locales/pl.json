@@ -1584,9 +1584,9 @@
       "importTargetInternal": "Importowanie do biblioteki aplikacji (zalecana domyślna lokalizacja na tym urządzeniu).",
       "unsupportedFormats": "Nieobsługiwane formaty plików: {{extensions}}",
       "importSkippedUnsupported": "Pominięto {{skipped}} nieobsługiwanych plików ({{extensions}}) – importować można tylko obrazy.",
-      "gallerySaveRejected": "Zapis do galerii został odrzucony."
-      "regrantNeeded": "Dostęp do folderu musi zostać ponownie przyznany — wybierz folder ponownie."
-      "restoreFailed": "Nie udało się przywrócić sesji. Folder mógł zostać przeniesiony lub usunięty."
+      "gallerySaveRejected": "Zapis do galerii został odrzucony.",
+      "regrantNeeded": "Dostęp do folderu musi zostać ponownie przyznany — wybierz folder ponownie.",
+      "restoreFailed": "Nie udało się przywrócić sesji. Folder mógł zostać przeniesiony lub usunięty.",
       "savePickerCancelled": "Anulowano zapisywanie."
     },
     "tooltips": {

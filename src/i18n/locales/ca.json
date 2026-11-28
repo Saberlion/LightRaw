@@ -1550,9 +1550,9 @@
       "importTargetInternal": "S'està important a la biblioteca de l'aplicació (ubicació recomanada en aquest dispositiu).",
       "unsupportedFormats": "Formats de fitxer no compatibles: {{extensions}}",
       "importSkippedUnsupported": "S'han omès {{skipped}} fitxers no compatibles ({{extensions}}) - només es poden importar imatges.",
-      "gallerySaveRejected": "S'ha rebutjat el desat a la galeria."
-      "regrantNeeded": "L'accés a la carpeta s'ha de tornar a concedir - torneu a seleccionar la carpeta."
-      "restoreFailed": "No s'ha pogut restaurar la sessió. És possible que s'hagi mogut o eliminat una carpeta."
+      "gallerySaveRejected": "S'ha rebutjat el desat a la galeria.",
+      "regrantNeeded": "L'accés a la carpeta s'ha de tornar a concedir - torneu a seleccionar la carpeta.",
+      "restoreFailed": "No s'ha pogut restaurar la sessió. És possible que s'hagi mogut o eliminat una carpeta.",
       "savePickerCancelled": "S'ha cancel·lat el desat."
     },
     "tooltips": {

@@ -1509,9 +1509,9 @@
       "importTargetInternal": "正在导入到应用图库(本设备推荐默认位置)。",
       "unsupportedFormats": "检测到不支持的文件格式：{{extensions}}",
       "importSkippedUnsupported": "已跳过 {{skipped}} 个不支持的文件（{{extensions}}）——仅支持导入图片。",
-      "gallerySaveRejected": "已拒绝保存到图库。"
-      "regrantNeeded": "图库文件夹访问授权需重新授予——请重新选择您的文件夹。"
-      "restoreFailed": "会话恢复失败。文件夹可能已被移动或删除。"
+      "gallerySaveRejected": "已拒绝保存到图库。",
+      "regrantNeeded": "图库文件夹访问授权需重新授予——请重新选择您的文件夹。",
+      "restoreFailed": "会话恢复失败。文件夹可能已被移动或删除。",
       "savePickerCancelled": "已取消保存。"
     },
     "tooltips": {
