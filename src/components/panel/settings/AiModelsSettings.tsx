@@ -13,6 +13,13 @@ import { Invokes } from '../../../types/invokes';
 import type { AppSettings } from '../../../types/settings';
 import { formatBytes } from '../../../utils/formatBytes';
 import { useOsPlatform } from '../../../hooks/useOsPlatform';
+
+// Model details (per-model status, download/delete, registry list) visibility
+// in Settings. Hidden since 2026-11-28 (product decision): the auto-download
+// toggle and its status line keep working; the registry commands (list, download,
+// delete, force-verify) remain available at the API level. Flip back to true
+// to restore the full registry view.
+const SHOW_MODEL_DETAILS = false;
 import { isJobActive, JobKind, useProcessStore } from '../../../store/useProcessStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import type { DataConfirmRequest } from './DataManagementSettings';
@@ -638,6 +645,13 @@ export default function AiModelsSettings({ onRequestConfirm, appSettings, onSett
         </div>
       )}
 
+      {/* Model details (per-model status, download/delete, registry list):
+          HIDDEN since 2026-11-28 (product decision). The auto-download
+          toggle and its status line above keep working; flip
+          SHOW_MODEL_DETAILS back to true to restore the full registry
+          view. */}
+      {SHOW_MODEL_DETAILS && (
+      <>
       {models === null && !error && (
         <Text variant={TextVariants.small} color={TextColors.secondary}>
           {t('settings.aiModels.status.checking')}
@@ -680,6 +694,8 @@ export default function AiModelsSettings({ onRequestConfirm, appSettings, onSett
             />
           )}
         </div>
+      )}
+      </>
       )}
     </div>
   );
