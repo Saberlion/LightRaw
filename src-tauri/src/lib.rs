@@ -605,8 +605,12 @@ pub fn run() {
                                 e
                             ),
                         }
+                        // BUG-2026-11-28-33: keep the flag even after warmup success —
+                        // the v200 driver can crash seconds later; removing the flag
+                        // here lets the next launch re-run warmup into the same crash.
+                        // Warmup stays off for this install; delete the file to re-enable.
                         if let Some(path) = &warmup_flag {
-                            let _ = std::fs::remove_file(path);
+                            let _ = std::fs::write(path, "warmup_done_v200_crash_guard");
                         }
                     })
                     .expect("failed to spawn pipeline warmup thread");
