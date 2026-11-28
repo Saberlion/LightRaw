@@ -570,12 +570,18 @@ pub fn run() {
                             .ok()
                             .map(|dir| dir.join(".gpu_warmup_crash_flag"));
                         if warmup_flag.as_ref().is_some_and(|path| path.exists()) {
+                            // Sticky since 2026-11-28: the skip used to consume
+                            // the flag, so the next (auto-)restart re-ran the
+                            // warmup and crashed again - on the Maleoon B322
+                            // tablet this produced an unattended crash-loop
+                            // (system restarts the app, warmup dies, flag
+                            // consumed, restart, ...). The flag is now only
+                            // cleared by a SUCCESSFUL warmup; deleting the
+                            // app-config file re-enables it manually.
                             log::warn!(
-                                "[pipeline-warmup] skipped after a previous warmup crash (first image open may stall)"
+                                "[pipeline-warmup] skipped after a previous warmup crash \
+                                 (stays disabled until a warmup succeeds; first image open may stall)"
                             );
-                            if let Some(path) = &warmup_flag {
-                                let _ = std::fs::remove_file(path);
-                            }
                             return;
                         }
                         // Gate on the webview's first stable frame before

@@ -395,6 +395,23 @@ pub fn get_or_init_gpu_context(
         adapter_info.driver,
         adapter_info.driver_info
     );
+    // Maleoon B322 (GEM-W40 / 935A) driver bug, BUG-2026-11-25/26: every
+    // vkCreateDescriptorSetLayout - i.e. the first bind-group-layout of any
+    // pipeline creation, warmup AND real work alike - SIGSEGVs inside
+    // libmaleoon_v300.so (driver treats wgpu string bytes as pointers).
+    // Single-threaded reproducible, survives a device reboot, ~19/19 crash
+    // rate after the first post-install launch on the only B322 device we
+    // have. Until the vendor fixes the driver, refuse the GPU here so every
+    // call site takes the existing no-adapter CPU degradation path (the
+    // x86_64 emulator already runs through it) - slow but stable. B312
+    // (MateBook/MOR) and v200-with-gate (Mate 80) are unaffected.
+    if adapter_info.driver.contains("B322") {
+        log::error!(
+            "Maleoon B322 GPU driver is blocklisted (vkCreateDescriptorSetLayout SIGSEGV, \
+             BUG-2026-11-28-26): running on the CPU for stability"
+        );
+        return Err("Maleoon B322 GPU driver is blocklisted for stability".to_string());
+    }
     crate::render::gpu::fallback::begin_attempt(crate::render::gpu::fallback::backend_name(
         adapter_info.backend,
     ));
