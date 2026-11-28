@@ -279,6 +279,17 @@ pub fn get_or_init_gpu_context(
     let mut reused_wayland = None;
     if GPU_DEVICE_LOST.load(Ordering::Acquire) {
         log::warn!("Recreating GPU context after the device was lost.");
+        // BUG-2026-11-28-33 (v200/Mate 80): the device-lost recreation path
+        // used to create a new context with NO first-frame gate — the
+        // OHOS_GPU_WINDOW_OPEN atomic was already set by the (successful)
+        // warmup, so wait_for_gpu_window() returned instantly and the new
+        // adapter enumeration raced the ArkWeb compositor on the v200
+        // driver (SIGSEGV in libmaleoon_v200.so, warmup thread, after
+        // "[pipeline-warmup] completed" logged + second "Using GPU
+        // adapter" line). Reset the gate so the recreation goes through
+        // the same first-frame wait + settle as the first creation.
+        #[cfg(all(target_env = "ohos", not(target_arch = "x86_64")))]
+        OHOS_GPU_WINDOW_OPEN.store(false, Ordering::Release);
         if let Some(context) = context_lock.take() {
             #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
             {
